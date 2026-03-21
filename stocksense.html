@@ -3,36 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StockSense India | Financial Terminal</title>
+    <title>StockSense India | Auditor Terminal</title>
     <style>
-        :root {
-            --primary: #1a365d;
-            --accent: #2b6cb0;
-            --success: #2f855a;
-            --bg: #f7fafc;
-        }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); margin: 0; padding: 20px; }
+        :root { --primary: #1a365d; --accent: #2b6cb0; --bg: #f7fafc; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 20px; }
         .container { max-width: 1200px; margin: auto; }
-        
-        /* Header & Search */
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 3px solid var(--primary); padding-bottom: 10px; }
-        .search-box { display: flex; gap: 10px; }
-        input { padding: 10px; width: 300px; border: 1px solid #cbd5e0; border-radius: 4px; }
-        button { padding: 10px 20px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; }
-        button:hover { background: var(--accent); }
-
-        /* Dashboard Grid */
-        .grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        
-        /* Tables */
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th { text-align: left; background: #edf2f7; padding: 12px; border-bottom: 2px solid #cbd5e0; }
-        td { padding: 12px; border-bottom: 1px solid #edf2f7; vertical-align: top; font-size: 14px; }
-        .highlight { background: #f0fff4; font-weight: bold; color: var(--success); }
-        
-        .loading { display: none; color: var(--accent); font-weight: bold; }
-        .error { color: #c53030; padding: 10px; background: #fff5f5; border-radius: 4px; display: none; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--primary); padding-bottom: 10px; margin-bottom: 20px; }
+        .search-area { display: flex; gap: 10px; }
+        input { padding: 12px; width: 300px; border: 1px solid #cbd5e0; border-radius: 4px; }
+        button { padding: 12px 24px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .card { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th { background: #edf2f7; text-align: left; padding: 12px; border-bottom: 2px solid #cbd5e0; }
+        td { padding: 12px; border-bottom: 1px solid #edf2f7; font-size: 14px; line-height: 1.5; }
+        .highlight-green { background: #f0fff4; color: #2f855a; font-weight: bold; }
+        .price-large { font-size: 2em; font-weight: bold; margin: 10px 0; }
     </style>
 </head>
 <body>
@@ -40,130 +25,82 @@
 <div class="container">
     <div class="header">
         <h1>StockSense <span style="color: var(--accent);">India</span></h1>
-        <div class="search-box">
-            <input type="text" id="tickerInput" placeholder="Enter Company Name (e.g. Reliance)">
-            <button onclick="searchStock()">Audit Stock</button>
+        <div class="search-area">
+            <input type="text" id="userInput" placeholder="Search Company (e.g. Infosys)">
+            <button onclick="runAudit()">Audit Stock</button>
         </div>
     </div>
 
-    <div id="loading" class="loading">Fetching Financial Data...</div>
-    <div id="error" class="error"></div>
+    <div id="status" style="display:none; padding: 10px; color: var(--accent);">🔍 Verifying Ledger...</div>
 
-    <div class="grid">
-        <div class="main-content">
-            <div class="card" id="priceCard" style="display:none;">
-                <h2 id="companyName">Company Overview</h2>
-                <div id="priceDetails"></div>
-            </div>
-
-            <div class="card">
-                <h2>Corporate Ledger (Meetings & Dividends)</h2>
-                <div id="corporateActions">
-                    <p style="color: #a0aec0;">Search for a stock to view board meetings and dividend history.</p>
-                </div>
-            </div>
+    <div id="dashboard" style="display:none;">
+        <div class="card">
+            <h2 id="compName">Company Name</h2>
+            <div id="priceDisplay" class="price-large">₹0.00</div>
+            <div id="metaDisplay">52W High: -- | 52W Low: --</div>
         </div>
 
-        <div class="sidebar">
-            <div class="card">
-                <h2>Quick Financials</h2>
-                <div id="financialStats">
-                    <p style="color: #a0aec0;">P&L and Balance Sheet summaries will appear here.</p>
-                </div>
-            </div>
+        <div class="card">
+            <h3>Corporate Ledger (Dividends & Board Meetings)</h3>
+            <div id="corporateTable"></div>
         </div>
     </div>
 </div>
 
 <script>
-    const apiBase = '/api/market';
-
-    async function searchStock() {
-        const query = document.getElementById('tickerInput').value;
-        const loader = document.getElementById('loading');
-        const errDiv = document.getElementById('error');
+    async function runAudit() {
+        const query = document.getElementById('userInput').value;
+        const status = document.getElementById('status');
+        const dash = document.getElementById('dashboard');
         
-        if (!query) return;
-
-        loader.style.display = 'block';
-        errDiv.style.display = 'none';
+        if(!query) return;
+        status.style.display = 'block';
+        dash.style.display = 'none';
 
         try {
-            // Step 1: Search for the correct symbol
-            const searchRes = await fetch(`${apiBase}?action=search&q=${query}`);
-            const searchData = await searchRes.json();
-            
-            // IndianAPI returns a symbol in its search results
-            const symbol = searchData.symbol || searchData[0]?.symbol || query.toUpperCase();
+            // 1. Search for Symbol
+            const sRes = await fetch(`/api/market?action=search&q=${query}`);
+            const sData = await sRes.json();
+            const symbol = sData[0]?.symbol || query; 
 
-            // Step 2: Fetch Corporate Actions (Using the structure you provided)
-            await fetchCorporateData(symbol);
+            // 2. Get Price Details
+            const pRes = await fetch(`/api/market?action=details&symbol=${symbol}`);
+            const pData = await pRes.json();
             
-            // Step 3: Fetch Live Details
-            await fetchLiveDetails(symbol);
+            // 3. Get Corporate Actions (Meetings)
+            const cRes = await fetch(`/api/market?action=corporate&symbol=${symbol}`);
+            const cData = await cRes.json();
 
-        } catch (err) {
-            errDiv.innerText = "Audit Failed: " + err.message;
-            errDiv.style.display = 'block';
+            updateUI(pData, cData, symbol);
+        } catch (e) {
+            alert("Audit Failed: " + e.message);
         } finally {
-            loader.style.display = 'none';
+            status.style.display = 'none';
         }
     }
 
-    async function fetchCorporateData(symbol) {
-        const res = await fetch(`${apiBase}?action=corporate&symbol=${symbol}`);
-        const result = await res.json();
+    function updateUI(price, corp, symbol) {
+        document.getElementById('dashboard').style.display = 'block';
+        document.getElementById('compName').innerText = symbol.toUpperCase();
+        document.getElementById('priceDisplay').innerText = `₹${price.lastPrice || 'N/A'}`;
+        document.getElementById('metaDisplay').innerText = `52W High: ₹${price.dayHigh || '--'} | 52W Low: ₹${price.dayLow || '--'}`;
+
+        let table = `<table><tr><th>Date</th><th>Agenda</th></tr>`;
         
-        let html = `<table>
-                        <thead>
-                            <tr><th>Date</th><th>Agenda & Outcome</th></tr>
-                        </thead>
-                        <tbody>`;
-
-        if (result.data && result.data.length > 0) {
-            result.data.forEach(meeting => {
-                const date = meeting[0];
-                const agenda = meeting[1];
-                
-                // Smart Highlight for Accountants: Detect Dividends, Buybacks, or Results
-                const isAction = agenda.toLowerCase().includes("dividend") || 
-                                 agenda.toLowerCase().includes("buyback") || 
-                                 agenda.toLowerCase().includes("results");
-                
-                const rowClass = isAction ? 'class="highlight"' : '';
-
-                html += `<tr ${rowClass}>
-                            <td style="white-space:nowrap;"><strong>${date}</strong></td>
-                            <td>${agenda}</td>
-                         </tr>`;
+        if(corp.board_meetings && corp.board_meetings.data) {
+            corp.board_meetings.data.forEach(row => {
+                const isDiv = row[1].toLowerCase().includes("dividend");
+                table += `<tr class="${isDiv ? 'highlight-green' : ''}">
+                            <td style="white-space:nowrap"><strong>${row[0]}</strong></td>
+                            <td>${row[1]}</td>
+                          </tr>`;
             });
         } else {
-            html += `<tr><td colspan="2">No corporate actions found for this symbol.</td></tr>`;
+            table += `<tr><td colspan="2">No records found in the official ledger.</td></tr>`;
         }
-
-        html += `</tbody></table>`;
-        document.getElementById('corporateActions').innerHTML = html;
-    }
-
-    async function fetchLiveDetails(symbol) {
-        const res = await fetch(`${apiBase}?action=details&symbol=${symbol}`);
-        const data = await res.json();
-        
-        const priceCard = document.getElementById('priceCard');
-        priceCard.style.display = 'block';
-        document.getElementById('companyName').innerText = data.companyName || symbol;
-        
-        document.getElementById('priceDetails').innerHTML = `
-            <div style="display: flex; gap: 30px; font-size: 1.2em;">
-                <div>Price: <strong>₹${data.lastPrice || 'N/A'}</strong></div>
-                <div style="color: ${data.pChange >= 0 ? 'green' : 'red'}">
-                    Change: ${data.pChange || 0}%
-                </div>
-            </div>
-            <p>52W High: ₹${data.dayHigh || 'N/A'} | 52W Low: ₹${data.dayLow || 'N/A'}</p>
-        `;
+        table += `</table>`;
+        document.getElementById('corporateTable').innerHTML = table;
     }
 </script>
-
 </body>
 </html>
