@@ -7,40 +7,40 @@ export default async function handler(req, res) {
     const RAPID_HOST = 'indian-stock-market-data-nse-bse.p.rapidapi.com';
 
     try {
-        // --- SEARCH ACTION ---
+        // --- SEARCH: Finding the Symbol ---
         if (action === 'search') {
+            // Some Indian APIs prefer 'stock_name' instead of 'q'
             const response = await fetch(`https://${RAPID_HOST}/search?q=${encodeURIComponent(q)}`, {
                 headers: { 'x-rapidapi-key': RAPID_KEY, 'x-rapidapi-host': RAPID_HOST }
             });
             const data = await response.json();
 
-            // FIXED: Handle both Arrays and Objects to prevent .map() errors
-            const rawResults = Array.isArray(data) ? data : (data.results || data.data || []);
+            // StocksCy fallback: sometimes data is in .data or .stocks
+            const list = Array.isArray(data) ? data : (data.data || data.stocks || []);
             
-            const results = rawResults.slice(0, 8).map(i => ({
-                symbol: i.symbol || i.scrip_cd || i.identifier,
-                name: i.name || i.companyName || i.symbol
+            const results = list.slice(0, 10).map(item => ({
+                symbol: item.symbol || item.scrip_cd || item.ticker || "UNKNOWN",
+                name: item.name || item.companyName || item.symbol || "Stock"
             }));
             
             return res.status(200).json({ results });
         }
 
-        // --- QUOTE ACTION ---
+        // --- QUOTE: Getting the Live Price ---
         if (action === 'quote') {
-            const cleanSymbol = symbol.toUpperCase();
-            const response = await fetch(`https://${RAPID_HOST}/stock-full-info?symbol=${encodeURIComponent(cleanSymbol)}`, {
+            // We use 'stock-full-info' as seen in your screenshot's suggested endpoints
+            const response = await fetch(`https://${RAPID_HOST}/stock-full-info?symbol=${encodeURIComponent(symbol)}`, {
                 headers: { 'x-rapidapi-key': RAPID_KEY, 'x-rapidapi-host': RAPID_HOST }
             });
             const d = await response.json();
 
-            // Check if we got valid price data
             if (!d || (!d.lastPrice && !d.currentPrice)) {
-                return res.status(404).json({ error: `No price data for ${cleanSymbol}` });
+                return res.status(404).json({ error: `Market data restricted for ${symbol}` });
             }
 
             return res.status(200).json({
-                symbol: d.symbol || cleanSymbol,
-                name: d.companyName || d.identifier || cleanSymbol,
+                symbol: d.symbol || symbol,
+                name: d.companyName || d.identifier || symbol,
                 price: d.lastPrice || d.currentPrice || 0,
                 changePct: d.pChange || 0,
                 high52: d.dayHigh || 0,
@@ -48,7 +48,6 @@ export default async function handler(req, res) {
             });
         }
     } catch (err) {
-        console.error("Build Error:", err.message);
-        return res.status(500).json({ error: 'Data Processing Error', details: err.message });
+        return res.status(500).json({ error: 'API Handshake Failed', details: err.message });
     }
 }
