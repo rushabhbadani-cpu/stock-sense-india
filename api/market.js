@@ -1,27 +1,18 @@
-// StockSense India — Market Proxy v8.0
-// Vercel serverless — stateless per invocation
+// StockSense India — Market Proxy v10.0
+// Key fix: session fetched ONCE per handler call, reused for all data fetches
+// getDailyChange merged into yahooFetch using 5d range to save one round-trip per quote
 // Place at: /api/market.js
 
 // ── YAHOO SESSION ─────────────────────────────────────────────────
 async function getSession() {
   try {
-    // Step 1: hit Yahoo Finance to get cookies
     const r1 = await fetch('https://fc.yahoo.com', {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-      },
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36' },
       signal: AbortSignal.timeout(6000),
       redirect: 'follow',
     });
-    // Collect all cookies from the response
     const rawCookie = r1.headers.get('set-cookie') || '';
-    // Parse out individual cookie key=value pairs
-    const cookie = rawCookie.split(',')
-      .map(c => c.trim().split(';')[0])
-      .filter(c => c.includes('='))
-      .join('; ');
-
-    // Step 2: get crumb using those cookies
+    const cookie = rawCookie.split(',').map(c => c.trim().split(';')[0]).filter(c => c.includes('=')).join('; ');
     const r2 = await fetch('https://query2.finance.yahoo.com/v1/test/getcrumb', {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
@@ -30,20 +21,21 @@ async function getSession() {
       signal: AbortSignal.timeout(6000),
     });
     const crumb = (await r2.text()).trim();
-    console.log(`Session: crumb="${crumb.substring(0,8)}" cookie_len=${cookie.length}`);
     if (!crumb || crumb.includes('<') || crumb.length < 3) {
-      console.error('Bad crumb received:', crumb.substring(0, 50));
+      console.error('Bad crumb:', crumb.substring(0, 30));
       return null;
     }
+    console.log(`Session OK crumb=${crumb.substring(0, 8)}`);
     return { cookie, crumb };
   } catch (e) {
-    console.error('getSession error:', e.message);
+    console.error('getSession:', e.message);
     return null;
   }
 }
 
 // ── YAHOO FETCH ───────────────────────────────────────────────────
-async function yahooFetch(sym, session, range = '1d', interval = '1d') {
+async function yahooFetch(sym, session, range = '5d', interval = '1d') {
+  // Default to 5d/1d so we always have prev close for % change calculation
   const crumbParam = session?.crumb ? `&crumb=${encodeURIComponent(session.crumb)}` : '';
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?interval=${interval}&range=${range}${crumbParam}`;
   const res = await fetch(url, {
@@ -54,51 +46,53 @@ async function yahooFetch(sym, session, range = '1d', interval = '1d') {
     },
     signal: AbortSignal.timeout(8000),
   });
-  if (!res.ok) {
-    console.error(`Yahoo ${sym} → HTTP ${res.status}`);
-    return null;
-  }
+  if (!res.ok) { console.error(`Yahoo ${sym} HTTP ${res.status}`); return null; }
   const json = await res.json();
-  // Check for Yahoo auth errors inside the response body
-  if (json?.chart?.error?.code === 'Unauthorized') {
-    console.error(`Yahoo ${sym} → Unauthorized (bad crumb)`);
-    return null;
-  }
+  if (json?.chart?.error?.code === 'Unauthorized') { console.error(`Yahoo ${sym} Unauthorized`); return null; }
   return json;
 }
 
-function extractMeta(data) {
-  return data?.chart?.result?.[0]?.meta || null;
+// ── EXTRACT PRICE + DAILY CHANGE from 5d data (single fetch) ─────
+function extractQuoteData(data, symbol) {
+  const result = data?.chart?.result?.[0];
+  if (!result) return null;
+  const m      = result.meta;
+  const price  = m.regularMarketPrice || m.previousClose || 0;
+  if (price <= 0) return null;
+
+  // Get real daily change from closes array (works on weekends too)
+  const closes = (result.indicators?.quote?.[0]?.close || []).filter(c => c != null && c > 0);
+  const prev   = closes.length >= 2 ? closes[closes.length - 2] : (m.previousClose || price);
+
+  return {
+    symbol,
+    price:     +price.toFixed(2),
+    change:    +(price - prev).toFixed(2),
+    changePct: +((price - prev) / prev * 100).toFixed(2),
+    open:      +(m.regularMarketOpen    || price).toFixed(2),
+    high:      +(m.regularMarketDayHigh || price).toFixed(2),
+    low:       +(m.regularMarketDayLow  || price).toFixed(2),
+    prevClose: +prev.toFixed(2),
+    volume:    m.regularMarketVolume || 0,
+    w52High:   +(m.fiftyTwoWeekHigh  || price).toFixed(2),
+    w52Low:    +(m.fiftyTwoWeekLow   || 0).toFixed(2),
+    pe:        +(m.trailingPE        || 0).toFixed(2),
+    marketCap: m.marketCap || 0,
+    longName:  m.longName  || m.shortName || symbol,
+    currency:  m.currency  || 'INR',
+    live: true,
+  };
 }
 
-// ── QUOTE ─────────────────────────────────────────────────────────
+// ── QUOTE — single fetch gets price + daily change ────────────────
 async function getQuote(symbol, session) {
   for (const sym of [`${symbol}.NS`, `${symbol}.BO`, symbol]) {
     try {
-      const data = await yahooFetch(sym, session);
-      const m = extractMeta(data);
-      if (!m) continue;
-      const price = m.regularMarketPrice || m.previousClose || 0;
-      const prev  = m.previousClose || price;
-      if (price > 0) {
-        console.log(`Quote ${sym}: ₹${price}`);
-        return {
-          symbol, price: +price.toFixed(2),
-          change:    +(price - prev).toFixed(2),
-          changePct: +((price - prev) / prev * 100).toFixed(2),
-          open:      +(m.regularMarketOpen    || price).toFixed(2),
-          high:      +(m.regularMarketDayHigh || price).toFixed(2),
-          low:       +(m.regularMarketDayLow  || price).toFixed(2),
-          prevClose: +prev.toFixed(2),
-          volume:    m.regularMarketVolume || 0,
-          w52High:   +(m.fiftyTwoWeekHigh  || price).toFixed(2),
-          w52Low:    +(m.fiftyTwoWeekLow   || 0).toFixed(2),
-          pe:        +(m.trailingPE        || 0).toFixed(2),
-          marketCap: m.marketCap || 0,
-          longName:  m.longName  || m.shortName || symbol,
-          currency:  m.currency  || 'INR',
-          source: sym, live: true,
-        };
+      const data   = await yahooFetch(sym, session, '5d', '1d');
+      const result = extractQuoteData(data, symbol);
+      if (result) {
+        console.log(`Quote ${sym}: ₹${result.price} ${result.changePct >= 0 ? '+' : ''}${result.changePct}%`);
+        return { ...result, source: sym };
       }
     } catch (e) { console.error(`Quote ${sym}:`, e.message); }
   }
@@ -110,10 +104,10 @@ async function getHistory(symbol, range, interval, session) {
   for (const sym of [`${symbol}.NS`, `${symbol}.BO`, symbol]) {
     try {
       const data = await yahooFetch(sym, session, range, interval);
-      const result = data?.chart?.result?.[0];
-      if (!result) continue;
-      const ts = result.timestamp || [];
-      const cl = result.indicators?.quote?.[0]?.close || [];
+      const r    = data?.chart?.result?.[0];
+      if (!r) continue;
+      const ts  = r.timestamp || [];
+      const cl  = r.indicators?.quote?.[0]?.close || [];
       const prices = ts
         .map((t, i) => ({ date: new Date(t * 1000).toISOString().split('T')[0], close: cl[i] ? +cl[i].toFixed(2) : null }))
         .filter(p => p.close !== null);
@@ -123,7 +117,7 @@ async function getHistory(symbol, range, interval, session) {
   return { prices: [], live: false };
 }
 
-// ── INDICES ───────────────────────────────────────────────────────
+// ── INDICES — parallel, single fetch each ─────────────────────────
 async function getIndices(session) {
   const MAP = {
     '^NSEI':'NIFTY 50', '^BSESN':'SENSEX', '^NSEBANK':'NIFTY BANK',
@@ -133,18 +127,20 @@ async function getIndices(session) {
   const results = await Promise.all(
     Object.entries(MAP).map(async ([sym, name]) => {
       try {
-        const data = await yahooFetch(sym, session);
-        const m = extractMeta(data);
-        if (!m) return null;
-        const price = m.regularMarketPrice || 0;
-        const prev  = m.previousClose      || price;
-        if (price > 0) return { name, symbol: sym, value: +price.toFixed(2), change: +(price-prev).toFixed(2), changePct: +((price-prev)/prev*100).toFixed(2), prevClose: +prev.toFixed(2) };
-      } catch (e) { console.error(`Index ${sym}:`, e.message); }
-      return null;
+        const data   = await yahooFetch(sym, session, '5d', '1d');
+        const result = data?.chart?.result?.[0];
+        if (!result) return null;
+        const m      = result.meta;
+        const price  = m.regularMarketPrice || 0;
+        if (price <= 0) return null;
+        const closes = (result.indicators?.quote?.[0]?.close || []).filter(c => c != null && c > 0);
+        const prev   = closes.length >= 2 ? closes[closes.length - 2] : (m.previousClose || price);
+        return { name, symbol: sym, value: +price.toFixed(2), change: +(price-prev).toFixed(2), changePct: +((price-prev)/prev*100).toFixed(2), prevClose: +prev.toFixed(2) };
+      } catch (e) { console.error(`Index ${sym}:`, e.message); return null; }
     })
   );
   const indices = results.filter(Boolean);
-  console.log(`Indices: ${indices.length} loaded`);
+  console.log(`Indices: ${indices.length}/8 loaded`);
   return { indices, live: indices.length > 0 };
 }
 
@@ -165,17 +161,19 @@ async function getCommodities(session) {
   const results = await Promise.all(
     COMM.map(async (c) => {
       try {
-        const data = await yahooFetch(c.sym, session);
-        const m = extractMeta(data);
-        if (!m) return null;
-        const price = m.regularMarketPrice || 0;
-        const prev  = m.previousClose      || price;
-        if (price > 0) return { ...c, price: +price.toFixed(2), changePct: +((price-prev)/prev*100).toFixed(2) };
-      } catch (e) { console.error(`Commodity ${c.sym}:`, e.message); }
-      return null;
+        const data   = await yahooFetch(c.sym, session, '5d', '1d');
+        const result = data?.chart?.result?.[0];
+        if (!result) return null;
+        const price  = result.meta?.regularMarketPrice || 0;
+        if (price <= 0) return null;
+        const closes = (result.indicators?.quote?.[0]?.close || []).filter(v => v != null && v > 0);
+        const prev   = closes.length >= 2 ? closes[closes.length - 2] : (result.meta?.previousClose || price);
+        return { ...c, price: +price.toFixed(2), changePct: +((price-prev)/prev*100).toFixed(2) };
+      } catch (e) { console.error(`Commodity ${c.sym}:`, e.message); return null; }
     })
   );
   const commodities = results.filter(Boolean);
+  console.log(`Commodities: ${commodities.length}/10 loaded`);
   return { commodities, live: commodities.length > 0 };
 }
 
@@ -194,17 +192,19 @@ async function getForex(session) {
   const results = await Promise.all(
     PAIRS.map(async (p) => {
       try {
-        const data = await yahooFetch(p.sym, session);
-        const m = extractMeta(data);
-        if (!m) return null;
-        const rate = m.regularMarketPrice || 0;
-        const prev = m.previousClose      || rate;
-        if (rate > 0) return { ...p, rate: +rate.toFixed(4), changePct: +((rate-prev)/prev*100).toFixed(2) };
-      } catch (e) { console.error(`Forex ${p.sym}:`, e.message); }
-      return null;
+        const data   = await yahooFetch(p.sym, session, '5d', '1d');
+        const result = data?.chart?.result?.[0];
+        if (!result) return null;
+        const rate   = result.meta?.regularMarketPrice || 0;
+        if (rate <= 0) return null;
+        const closes = (result.indicators?.quote?.[0]?.close || []).filter(v => v != null && v > 0);
+        const prev   = closes.length >= 2 ? closes[closes.length - 2] : (result.meta?.previousClose || rate);
+        return { ...p, rate: +rate.toFixed(4), changePct: +((rate-prev)/prev*100).toFixed(2) };
+      } catch (e) { console.error(`Forex ${p.sym}:`, e.message); return null; }
     })
   );
   const forex = results.filter(Boolean);
+  console.log(`Forex: ${forex.length}/8 loaded`);
   return { forex, live: forex.length > 0 };
 }
 
@@ -232,14 +232,16 @@ async function getNews(q) {
           : tl.match(/rise|gain|surge|rally|profit|jump|soar/) ? 'positive' : 'neutral';
         const hrs = Math.round((Date.now() - new Date(pub)) / 3600000);
         items.push({
-          title: title.replace(/ - [^-]+$/, '').replace(/&amp;/g,'&').trim().slice(0, 130),
+          title: title.replace(/ - [^-]+$/, '').replace(/&amp;/g, '&').trim().slice(0, 130),
           source: src, sentiment,
-          timeAgo: isNaN(hrs) ? 'Recently' : hrs < 1 ? 'Just now' : hrs < 24 ? `${hrs}h ago` : `${Math.round(hrs/24)}d ago`,
+          timeAgo: isNaN(hrs) ? 'Recently' : hrs < 1 ? 'Just now' : hrs < 24 ? `${hrs}h ago` : `${Math.round(hrs / 24)}d ago`,
         });
       }
     }
+    console.log(`News: ${items.length} items loaded`);
     return { news: items, live: items.length > 0 };
   } catch (e) {
+    console.error('News:', e.message);
     return { news: [], live: false, error: e.message };
   }
 }
@@ -250,23 +252,21 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Content-Type',   'application/json');
   res.setHeader('Cache-Control',  'no-cache, no-store');
-
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   const p      = req.query || {};
-  const action = p.action  || 'quote';
+  const action = p.action || 'quote';
 
   try {
-    // Get a fresh session for every handler invocation
-    // (Vercel functions are stateless — variables don't persist between calls)
-    const session = action !== 'news' ? await getSession() : null;
+    // Session fetched ONCE per handler call — reused for all sub-requests
+    const session = (action !== 'news') ? await getSession() : null;
     if (action !== 'news' && !session) {
-      console.error('Could not establish Yahoo session');
+      console.error('No session — Yahoo unreachable');
       return res.status(200).json({ live: false, error: 'Could not connect to data source' });
     }
 
     let result;
-    if      (action === 'quote')       result = (await getQuote(p.symbol || 'TCS', session)) || { live:false, error:'No data', symbol:p.symbol };
+    if      (action === 'quote')       result = (await getQuote(p.symbol || 'TCS', session)) || { live: false, error: 'No data', symbol: p.symbol };
     else if (action === 'history')     result = await getHistory(p.symbol || 'TCS', p.range || '1y', p.interval || '1wk', session);
     else if (action === 'indices')     result = await getIndices(session);
     else if (action === 'commodities') result = await getCommodities(session);
@@ -276,7 +276,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json(result);
   } catch (e) {
-    console.error('Handler error:', e.message);
-    return res.status(200).json({ live:false, error: e.message });
+    console.error('Handler:', e.message);
+    return res.status(200).json({ live: false, error: e.message });
   }
 }
