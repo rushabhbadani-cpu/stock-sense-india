@@ -7,21 +7,25 @@ export default async function handler(req, res) {
   const RAPID_HOST = 'yh-finance.p.rapidapi.com';
 
   try {
-    // 1. SEARCH LOGIC
+    // 1. SEARCH: To find symbols
     if (action === 'search') {
-      const response = await fetch(`https://${RAPID_HOST}/auto-complete?q=${encodeURIComponent(q)}&region=IN`, {
+      const url = `https://${RAPID_HOST}/auto-complete?q=${encodeURIComponent(q)}&region=IN`;
+      const response = await fetch(url, {
         headers: { 'x-rapidapi-key': RAPID_KEY, 'x-rapidapi-host': RAPID_HOST }
       });
       const data = await response.json();
       return res.status(200).json({ results: data.quotes || [] });
     }
 
-    // 2. QUOTE LOGIC (The "Price" Fetcher)
+    // 2. QUOTE: To get the real-time price
     if (action === 'quote') {
+      // Force Indian suffix if missing
       const cleanSymbol = symbol.includes('.') ? symbol : `${symbol}.NS`;
       
-      // We are switching to 'get-insights' or 'get-quotes' which is more reliable for NSE
-      const response = await fetch(`https://${RAPID_HOST}/market/v2/get-quotes?region=IN&symbols=${encodeURIComponent(cleanSymbol)}`, {
+      // SWITCHED TO v6 get-quotes (The most reliable endpoint for NSE)
+      const url = `https://${RAPID_HOST}/market/v2/get-quotes?region=IN&symbols=${encodeURIComponent(cleanSymbol)}`;
+      
+      const response = await fetch(url, {
         headers: { 'x-rapidapi-key': RAPID_KEY, 'x-rapidapi-host': RAPID_HOST }
       });
       
@@ -29,7 +33,7 @@ export default async function handler(req, res) {
       const stock = d.quoteResponse?.result?.[0];
 
       if (!stock) {
-        return res.status(404).json({ error: `Market closed or Symbol ${cleanSymbol} not found.` });
+        return res.status(404).json({ error: `Market Data currently restricted for ${cleanSymbol}` });
       }
 
       return res.status(200).json({
@@ -42,6 +46,6 @@ export default async function handler(req, res) {
       });
     }
   } catch (err) {
-    return res.status(500).json({ error: 'System Timeout', details: err.message });
+    return res.status(500).json({ error: 'Connection Timeout', details: err.message });
   }
 }
