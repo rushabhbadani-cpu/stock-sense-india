@@ -826,26 +826,18 @@ function applyLang() {
 }
 
 // ── API LAYER ─────────────────────────────────────────────────────
-// Works on Vercel (uses /api/market serverless function)
-// Works on localhost (uses direct Yahoo Finance CORS proxy)
-const VERCEL_API = '/api/market';
-const YAHOO_BASE = 'https://query1.finance.yahoo.com/v8/finance/chart/';
-const IS_VERCEL = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1' && window.location.hostname !== '';
-
 async function api(action, params = {}) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 20000);
   try {
-    if (IS_VERCEL) {
-      // Deployed on Vercel — use the serverless function
-      const qs = new URLSearchParams({ action, ...params }).toString();
-      const res = await fetch(`${VERCEL_API}?${qs}`, { signal: AbortSignal.timeout(12000) });
-      if (!res.ok) return null;
-      return res.json();
-    } else {
-      // Local dev fallback — call Yahoo Finance directly (only works with CORS open)
-      return null;
-    }
+    const qs  = new URLSearchParams({ action, ...params }).toString();
+    const res = await fetch(`/api/market?${qs}`, { signal: controller.signal });
+    clearTimeout(timer);
+    if (!res.ok) return null;
+    return await res.json();
   } catch (e) {
-    console.warn('API error:', action, e.message);
+    clearTimeout(timer);
+    if (e.name !== 'AbortError') console.warn('API error:', action, e.message);
     return null;
   }
 }
@@ -891,22 +883,6 @@ function buildLivePillars(live) {
     { name: 'Price Momentum',    score: momScore, weight: 10, why: `At ${Math.round(pct * 100)}% of 52W range (₹${w52l.toLocaleString('en-IN')}–₹${w52h.toLocaleString('en-IN')}) — ${pct < 0.3 ? 'Near yearly low' : pct > 0.7 ? 'Near yearly high' : 'Mid-range'}` },
     { name: 'Trading Activity',  score: volScore, weight: 10, why: `Volume: ${fmtVol(vol)} — ${vol > 2000000 ? 'High institutional activity' : vol > 500000 ? 'Normal market activity' : 'Lower than average volume'}` },
   ];
-}
-
-function updatePillarsWithLive(pillars, live) {
-  if (!live || !pillars) return pillars;
-  return pillars.map(p => {
-    if (p.name === 'Valuation' && live.pe > 0) {
-      const s = live.pe < 12 ? 9.5 : live.pe < 20 ? 8 : live.pe < 30 ? 7 : live.pe < 40 ? 6 : live.pe < 60 ? 4.5 : 3;
-      return { ...p, score: s, why: `Live P/E: ${live.pe.toFixed(1)} — ${live.pe < 20 ? 'Cheap' : live.pe < 35 ? 'Fair value' : live.pe < 60 ? 'Expensive' : 'Very expensive'}` };
-    }
-    if (p.name === 'Price Momentum' && live.w52High > live.w52Low) {
-      const pct = (live.price - live.w52Low) / (live.w52High - live.w52Low);
-      const s = parseFloat(Math.min(9.5, Math.max(2, pct * 7 + 2)).toFixed(1));
-      return { ...p, score: s, why: `At ${Math.round(pct * 100)}% of 52W range — ${pct < 0.3 ? 'Near yearly low' : pct > 0.7 ? 'Near yearly high' : 'Mid-range'}` };
-    }
-    return p;
-  });
 }
 
 // ── STOCK IDENTITY LOOKUP (name + sector only — all prices & financials come from live API) ─────
@@ -976,7 +952,7 @@ const STOCKS = {
 
 // Quick access sectors and picks
 const SECTORS = ['IT Services','Banking & Finance','Pharma','Automobile','FMCG','Telecom','Infrastructure','Defence','Electronics Manufacturing','Automotive Tech'];
-const QUICK_PICKS = ['TCS','INFY','HDFCBANK','RELIANCE','MARUTI','SUNPHARMA','ITC','HAL','DIXON','KPIT'];
+const QUICK_PICKS = ['TCS','INFY','HDFCBANK','RELIANCE','MARUTI','SUNPHARMA','ITC','HAL','DIXON','TATAMOTORS'];
 
 // Sector benchmarks
 const BENCH = {
@@ -1416,7 +1392,7 @@ function buildOutlookTab(s) {
       {name:'Linear Regression',desc:'Trend line through 52-week price range. R² shows trend reliability.',bull:lrSignal,prob:lrProb,find:lrSignal?`Price above midpoint of yearly range — trend bias upward`:`Price below midpoint — trend bias downward`},
       {name:'Moving Average Signal',desc:'20-day vs 50-day average comparison. Short above long = bullish.',bull:maSignal,prob:maProb,find:maSignal?'Short-term momentum above long-term — positive signal':'Short-term momentum below long-term — caution signal'},
       {name:'RSI Momentum (14-day)',desc:`RSI estimates ${rsiVal} based on 52-week position. Below 30 = oversold. Above 70 = overbought.`,bull:rsiSignal,prob:rsiProb,find:rsiVal>70?'Potentially overbought — exercise caution':rsiVal<30?'Potentially oversold — watch for reversal':'RSI in neutral zone — no extreme signal'},
-      {name:'Fundamental Momentum',desc:`Earnings quality ${(s.pillars?.[0]?.score||5).toFixed(1)}/10 and balance sheet ${(s.pillars?.[2]?.score||5).toFixed(1)}/10 from stored data.`,bull:fundSignal,prob:fundProb,find:fundSignal?'Business fundamentals support upside potential':'Limited fundamental catalyst at current valuation'},
+      {name:'Fundamental Momentum',desc:`Valuation score ${(s.pillars?.[3]?.score||5).toFixed(1)}/10 and momentum ${(s.pillars?.[4]?.score||5).toFixed(1)}/10 — both calculated from live Yahoo Finance data.`,bull:fundSignal,prob:fundProb,find:fundSignal?'Live data signals support upside potential':'Limited catalyst at current valuation — monitor closely'},
     ].map(m=>`
       <div class="model-row">
         <div class="model-top">
@@ -1549,7 +1525,7 @@ function buildPeersTab(sym, s) {
           ${peerList.filter(p=>p!==sym).map(p=>`<th>${p}</th>`).join('')}
         </tr></thead>
         <tbody>
-          <tr><td>Score /10</td><td>${s.score?.toFixed(1)||'—'}</td><td class="active-col" style="color:var(--gm);font-weight:700">${s.score?.toFixed(1)||'—'}</td>${peerList.filter(p=>p!==sym).map(p=>`<td><span class="peer-tap" onclick="loadStock('${p}')">${STOCKS[p]?.pillars?calcScore(STOCKS[p].pillars).toFixed(1):'—'} ↗</span></td>`).join('')}</tr>
+          <tr><td>Score /10</td><td>${s.score?.toFixed(1)||'—'}</td><td class="active-col" style="color:var(--gm);font-weight:700">${s.score?.toFixed(1)||'—'}</td>${peerList.filter(p=>p!==sym).map(p=>`<td><span class="peer-tap" onclick="loadStock('${p}')">Tap ↗</span></td>`).join('')}</tr>
           <tr><td>P/E (live)</td><td>${bench.pe||'—'}</td><td class="active-col" style="font-weight:600">${s.pe>0?s.pe.toFixed(1):'—'}</td>${peerList.filter(p=>p!==sym).map(p=>`<td><span class="peer-tap" onclick="loadStock('${p}')">Tap ↗</span></td>`).join('')}</tr>
           ${s.fundamentals?`
           <tr><td>Rev Growth</td><td>${bench.salesGrowth||'—'}%</td><td class="active-col" style="font-weight:600">${s.fundamentals.revenue?.length>=2?((s.fundamentals.revenue.slice(-1)[0]/s.fundamentals.revenue.slice(-2)[0]-1)*100).toFixed(0)+'%':'—'}</td>${peerList.filter(p=>p!==sym).map(p=>`<td>—</td>`).join('')}</tr>
@@ -1724,95 +1700,101 @@ function updateMoodCard(nifty, sensex, vix) {
 }
 
 // ── HOME — DARK HORSE (auto-calculated) ─────────────────────────
-const DH_CANDIDATES = ['SUNPHARMA','HAL','DIXON','KPIT','PERSISTENT','TCS','HDFCBANK','MARUTI','BHARTIARTL','LT','RELIANCE','INFY'];
+const DH_CANDIDATES = ['SUNPHARMA','HAL','DIXON','PERSISTENT','TCS','HDFCBANK','MARUTI','BHARTIARTL','LT','RELIANCE','INFY','SBIN'];
 
 async function loadDarkHorse() {
   const results = [];
-  const quotes = await Promise.all(DH_CANDIDATES.map(s => api('quote', {symbol:s})));
-  quotes.forEach((live, i) => {
-    if (!live?.price || !live?.live) return;
-    const sym = DH_CANDIDATES[i];
-    const stored = STOCKS[sym]; if(!stored) return;
-    const w52pct = live.w52High > live.w52Low ? (live.price - live.w52Low)/(live.w52High - live.w52Low) : 0.5;
-    // Dark Horse: strong 52W position + volume + not at extreme high (under radar)
-    const underRadar = w52pct < 0.75 && w52pct > 0.35; // not at 52W high (already known) or low (distressed)
-    const volScore = live.volume > 500000 ? 2 : live.volume > 200000 ? 1 : 0;
-    const dhScore = (w52pct * 5) + (Math.abs(live.changePct) * 0.8) + volScore + (underRadar ? 2 : 0);
-    results.push({ sym, live, stored, dhScore, w52pct, underRadar });
-  });
-  if (!results.length) return;
-  results.sort((a,b) => b.dhScore - a.dhScore);
+  // Fetch one at a time to avoid rate limiting (DH is not time-critical)
+  for (const sym of DH_CANDIDATES) {
+    try {
+      const live = await api('quote', { symbol: sym });
+      if (!live?.price || !live?.live) continue;
+      const stored = STOCKS[sym];
+      const w52pct = live.w52High > live.w52Low
+        ? (live.price - live.w52Low) / (live.w52High - live.w52Low)
+        : 0.5;
+      const underRadar = w52pct < 0.75 && w52pct > 0.3;
+      const volScore   = live.volume > 500000 ? 2 : live.volume > 100000 ? 1 : 0;
+      const dhScore    = (w52pct * 5) + (Math.abs(live.changePct) * 0.8) + volScore + (underRadar ? 2 : 0);
+      // Build live pillars score (no stored pillars needed)
+      const pillars = buildLivePillars(live);
+      const score   = calcScore(pillars);
+      results.push({ sym, live, stored, dhScore, w52pct, underRadar, score });
+    } catch (e) { console.warn('DH fetch', sym, e.message); }
+  }
+
+  if (!results.length) {
+    const dhLoad = document.getElementById('dhLoading');
+    if (dhLoad) dhLoad.textContent = 'Live data unavailable — refresh to retry';
+    return;
+  }
+
+  results.sort((a, b) => b.dhScore - a.dhScore);
   const dh = results[0];
   const up = dh.live.changePct >= 0;
-  const dhLoad = document.getElementById('dhLoading'); if(dhLoad) dhLoad.style.display='none';
-  const dhCont = document.getElementById('dhContent'); if(dhCont) dhCont.style.display='block';
+
+  const dhLoad = document.getElementById('dhLoading'); if (dhLoad) dhLoad.style.display = 'none';
+  const dhCont = document.getElementById('dhContent'); if (dhCont) dhCont.style.display = 'block';
   const dhCard = document.getElementById('dhCard');
-  if(dhCard) dhCard.onclick = () => loadStock(dh.sym);
-  const set = (id, txt) => { const el=document.getElementById(id); if(el) el.textContent=txt; };
-  set('dhSym', dh.stored.name);
-  set('dhName', `${dh.sym} · NSE · ${dh.stored.index||''} · ${dh.stored.sector}`);
-  set('dhWhy', `${up?'Up':'Down'} ${Math.abs(dh.live.changePct).toFixed(1)}% today at ${fmtPrice(dh.live.price)}. At ${Math.round(dh.w52pct*100)}% of yearly range — ${dh.underRadar?'under the radar, not at extremes':'showing strong momentum'}. Score ${calcScore(dh.stored.pillars).toFixed(1)}/10.`);
-  set('dhMove', (up?'+':'')+dh.live.changePct.toFixed(1)+'%');
-  set('dhScore', calcScore(dh.stored.pillars).toFixed(1)+'/10');
-  set('dhVol', fmtVol(dh.live.volume));
-  set('dhRadar', dh.underRadar ? '✓ Yes' : '~ At extreme');
+  if (dhCard) dhCard.onclick = () => loadStock(dh.sym);
+
+  const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+  const name = dh.live.longName || dh.stored?.name || dh.sym;
+  set('dhSym',  name);
+  set('dhName', `${dh.sym} · NSE · ${dh.stored?.sector || 'Listed'}`);
+  set('dhWhy',  `${up ? 'Up' : 'Down'} ${Math.abs(dh.live.changePct).toFixed(1)}% · ₹${dh.live.price.toLocaleString('en-IN')}. At ${Math.round(dh.w52pct * 100)}% of yearly range — ${dh.underRadar ? 'not at extremes, worth watching' : 'near yearly high — strong momentum'}.`);
+  set('dhMove',  (up ? '+' : '') + dh.live.changePct.toFixed(2) + '%');
+  set('dhScore', dh.score.toFixed(1) + '/10');
+  set('dhVol',   fmtVol(dh.live.volume));
+  set('dhRadar', dh.underRadar ? '✓ Yes' : '~ Extreme');
+
   const mv0 = document.querySelector('#dhCard .dh-mv');
-  if(mv0) mv0.style.color = up?'#4ade80':'#f87171';
+  if (mv0) mv0.style.color = up ? '#4ade80' : '#f87171';
 }
 
 // ── HOME — TOP MOVERS (live) ──────────────────────────────────────
+// Must include all HEATMAP_SYMS so heatmap gets populated from movers data
 const MOVER_SYMS = [
-  'TCS','INFY','WIPRO','HDFCBANK','RELIANCE','MARUTI','SUNPHARMA','ITC','BHARTIARTL','LT',
-  'HAL','DIXON','KPIT','PERSISTENT','HCLTECH','KOTAKBANK','AXISBANK','BAJFINANCE','TITAN','DMART',
-  'TATAMOTORS','M&M','ASIANPAINT','NESTLEIND','SBIN','ICICIBANK','DRREDDY','CIPLA','HINDUNILVR','ZOMATO',
-  'ADANIPORTS','ULTRACEMCO','TATASTEEL','BEL','IRCTC','INDIGO','BAJAJ-AUTO','NTPC','POWERGRID','ONGC'
+  // Heatmap representatives (must stay)
+  'INFY','HDFCBANK','SUNPHARMA','MARUTI','ITC','RELIANCE','LT','HAL','DIXON',
+  // Additional movers
+  'TCS','BHARTIARTL','PERSISTENT','HCLTECH','KOTAKBANK','AXISBANK','BAJFINANCE','TITAN','TATAMOTORS','SBIN','ICICIBANK'
 ];
-let moversLoaded = false;
 
 async function loadMovers() {
   const moverEl = document.getElementById('moversList');
-  if (moverEl && !moversLoaded) moverEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">⏳ Loading live market data…</div>';
-
-  // Batch fetch in groups of 10 to avoid rate-limit
-  const batch1 = MOVER_SYMS.slice(0, 20);
-  const batch2 = MOVER_SYMS.slice(20);
-  const quotes1 = await Promise.allSettled(batch1.map(s => api('quote', {symbol:s})));
-  const quotes2 = await Promise.allSettled(batch2.map(s => api('quote', {symbol:s})));
-  const allQuotes = [...quotes1, ...quotes2];
+  if (moverEl) moverEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">⏳ Loading live data for 20 stocks…</div>';
 
   const results = [];
-  allQuotes.forEach((res, i) => {
-    const live = res.status === 'fulfilled' ? res.value : null;
-    if (!live?.price) return;
-    const sym = MOVER_SYMS[i];
-    results.push({ sym, live, name: live.longName || STOCKS[sym]?.name || sym });
-  });
+  const BATCH   = 5;
+  for (let i = 0; i < MOVER_SYMS.length; i += BATCH) {
+    const batch  = MOVER_SYMS.slice(i, i + BATCH);
+    const quotes = await Promise.allSettled(batch.map(s => api('quote', { symbol: s })));
+    quotes.forEach((res, j) => {
+      const live = res.status === 'fulfilled' ? res.value : null;
+      if (!live?.price) return;
+      const sym = MOVER_SYMS[i + j];
+      results.push({ sym, live, name: live.longName || STOCKS[sym]?.name || sym });
+    });
+    // Show partial results after each batch
+    if (results.length > 0) {
+      const partial = [...results].sort((a, b) => b.live.changePct - a.live.changePct);
+      renderMovers('gainers', partial);
+      updateHeatmapFromMovers(results);
+    }
+    if (i + BATCH < MOVER_SYMS.length) await new Promise(r => setTimeout(r, 400));
+  }
 
-  moversCache.gainers = [...results].sort((a,b) => b.live.changePct - a.live.changePct);
-  moversCache.losers = [...results].sort((a,b) => a.live.changePct - b.live.changePct);
-  moversCache.volume = [...results].sort((a,b) => (b.live.volume||0) - (a.live.volume||0));
-  moversLoaded = true;
+  if (!results.length) {
+    if (moverEl) moverEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">⚠️ Could not load market data. <span onclick="loadMovers()" style="color:var(--b);cursor:pointer;font-weight:600">Tap to retry</span></div>';
+    return;
+  }
+
+  moversCache.gainers = [...results].sort((a, b) => b.live.changePct - a.live.changePct);
+  moversCache.losers  = [...results].sort((a, b) => a.live.changePct - b.live.changePct);
+  moversCache.volume  = [...results].sort((a, b) => (b.live.volume || 0) - (a.live.volume || 0));
   renderMovers('gainers');
-
-  // Update heatmap with movers data since we have quotes now
   updateHeatmapFromMovers(results);
-}
-
-function updateHeatmapFromMovers(results) {
-  // If we have quotes from movers, update heatmap cells immediately (avoids extra API calls)
-  HEATMAP_SYMS.forEach(({ name, sym }) => {
-    const found = results.find(r => r.sym === sym);
-    if (!found) return;
-    const cell = document.getElementById('hm-' + sym); if(!cell) return;
-    cell.className = 'hm-cell';
-    const chg = found.live.changePct || 0;
-    const up = chg >= 0;
-    const intensity = Math.min(Math.abs(chg) / 4, 1);
-    cell.style.background = up ? `rgba(46,163,102,${0.1 + intensity * 0.45})` : `rgba(192,57,43,${0.1 + intensity * 0.45})`;
-    const col = up ? 'var(--g)' : 'var(--r)';
-    cell.onclick = () => loadStock(sym);
-    cell.innerHTML = `<div class="hm-n" style="color:${col}">${name}</div><div class="hm-v" style="color:${col}">${up?'+':''}${chg.toFixed(2)}%</div>`;
-  });
 }
 
 function switchMovers(type, el) {
@@ -1821,30 +1803,29 @@ function switchMovers(type, el) {
   renderMovers(type);
 }
 
-function renderMovers(type) {
-  const el = document.getElementById('moversList'); if(!el) return;
-  const list = moversCache[type] || [];
-  if (!list.length) {
-    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">⏳ Loading live market data from 40 stocks…</div>';
-    return;
-  }
+// ── HOME — COMMODITIES ────────────────────────────────────────────
+
+function renderMovers(type, overrideList) {
+  const el   = document.getElementById('moversList'); if (!el) return;
+  const list = overrideList || moversCache[type] || [];
+  if (!list.length) return;
   const display = type === 'volume'
     ? r => fmtVol(r.live.volume)
-    : r => (r.live.changePct>=0?'+':'')+r.live.changePct.toFixed(2)+'%';
-  el.innerHTML = list.slice(0, 8).map((r,i) => {
-    const up = r.live.changePct >= 0;
-    const nameStr = (r.live.longName || r.name || r.sym).substring(0, 28);
+    : r => (r.live.changePct >= 0 ? '+' : '') + r.live.changePct.toFixed(2) + '%';
+  el.innerHTML = list.slice(0, 8).map((r, i) => {
+    const up      = r.live.changePct >= 0;
+    const nameStr = (r.name || r.sym).substring(0, 28);
     return `<div class="mrow" onclick="loadStock('${r.sym}')">
-      <div class="mrank">${i+1}</div>
+      <div class="mrank">${i + 1}</div>
       <div style="flex:1"><div class="msym">${r.sym}</div><div class="mname">${nameStr}</div></div>
       <div style="text-align:right">
-        <div class="mchg ${up?'up':'dn'}">${display(r)}</div>
-        <div class="msc">${r.live.price>0?fmtPrice(r.live.price):'—'}</div>
+        <div class="mchg ${up ? 'up' : 'dn'}">${display(r)}</div>
+        <div class="msc">${r.live.price > 0 ? fmtPrice(r.live.price) : '—'}</div>
       </div>
     </div>`;
   }).join('')
   + `<div style="padding:8px 0 2px;text-align:center;font-size:10px;color:var(--muted)">
-      Showing top 8 from ${list.length} live stocks · 
+      ${list.length} stocks loaded ·
       <span onclick="loadMovers()" style="color:var(--b);cursor:pointer;font-weight:600">↻ Refresh</span>
     </div>`;
 }
@@ -1982,48 +1963,48 @@ function renderNews(cat, el) {
   }).join('') : '<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">No news in this category yet</div>';
 }
 
-// ── HEATMAP — Live sector data ─────────────────────────────────────
+// ── HEATMAP — populated from movers data (no extra API calls) ─────
 const HEATMAP_SYMS = [
-  { name:'IT',       sym:'INFY'       },
-  { name:'Banking',  sym:'HDFCBANK'   },
-  { name:'Pharma',   sym:'SUNPHARMA'  },
-  { name:'Auto',     sym:'MARUTI'     },
-  { name:'FMCG',     sym:'ITC'        },
-  { name:'Energy',   sym:'RELIANCE'   },
-  { name:'Infra',    sym:'LT'         },
-  { name:'Defence',  sym:'HAL'        },
-  { name:'EMS',      sym:'DIXON'      },
+  { name:'IT',       sym:'INFY'      },
+  { name:'Banking',  sym:'HDFCBANK'  },
+  { name:'Pharma',   sym:'SUNPHARMA' },
+  { name:'Auto',     sym:'MARUTI'    },
+  { name:'FMCG',     sym:'ITC'       },
+  { name:'Energy',   sym:'RELIANCE'  },
+  { name:'Infra',    sym:'LT'        },
+  { name:'Defence',  sym:'HAL'       },
+  { name:'EMS',      sym:'DIXON'     },
 ];
 
 function buildHeatmap() {
-  const el = document.getElementById('heatmapGrid'); if(!el) return;
-  // Show skeleton first
+  const el = document.getElementById('heatmapGrid'); if (!el) return;
+  // Show skeleton — data will be filled by updateHeatmapFromMovers once movers load
   el.innerHTML = HEATMAP_SYMS.map(s =>
-    `<div class="hm-cell shimmer" style="height:60px" id="hm-${s.sym}"></div>`
+    `<div class="hm-cell shimmer" style="height:60px" id="hm-${s.sym}" onclick="loadStock('${s.sym}')"></div>`
   ).join('');
-  // Load live data for each sector representative
-  HEATMAP_SYMS.forEach(async ({ name, sym }) => {
-    const live = await api('quote', { symbol: sym });
-    const cell = document.getElementById('hm-' + sym); if(!cell) return;
-    cell.className = 'hm-cell';
-    if (!live?.price) {
-      cell.style.background = 'var(--border)';
-      cell.innerHTML = `<div class="hm-n" style="color:var(--muted)">${name}</div><div class="hm-v" style="color:var(--muted)">—</div>`;
-      cell.onclick = () => loadStock(sym);
-      return;
-    }
-    const chg = live.changePct || 0;
-    const up = chg >= 0;
-    const intensity = Math.min(Math.abs(chg) / 4, 1);
-    const bg = up ? `rgba(46,163,102,${0.1 + intensity * 0.45})` : `rgba(192,57,43,${0.1 + intensity * 0.45})`;
-    const col = up ? 'var(--g)' : 'var(--r)';
-    cell.style.background = bg;
-    cell.onclick = () => loadStock(sym);
-    cell.innerHTML = `<div class="hm-n" style="color:${col}">${name}</div><div class="hm-v" style="color:${col}">${up?'+':''}${chg.toFixed(2)}%</div>`;
-  });
 }
 
-// ── IPOs — Live news from Google RSS + curated static base ────────
+function updateHeatmapFromMovers(results) {
+  HEATMAP_SYMS.forEach(({ name, sym }) => {
+    const found = results.find(r => r.sym === sym);
+    const cell  = document.getElementById('hm-' + sym); if (!cell) return;
+    cell.className = 'hm-cell';
+    cell.onclick   = () => loadStock(sym);
+    if (!found?.live?.price) {
+      cell.style.background = 'var(--border)';
+      cell.innerHTML = `<div class="hm-n" style="color:var(--muted)">${name}</div><div class="hm-v" style="color:var(--muted)">—</div>`;
+      return;
+    }
+    const chg = found.live.changePct || 0;
+    const up  = chg >= 0;
+    const intensity = Math.min(Math.abs(chg) / 4, 1);
+    cell.style.background = up
+      ? `rgba(46,163,102,${0.12 + intensity * 0.45})`
+      : `rgba(192,57,43,${0.12 + intensity * 0.45})`;
+    const col = up ? 'var(--g)' : 'var(--r)';
+    cell.innerHTML = `<div class="hm-n" style="color:${col}">${name}</div><div class="hm-v" style="color:${col}">${up ? '+' : ''}${chg.toFixed(2)}%</div>`;
+  });
+}
 async function buildIPOs() {
   const el = document.getElementById('ipoContent'); if(!el) return;
   // Static curated base (kept up to date)
@@ -2167,12 +2148,12 @@ async function renderPortfolio() {
     const plPct = (pl / invested) * 100;
     totalInvested += invested;
     totalCurrent += current;
-    // Best alternative in sector
     const stored = STOCKS[h.sym];
     let altText = '';
+    // Best alternative in sector — just show first peer (no hardcoded scores)
     if (stored?.peers?.length) {
-      const bestAlt = stored.peers.filter(p => p !== h.sym && STOCKS[p]).sort((a,b) => calcScore(STOCKS[b].pillars) - calcScore(STOCKS[a].pillars))[0];
-      if (bestAlt) altText = `Better in sector: ${bestAlt} (Score ${calcScore(STOCKS[bestAlt].pillars).toFixed(1)})`;
+      const bestAlt = stored.peers.find(p => p !== h.sym && STOCKS[p]);
+      if (bestAlt) altText = `Also in sector: ${bestAlt} — tap to compare`;
     }
     rows.push({ h, curPrice, pl, plPct, altText, isLive: !!(live?.live) });
   }
@@ -2433,11 +2414,11 @@ document.addEventListener('DOMContentLoaded', () => {
   document.body.classList.add('novice-mode');
   applyLang();
 
-  // Load live data with staggered delays to avoid rate limiting
-  setTimeout(loadIndices, 500);
-  setTimeout(loadDarkHorse, 1500);
-  setTimeout(loadMovers, 2500);
-  setTimeout(() => { if (document.getElementById('ht-today')?.classList.contains('on')) loadNews(); }, 3500);
+  // Load live data — staggered to avoid hammering the API simultaneously
+  setTimeout(loadIndices,   800);
+  setTimeout(loadDarkHorse, 3000);
+  setTimeout(loadMovers,    5000);
+  setTimeout(() => { if (document.getElementById('ht-today')?.classList.contains('on')) loadNews(); }, 7000);
 });
 
 </script>
