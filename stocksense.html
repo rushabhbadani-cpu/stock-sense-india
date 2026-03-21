@@ -2921,11 +2921,14 @@ document.addEventListener('DOMContentLoaded', () => {
   document.body.classList.add('novice-mode');
   applyLang();
 
-  // Staggered live data loads
-  setTimeout(loadIndices,   800);
-  setTimeout(loadMovers,    2000);
-  setTimeout(loadDarkHorse, 2400);
-  setTimeout(() => { if (document.getElementById('ht-today')?.classList.contains('on')) loadNews(); }, 4000);
+  // Pre-warm the server session immediately so it's cached before data calls fire
+  api('warmup').catch(() => {});
+
+  // Load all data immediately — session cache on server means no repeated 2-4s session overhead
+  loadIndices();
+  loadMovers();
+  loadDarkHorse();
+  setTimeout(() => { if (document.getElementById('ht-today')?.classList.contains('on')) loadNews(); }, 500);
 });
 
 </script>
