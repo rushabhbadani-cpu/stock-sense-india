@@ -428,29 +428,33 @@ body:not(.novice-mode) .novice-only{display:none!important}
   <div class="htab-c on" id="ht-today">
     <div class="pw">
       <div id="moodCardWrap" class="mood-card" style="background:var(--gl)">
-        <div class="mood-left">
+        <div class="mood-left" style="flex:1">
           <div class="mood-lbl" id="moodLbl">Market today</div>
           <div class="mood-title" id="moodTitle">Loading…</div>
           <div class="mood-sub" id="moodReason">Fetching live data</div>
+          <!-- Index values shown prominently below title -->
+          <div id="moodIdxRow" style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap"></div>
         </div>
-        <div class="mood-idxs" id="moodIdx"></div>
       </div>
 
       <!-- DARK HORSE -->
       <div class="sec-title" id="dhLabel">🐎 Dark Horse</div>
       <div class="dh-card" id="dhCard">
-        <div class="dh-badge">◆ Dark Horse</div>
+        <div class="dh-badge">◆ DARK HORSE — Live calculation from <span id="dhCandCount">15</span> stocks</div>
         <div class="dh-loading" id="dhLoading">Scanning live market data…</div>
         <div id="dhContent" style="display:none">
           <div class="dh-sym" id="dhSym"></div>
           <div class="dh-name" id="dhName"></div>
           <div class="dh-why" id="dhWhy"></div>
           <div class="dh-metrics">
-            <div class="dh-m"><div class="dh-ml">7D Move</div><div class="dh-mv" id="dhMove"></div></div>
-            <div class="dh-m"><div class="dh-ml">Score</div><div class="dh-mv" id="dhScore"></div></div>
+            <div class="dh-m"><div class="dh-ml">Last Move</div><div class="dh-mv" id="dhMove"></div></div>
+            <div class="dh-m"><div class="dh-ml">52W Position</div><div class="dh-mv" id="dhRadar"></div></div>
             <div class="dh-m"><div class="dh-ml">Volume</div><div class="dh-mv" id="dhVol"></div></div>
-            <div class="dh-m"><div class="dh-ml">Under Radar?</div><div class="dh-mv" id="dhRadar"></div></div>
+            <div class="dh-m"><div class="dh-ml">DH Score</div><div class="dh-mv" id="dhScore"></div></div>
           </div>
+          <!-- How it's calculated - transparent -->
+          <div id="dhCalc" style="margin-top:10px;padding:8px;background:rgba(0,0,0,0.15);border-radius:8px;font-size:9px;color:rgba(255,255,255,0.6);line-height:1.5;display:none"></div>
+          <div style="font-size:9px;color:rgba(255,255,255,0.4);margin-top:6px;cursor:pointer" onclick="document.getElementById('dhCalc').style.display=document.getElementById('dhCalc').style.display==='none'?'block':'none'">📊 How is this calculated? (tap to see)</div>
         </div>
       </div>
 
@@ -1409,76 +1413,83 @@ async function renderPriceChart(sym, range) {
   }
 }
 
-// ── SCORE TAB — Live signals with benchmarks, no advice ──────────
+// ── SCORE TAB — loads real fundamentals and scores them ──────────
 function buildScoreTab(s) {
-  const pillars = s.pillars || [];
+  const bench = BENCH[s.sector] || BENCH['IT Services'];
   const pe = s.pe || 0;
   const mktCapCr = s.mktCap > 0 ? Math.round(s.mktCap / 1e7) : 0;
-  const bench = BENCH[s.sector] || BENCH['IT Services'];
   const w52pct = s.w52High > s.w52Low ? Math.round((s.price - s.w52Low) / (s.w52High - s.w52Low) * 100) : 50;
 
-  // Benchmark comparisons with explanations
-  const benchRows = [
-    {
-      label: 'P/E vs Sector Avg',
-      value: pe > 0 ? pe.toFixed(1) : 'N/A',
-      benchmark: bench.pe,
-      explain: 'P/E = Price ÷ Earnings Per Share. Compare with sector average to judge if a stock is expensive or cheap for its industry.',
-      signal: pe > 0 ? (pe < bench.pe ? 'below avg' : pe < bench.pe * 1.5 ? 'near avg' : 'above avg') : 'no data',
-      signalColor: pe > 0 ? (pe < bench.pe ? 'var(--g)' : pe < bench.pe * 1.5 ? 'var(--a)' : 'var(--r)') : 'var(--muted)',
-    },
-    {
-      label: '52-Week Position',
-      value: w52pct + '%',
-      benchmark: '30–70% = healthy',
-      explain: 'Where the current price sits within the past year\'s range. 0% = yearly low, 100% = yearly high. Middle zone is generally less risky.',
-      signal: w52pct > 80 ? 'near high' : w52pct < 20 ? 'near low' : 'mid range',
-      signalColor: w52pct > 80 ? 'var(--a)' : w52pct < 20 ? 'var(--r)' : 'var(--g)',
-    },
-    {
-      label: 'Market Cap Category',
-      value: mktCapCr > 20000 ? 'Large Cap' : mktCapCr > 5000 ? 'Mid Cap' : mktCapCr > 0 ? 'Small Cap' : 'N/A',
-      benchmark: mktCapCr > 20000 ? '>₹20,000 Cr' : mktCapCr > 5000 ? '₹5,000–20,000 Cr' : '<₹5,000 Cr',
-      explain: 'Large caps are more stable but grow slower. Mid caps balance growth and stability. Small caps can grow fast but carry more risk.',
-      signal: mktCapCr > 20000 ? 'stable' : mktCapCr > 5000 ? 'growth' : 'risky',
-      signalColor: mktCapCr > 20000 ? 'var(--b)' : mktCapCr > 5000 ? 'var(--g)' : 'var(--a)',
-    },
-    {
-      label: 'Promoter Holding',
-      value: s.promoter > 0 ? s.promoter + '%' : 'N/A',
-      benchmark: '>50% = high confidence',
-      explain: 'Promoters are founders or controlling shareholders. High holding means they believe in the company. Very low holding can signal lack of confidence.',
-      signal: s.promoter > 50 ? 'high' : s.promoter > 25 ? 'moderate' : s.promoter > 0 ? 'low' : 'no data',
-      signalColor: s.promoter > 50 ? 'var(--g)' : s.promoter > 25 ? 'var(--a)' : s.promoter > 0 ? 'var(--r)' : 'var(--muted)',
-    },
-  ];
-
-  return `
+  const html = `
     <div style="background:var(--al);border-radius:9px;padding:10px 12px;margin-bottom:12px">
-      <div style="font-size:11px;font-weight:700;color:var(--a);margin-bottom:3px">⚠️ Educational Score Only</div>
-      <div style="font-size:10px;color:var(--text);line-height:1.5">This score is calculated from live market data signals only — P/E ratio, 52-week position, market cap, and promoter holding. It is <b>not a buy or sell recommendation</b>. Full fundamental analysis requires P&L, balance sheet, and cash flow data. Always do your own research.</div>
+      <div style="font-size:11px;font-weight:700;color:var(--a);margin-bottom:3px">⚠️ Educational Score — Not a Buy/Sell Signal</div>
+      <div style="font-size:10px;color:var(--text);line-height:1.5">This score is calculated from live Yahoo Finance data. It shows you how the stock compares on key metrics. It is not investment advice. Markets have many more factors that affect prices.</div>
     </div>
 
-    <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">Live Signal Analysis vs Sector Benchmark</div>
-
-    ${benchRows.map(row => `
-      <div style="background:var(--card);border:0.5px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+    <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">Live Market Signals</div>
+    ${[
+      { label:'P/E vs Sector Avg', value: pe > 0 ? pe.toFixed(1)+'x' : 'N/A', bench: bench.pe+'x', signal: pe > 0 ? (pe < bench.pe ? 'below avg ✓' : pe < bench.pe*1.5 ? 'near avg' : 'above avg') : 'no data', good: pe > 0 && pe < bench.pe*1.5, explain: 'Price ÷ Earnings. Lower than sector average = potentially cheaper. Higher = market expects more growth.' },
+      { label:'52-Week Position', value: w52pct+'%', bench: '30–70% healthy', signal: w52pct > 80 ? 'near high ⚠️' : w52pct < 20 ? 'near low ⚠️' : 'mid range ✓', good: w52pct >= 20 && w52pct <= 80, explain: '0% = yearly low, 100% = yearly high. Mid-range usually means less extreme risk in either direction.' },
+      { label:'Market Cap', value: mktCapCr > 0 ? (mktCapCr > 20000 ? 'Large Cap' : mktCapCr > 5000 ? 'Mid Cap' : 'Small Cap') : 'N/A', bench: mktCapCr > 20000 ? '>₹20,000 Cr' : '—', signal: mktCapCr > 20000 ? 'stable' : mktCapCr > 5000 ? 'growth' : 'higher risk', good: mktCapCr > 5000, explain: 'Larger companies are generally more stable. Smaller companies can grow faster but carry more risk.' },
+      { label:'Promoter Holding', value: s.promoter > 0 ? s.promoter+'%' : 'N/A', bench: '>50% ideal', signal: s.promoter > 50 ? 'high ✓' : s.promoter > 25 ? 'moderate' : s.promoter > 0 ? 'low ⚠️' : 'N/A', good: s.promoter > 25, explain: 'High promoter holding = founders believe in the business. Very low can mean they have sold their stakes.' },
+    ].map(row => `
+      <div style="background:var(--card);border:0.5px solid var(--border);border-radius:10px;padding:11px 12px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
           <div style="font-size:12px;font-weight:600">${row.label}</div>
           <div style="display:flex;gap:8px;align-items:center">
             <div style="font-size:13px;font-weight:700">${row.value}</div>
-            <div style="font-size:10px;font-weight:600;color:${row.signalColor};background:${row.signalColor}18;border-radius:4px;padding:2px 7px">${row.signal}</div>
+            <div style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;background:${row.good?'var(--gl)':'var(--al)'};color:${row.good?'var(--g)':'var(--a)'}">${row.signal}</div>
           </div>
         </div>
-        <div style="font-size:10px;color:var(--muted);margin-bottom:4px">Sector avg: <b>${row.benchmark}</b></div>
+        <div style="font-size:9px;color:var(--muted);margin-bottom:3px">Benchmark: ${row.bench}</div>
         <div style="font-size:10px;color:var(--muted);line-height:1.5">${row.explain}</div>
       </div>`).join('')}
 
-    <div style="background:var(--bg);border-radius:8px;padding:10px 12px;margin-top:4px">
-      <div style="font-size:10px;font-weight:600;color:var(--muted);margin-bottom:4px">What this score does NOT include:</div>
-      <div style="font-size:10px;color:var(--muted);line-height:1.6">Revenue growth · Profit margins · Debt levels · Cash flow · Management quality · Competitive position · Industry trends · Macroeconomic factors. <b>For complete analysis, use Screener.in, BSE filings, or consult a SEBI-registered advisor.</b></div>
+    <div id="scoreFinBox">
+      <div style="background:var(--bl);border-radius:9px;padding:10px 12px;margin-top:4px;display:flex;align-items:center;gap:10px;cursor:pointer" onclick="loadScoreFundamentals('${s.nseCode||currentSym}')">
+        <div style="font-size:20px">📊</div>
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--b)">Load Fundamental Scores</div>
+          <div style="font-size:10px;color:var(--muted)">Tap to fetch ROE, Profit Margin, Revenue Growth, Debt from Yahoo Finance</div>
+        </div>
+      </div>
+      <div id="scoreFunData" style="margin-top:8px"></div>
     </div>
     <div class="disc" style="margin-top:8px">${t('scoreDisc')}</div>`;
+  return html;
+}
+
+async function loadScoreFundamentals(sym) {
+  const box = document.getElementById('scoreFinBox');
+  if (!box) return;
+  box.innerHTML = '<div style="text-align:center;padding:16px;color:var(--muted);font-size:12px">⏳ Loading fundamentals from Yahoo Finance…</div>';
+  const f = await api('fundamentals', { symbol: sym });
+  if (!f?.live) {
+    box.innerHTML = '<div style="background:var(--rl);border-radius:9px;padding:10px;font-size:11px;color:var(--r)">Could not load fundamental data for this stock.</div>';
+    return;
+  }
+  const rows = [
+    { label:'Return on Equity (ROE)', value: f.roe != null ? f.roe+'%' : 'N/A', bench:'Sector avg '+( BENCH[currentStock?.sector]?.roe||'—')+'%', explain:'How efficiently the company uses shareholder money to generate profit. Higher = better.' },
+    { label:'Profit Margin', value: f.profitMargin != null ? f.profitMargin+'%' : 'N/A', bench:'Higher = more efficient', explain:'Net profit as % of revenue. Shows how much of sales actually becomes profit after all costs.' },
+    { label:'Revenue Growth (YoY)', value: f.revenueGrowth != null ? (f.revenueGrowth>0?'+':'')+f.revenueGrowth+'%' : 'N/A', bench:'>10% = growing', explain:'How much revenue grew versus the same period last year.' },
+    { label:'Earnings Growth (YoY)', value: f.earningsGrowth != null ? (f.earningsGrowth>0?'+':'')+f.earningsGrowth+'%' : 'N/A', bench:'>15% = strong', explain:'How much profit grew year-over-year. Consistent earnings growth is a very positive sign.' },
+    { label:'Debt/Equity Ratio', value: f.debtToEquity != null ? f.debtToEquity+'x' : 'N/A', bench:'<1x = manageable', explain:'Total debt divided by shareholder equity. Lower is generally safer. Very high debt = financial risk.' },
+    { label:'Current Ratio', value: f.currentRatio != null ? f.currentRatio+'x' : 'N/A', bench:'>1.5x = healthy', explain:'Can the company pay its short-term debts? Above 1 = yes. Below 1 = potential liquidity risk.' },
+    { label:'P/B Ratio (Price/Book)', value: f.priceToBook != null ? f.priceToBook+'x' : 'N/A', bench:'<3x = reasonable', explain:'Stock price vs book value of assets. Very high P/B means paying a big premium over actual assets.' },
+    { label:'Beta', value: f.beta != null ? f.beta : 'N/A', bench:'<1 = less volatile', explain:'Measures stock volatility vs market. Beta 1.5 = moves 50% more than Nifty. Beta 0.5 = half as volatile.' },
+  ];
+  box.innerHTML = `
+    <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:10px 0 8px">Fundamental Ratios (Yahoo Finance)</div>
+    ${rows.map(row => `
+      <div style="background:var(--card);border:0.5px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:7px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <div style="font-size:11px;font-weight:600">${row.label}</div>
+          <div style="font-size:13px;font-weight:700;color:var(--gm)">${row.value}</div>
+        </div>
+        <div style="font-size:9px;color:var(--muted);margin-bottom:3px">Benchmark: ${row.bench}</div>
+        <div style="font-size:10px;color:var(--muted);line-height:1.5">${row.explain}</div>
+      </div>`).join('')}
+    <div class="disc">Data from Yahoo Finance quoteSummary. Educational reference only — not investment advice.</div>`;
 }
 
 function recalcScore() {
@@ -1613,110 +1624,211 @@ async function loadWhyMoved(sym) {
 }
 
 // ── FINANCIALS TAB — 100% Live from Yahoo Finance ────────────────
-// ── FINANCIALS TAB — Real ratios with explanations ────────────────
+// ── FINANCIALS TAB — Real P&L from Yahoo Finance ─────────────────
 function buildFinancialsTab(s) {
   const sym = s.nseCode || currentSym || '';
   const eps = s.pe > 0 && s.price > 0 ? (s.price / s.pe) : null;
   const mktCapCr = s.mktCap > 0 ? Math.round(s.mktCap / 1e7) : null;
-  const bench = BENCH[s.sector] || {};
-
-  // All ratios we can compute from live Yahoo data
-  const ratios = [
-    { label:'Current Price', value: s.price > 0 ? fmtPrice(s.price) : '—', bench: '—', explain: 'The price of one share right now.' },
-    { label:'P/E Ratio', value: s.pe > 0 ? s.pe.toFixed(1) + 'x' : 'N/A', bench: bench.pe ? bench.pe + 'x sector avg' : '—', explain: 'How much you pay for ₹1 of company earnings. P/E 25 means you pay ₹25 for every ₹1 the company earns annually. High P/E = growth expected. Low P/E = value or trouble.' },
-    { label:'EPS (₹)', value: eps ? '₹' + eps.toFixed(2) : 'N/A', bench: '—', explain: 'Earnings Per Share = Total Profit ÷ Total Shares. Shows how much money each share earns. Rising EPS year-over-year is a positive sign.' },
-    { label:'Market Cap', value: mktCapCr ? '₹' + mktCapCr.toLocaleString('en-IN') + ' Cr' : '—', bench: mktCapCr > 20000 ? 'Large Cap' : mktCapCr > 5000 ? 'Mid Cap' : 'Small Cap', explain: 'Total value of the company = Share Price × Total Shares. Large cap (>₹20,000 Cr) = stable. Mid cap = growth. Small cap = higher risk/reward.' },
-    { label:'52W High / Low', value: s.w52High > 0 ? fmtPrice(s.w52High) + ' / ' + fmtPrice(s.w52Low) : '—', bench: '—', explain: 'Highest and lowest price in the past 52 weeks. If current price is near the 52W high, momentum is strong. Near the low may mean value or distress.' },
-    { label:'Promoter Holding', value: s.promoter > 0 ? s.promoter + '%' : 'N/A', bench: '>50% = high confidence', explain: 'Promoters are founders or controlling owners. High holding = founders have skin in the game. Very low holding (<15%) can be a concern.' },
-    { label:'FII Holding', value: s.fii > 0 ? s.fii + '%' : 'N/A', bench: '>15% = institutional interest', explain: 'Foreign Institutional Investors (FIIs) are large global funds. High FII holding = international confidence. Sudden FII selling can cause sharp price drops.' },
-    { label:'DII Holding', value: s.dii > 0 ? s.dii + '%' : 'N/A', bench: '—', explain: 'Domestic Institutional Investors — Indian mutual funds and insurance companies. High DII buying often stabilises prices when FIIs sell.' },
-  ];
 
   return `
-    <div style="background:var(--al);border-radius:9px;padding:10px 12px;margin-bottom:12px">
-      <div style="font-size:11px;font-weight:700;color:var(--a);margin-bottom:3px">⚠️ What you see here vs what you need</div>
-      <div style="font-size:10px;color:var(--text);line-height:1.5">These ratios come from live Yahoo Finance data. For complete fundamental analysis you also need: <b>5-year revenue growth, profit margins, debt/equity ratio, cash flow, return on equity, and quarterly results</b>. See Screener.in below — it is free and has all of this.</div>
+    <div style="background:var(--gl);border-radius:9px;padding:10px 12px;margin-bottom:12px">
+      <div style="font-size:11px;font-weight:700;color:var(--g);margin-bottom:3px">📡 Live data from Yahoo Finance</div>
+      <div style="font-size:10px;color:var(--text);line-height:1.5">Price data is live. Tap "Load Financial Statements" to fetch P&L, Balance Sheet, and Cash Flow directly from Yahoo Finance — free, no login needed.</div>
     </div>
 
-    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
-      ${ratios.map(row => `
-        <div style="background:var(--card);border:0.5px solid var(--border);border-radius:10px;padding:10px 12px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-            <div style="font-size:11px;font-weight:600">${row.label}</div>
-            <div style="text-align:right">
-              <div style="font-size:13px;font-weight:700">${row.value}</div>
-              ${row.bench !== '—' ? `<div style="font-size:9px;color:var(--muted)">${row.bench}</div>` : ''}
-            </div>
-          </div>
-          <div style="font-size:10px;color:var(--muted);line-height:1.5">${row.explain}</div>
+    <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Live Market Data</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:14px">
+      ${[
+        ['Price',       s.price > 0 ? fmtPrice(s.price) : '—',                   'Current share price'],
+        ['P/E Ratio',   s.pe > 0 ? s.pe.toFixed(1)+'x' : 'N/A',                  'Price ÷ Earnings per share'],
+        ['EPS',         eps ? '₹'+eps.toFixed(2) : 'N/A',                         'Earnings per share (Price÷PE)'],
+        ['Market Cap',  mktCapCr ? '₹'+mktCapCr.toLocaleString('en-IN')+' Cr':'—','Total company value'],
+        ['52W High',    s.w52High > 0 ? fmtPrice(s.w52High) : '—',                'Highest price past year'],
+        ['52W Low',     s.w52Low > 0  ? fmtPrice(s.w52Low)  : '—',                'Lowest price past year'],
+        ['Volume',      fmtVol(s.volume),                                           'Shares traded today'],
+        ['Prev Close',  s.prevClose > 0 ? fmtPrice(s.prevClose) : '—',            'Yesterday closing price'],
+      ].map(([l,v,d]) => `
+        <div style="background:var(--bg);border-radius:8px;padding:9px;border:0.5px solid var(--border)">
+          <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:2px">${l}</div>
+          <div style="font-size:14px;font-weight:700;margin-bottom:2px">${v}</div>
+          <div style="font-size:9px;color:var(--muted)">${d}</div>
         </div>`).join('')}
     </div>
 
-    <div style="background:var(--gl);border-radius:10px;padding:12px;margin-bottom:10px">
-      <div style="font-size:11px;font-weight:700;color:var(--g);margin-bottom:5px">📊 Get complete financial data (free)</div>
-      <a href="https://www.screener.in/company/${sym}/" target="_blank"
-        style="display:block;background:#fff;border-radius:8px;padding:10px 12px;margin-bottom:6px;text-decoration:none;border:0.5px solid var(--border)">
-        <div style="font-size:12px;font-weight:600;color:var(--g)">🔍 Screener.in — ${sym}</div>
-        <div style="font-size:10px;color:var(--muted)">P&L · Balance Sheet · Cash Flow · Quarterly Results · 10-year history</div>
-      </a>
-      <a href="https://www.bseindia.com/stock-share-price/${sym.toLowerCase()}/equity/" target="_blank"
-        style="display:block;background:#fff;border-radius:8px;padding:10px 12px;text-decoration:none;border:0.5px solid var(--border)">
-        <div style="font-size:12px;font-weight:600;color:var(--b)">📋 BSE India — Official Filings</div>
-        <div style="font-size:10px;color:var(--muted)">Annual Reports · Quarterly Results · Shareholding · Corporate Actions</div>
-      </a>
+    <div id="finStatementsBox">
+      <div style="background:var(--bl);border-radius:10px;padding:12px;cursor:pointer;display:flex;align-items:center;gap:12px" onclick="loadFinancialStatements('${sym}')">
+        <div style="font-size:28px">📋</div>
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--b)">Load Financial Statements</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:2px">P&L · Balance Sheet · Cash Flow · Quarterly Results<br>Free from Yahoo Finance — takes ~3 seconds</div>
+        </div>
+      </div>
     </div>
-    <div class="disc">All price data from Yahoo Finance. Shareholding data from last quarterly filing. This is for educational reference only — not investment advice.</div>`;
+    <div class="disc" style="margin-top:10px">All data is from Yahoo Finance public API. For audited annual reports, refer to BSE filings. Educational reference only — not investment advice.</div>`;
 }
 
-// ── PEERS TAB — Comparative analysis with live P/E ───────────────
-function buildPeersTab(sym, s) {
-  const bench = BENCH[s.sector] || {};
-  const peerList = (s.peers?.length ? s.peers : []).filter(p => p !== sym).slice(0, 4);
+async function loadFinancialStatements(sym) {
+  const box = document.getElementById('finStatementsBox');
+  if (!box) return;
+  box.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">⏳ Fetching financial statements…</div>';
+  const f = await api('fundamentals', { symbol: sym });
+  if (!f?.live || !f.income?.length) {
+    box.innerHTML = '<div style="background:var(--rl);border-radius:9px;padding:12px;font-size:11px;color:var(--r)">⚠️ Financial statement data not available for this stock from Yahoo Finance. Try checking BSE or NSE directly for this company\'s filings.</div>';
+    return;
+  }
 
-  // What makes a good peer comparison — explain the methodology
-  const comparisons = [
-    { metric: 'P/E Ratio', yours: s.pe > 0 ? s.pe.toFixed(1) + 'x' : 'N/A', sector: bench.pe ? bench.pe + 'x' : '—',
-      explain: 'Lower P/E than sector avg = potentially cheaper. Higher = market expects more growth or stock is expensive.' },
-    { metric: 'Market Cap', yours: s.mktCap > 0 ? fmtMktCap(s.mktCap) : 'N/A', sector: '—',
-      explain: 'Larger market cap = more stable, harder to manipulate. Smaller = higher volatility, more growth potential.' },
-    { metric: 'Promoter %', yours: s.promoter > 0 ? s.promoter + '%' : 'N/A', sector: bench.roe ? '>40% ideal' : '—',
-      explain: 'Higher promoter holding means founders are committed. Low holding can mean they have sold or reduced belief in the company.' },
-    { metric: 'FII Interest', yours: s.fii > 0 ? s.fii + '%' : 'N/A', sector: '>10% = watched',
-      explain: 'High FII holding = global institutions trust this stock. But high FII also means vulnerability if they exit suddenly.' },
-    { metric: '52W Position', yours: s.w52High > s.w52Low ? Math.round((s.price - s.w52Low) / (s.w52High - s.w52Low) * 100) + '%' : 'N/A', sector: '30–70% healthy',
-      explain: 'Where the stock sits in its yearly range. Near the top = momentum. Near the bottom = potential value or ongoing trouble.' },
-  ];
+  const fmt = n => n ? (Math.abs(n) >= 1e9 ? '₹'+(n/1e7).toFixed(0)+' Cr' : Math.abs(n) >= 1e7 ? '₹'+(n/1e7).toFixed(1)+' Cr' : '₹'+n.toLocaleString('en-IN')) : '—';
+  const pct = n => n != null ? (n > 0 ? '+' : '') + n + '%' : '—';
 
-  return `
-    <div style="background:var(--al);border-radius:9px;padding:10px 12px;margin-bottom:12px">
-      <div style="font-size:11px;font-weight:700;color:var(--a);margin-bottom:3px">⚠️ How to use peer comparison</div>
-      <div style="font-size:10px;color:var(--text);line-height:1.5">Comparing a stock with its peers helps you understand relative value. But companies in the same sector can have very different business models. Always look at the specific reasons behind each difference.</div>
+  box.innerHTML = `
+    <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:14px 0 10px">Annual Income Statement</div>
+    <div style="overflow-x:auto;margin-bottom:14px">
+      <table style="width:100%;border-collapse:collapse;font-size:11px">
+        <thead><tr style="border-bottom:1.5px solid var(--border)">
+          <th style="text-align:left;padding:6px 4px;color:var(--muted);font-size:9px;text-transform:uppercase">Metric</th>
+          ${f.income.map(y => `<th style="text-align:right;padding:6px 4px;color:var(--muted);font-size:9px">${y.date}</th>`).join('')}
+        </tr></thead>
+        <tbody>
+          <tr style="border-bottom:0.5px solid var(--border)"><td style="padding:8px 4px;font-weight:600">Revenue</td>${f.income.map(y => `<td style="text-align:right;padding:8px 4px">${fmt(y.revenue)}</td>`).join('')}</tr>
+          <tr style="border-bottom:0.5px solid var(--border)"><td style="padding:8px 4px;font-weight:600">Net Profit</td>${f.income.map(y => `<td style="text-align:right;padding:8px 4px;color:${y.profit>=0?'var(--g)':'var(--r)'}">${fmt(y.profit)}</td>`).join('')}</tr>
+          <tr style="border-bottom:0.5px solid var(--border)"><td style="padding:8px 4px;font-weight:600">EBITDA</td>${f.income.map(y => `<td style="text-align:right;padding:8px 4px">${fmt(y.ebitda)}</td>`).join('')}</tr>
+          <tr><td style="padding:8px 4px;font-weight:600">EPS (₹)</td>${f.income.map(y => `<td style="text-align:right;padding:8px 4px">₹${y.eps?.toFixed(2)||'—'}</td>`).join('')}</tr>
+        </tbody>
+      </table>
     </div>
 
-    <div style="font-size:11px;font-weight:600;color:var(--text);margin-bottom:10px">${sym} vs Sector: ${s.sector}</div>
+    <div style="font-size:10px;color:var(--muted);background:var(--bg);border-radius:8px;padding:8px 10px;margin-bottom:14px">
+      📖 <b>Revenue</b> = total sales. <b>Net Profit</b> = what remains after all costs. <b>EBITDA</b> = operating profit before interest, tax, depreciation. <b>EPS</b> = profit per share. Rising revenue + rising profit = healthy business.
+    </div>
 
-    ${comparisons.map(row => `
-      <div style="background:var(--card);border:0.5px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-          <div style="font-size:12px;font-weight:600">${row.metric}</div>
-          <div style="text-align:right">
-            <div style="font-size:13px;font-weight:700;color:var(--gm)">${row.yours}</div>
-            <div style="font-size:9px;color:var(--muted)">Sector: ${row.sector}</div>
-          </div>
+    <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">Key Ratios (Latest)</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:12px">
+      ${[
+        ['ROE', pct(f.roe), 'Return on Equity — how well shareholder money is used'],
+        ['Profit Margin', pct(f.profitMargin), 'Net profit as % of revenue'],
+        ['Revenue Growth', pct(f.revenueGrowth), 'Year-over-year revenue change'],
+        ['Earnings Growth', pct(f.earningsGrowth), 'Year-over-year profit change'],
+        ['Debt/Equity', f.debtToEquity != null ? f.debtToEquity+'x' : '—', 'Debt relative to equity. Lower = safer'],
+        ['Current Ratio', f.currentRatio != null ? f.currentRatio+'x' : '—', 'Ability to pay short-term debts'],
+        ['Free Cash Flow', fmt(f.freeCashFlow), 'Cash left after capital spending'],
+        ['P/B Ratio', f.priceToBook != null ? f.priceToBook+'x' : '—', 'Price vs book value of assets'],
+      ].map(([l,v,d]) => `
+        <div style="background:var(--bg);border-radius:8px;padding:8px;border:0.5px solid var(--border)">
+          <div style="font-size:9px;color:var(--muted);text-transform:uppercase;margin-bottom:2px">${l}</div>
+          <div style="font-size:14px;font-weight:700;margin-bottom:2px">${v}</div>
+          <div style="font-size:9px;color:var(--muted);line-height:1.4">${d}</div>
+        </div>`).join('')}
+    </div>
+    <div class="disc">Financial statements from Yahoo Finance quoteSummary API. Data accuracy depends on Yahoo Finance updates. This is for educational analysis only — not investment advice.</div>`;
+}
+
+// ── PEERS TAB — Live comparison table using batch API ────────────
+function buildPeersTab(sym, s) {
+  const bench  = BENCH[s.sector] || {};
+  const peers  = (s.peers?.length ? s.peers : []).filter(p => p !== sym).slice(0, 5);
+  const all    = [sym, ...peers];
+  const w52pct = s.w52High > s.w52Low ? Math.round((s.price - s.w52Low) / (s.w52High - s.w52Low) * 100) : '—';
+
+  return `
+    <div style="background:var(--gl);border-radius:9px;padding:10px 12px;margin-bottom:12px">
+      <div style="font-size:11px;font-weight:700;color:var(--g);margin-bottom:3px">📊 Live Peer Comparison — ${s.sector}</div>
+      <div style="font-size:10px;color:var(--text);line-height:1.5">Comparing ${sym} with ${peers.length} sector peers using live market data. Tap any peer stock to see its full research profile.</div>
+    </div>
+
+    <!-- Current stock summary -->
+    <div style="background:var(--card);border:1.5px solid var(--gm);border-radius:12px;padding:12px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--gm)">${sym} ★ (Selected)</div>
+          <div style="font-size:10px;color:var(--muted)">${s.name || sym} · ${s.sector}</div>
         </div>
-        <div style="font-size:10px;color:var(--muted);line-height:1.5">${row.explain}</div>
-      </div>`).join('')}
-
-    ${peerList.length > 0 ? `
-      <div style="font-size:11px;font-weight:600;color:var(--muted);margin:12px 0 8px;text-transform:uppercase;letter-spacing:0.5px">Load peers to compare live</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-        ${peerList.map(p => `
-          <div onclick="loadStock('${p}')" style="background:var(--bl);border:1px solid var(--b);border-radius:8px;padding:8px 14px;cursor:pointer;font-size:12px;font-weight:600;color:var(--b)">
-            ${p} <span style="font-size:10px;opacity:0.7">↗ Load</span>
+        <div style="text-align:right">
+          <div style="font-size:18px;font-weight:700">${s.price > 0 ? fmtPrice(s.price) : '—'}</div>
+          <div style="font-size:11px;font-weight:600;color:${s.changePct>=0?'var(--g)':'var(--r)'}">${s.changePct>=0?'+':''}${s.changePct?.toFixed(2)||0}%</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
+        ${[['P/E', s.pe>0?s.pe.toFixed(1):'N/A'],['Mkt Cap', fmtMktCap(s.mktCap)],['Promoter', s.promoter>0?s.promoter+'%':'N/A'],['52W Pos', w52pct+'%']].map(([l,v])=>`
+          <div style="background:var(--gl);border-radius:6px;padding:6px;text-align:center">
+            <div style="font-size:9px;color:var(--g);text-transform:uppercase;font-weight:600">${l}</div>
+            <div style="font-size:12px;font-weight:700;color:var(--g)">${v}</div>
           </div>`).join('')}
-      </div>` : ''}
+      </div>
+    </div>
 
-    <div class="disc">Peer data is for educational comparison only. Live P/E from Yahoo Finance. Shareholding from quarterly BSE filings. Not investment advice.</div>`;
+    <!-- Peers loaded dynamically -->
+    <div id="peersCompareBox">
+      ${peers.length > 0 ? `
+        <div style="background:var(--bl);border-radius:10px;padding:12px;cursor:pointer;display:flex;align-items:center;gap:12px" onclick="loadPeerComparison('${sym}','${peers.join(',')}','${s.sector}')">
+          <div style="font-size:28px">⚡</div>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--b)">Load Live Peer Comparison</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:2px">Compare ${sym} vs ${peers.join(', ')} — live prices, P/E, market cap</div>
+          </div>
+        </div>` : '<div style="padding:12px;color:var(--muted);font-size:12px">No peers defined for this stock yet.</div>'}
+    </div>
+
+    <!-- Sector benchmarks -->
+    <div style="margin-top:12px;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Sector Benchmarks — ${s.sector}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:12px">
+      ${[['Avg P/E',bench.pe+'x'],['Avg ROE',bench.roe+'%'],['Rev Growth','>'+bench.salesGrowth+'%'],['Div Yield','>'+bench.divYield+'%']].map(([l,v])=>`
+        <div style="background:var(--bg);border-radius:8px;padding:9px;border:0.5px solid var(--border);text-align:center">
+          <div style="font-size:9px;color:var(--muted);text-transform:uppercase;font-weight:600;margin-bottom:3px">${l}</div>
+          <div style="font-size:14px;font-weight:700">${v||'—'}</div>
+        </div>`).join('')}
+    </div>
+
+    <div class="disc">Live prices from Yahoo Finance. Shareholding from latest quarterly BSE filing. For deeper comparison use the Financials tab to load each company's P&L. Educational only — not investment advice.</div>`;
+}
+
+async function loadPeerComparison(mainSym, peersStr, sector) {
+  const box = document.getElementById('peersCompareBox');
+  if (!box) return;
+  box.innerHTML = '<div style="text-align:center;padding:16px;color:var(--muted);font-size:12px">⏳ Fetching live data for all peers…</div>';
+
+  const peers   = peersStr.split(',');
+  const allSyms = [mainSym, ...peers];
+  const data    = await api('batch', { symbols: allSyms.join(',') });
+
+  if (!data?.quotes) {
+    box.innerHTML = '<div style="color:var(--r);font-size:11px;padding:10px">Could not load peer data. Please retry.</div>';
+    return;
+  }
+
+  const rows = allSyms.map(sym => {
+    const q       = data.quotes[sym];
+    const stored  = STOCKS[sym];
+    const isMain  = sym === mainSym;
+    const w52p    = q?.w52High > q?.w52Low ? Math.round((q.price - q.w52Low) / (q.w52High - q.w52Low) * 100) : null;
+    const up      = (q?.changePct || 0) >= 0;
+    return { sym, q, stored, isMain, w52p, up };
+  });
+
+  const cols = ['Stock', 'Price', 'Change', 'P/E', 'Mkt Cap', 'Promoter', '52W'];
+  box.innerHTML = `
+    <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Live Comparison Table</div>
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:11px">
+        <thead>
+          <tr style="border-bottom:1.5px solid var(--border)">
+            ${cols.map(c => `<th style="padding:6px 8px;text-align:${c==='Stock'?'left':'right'};color:var(--muted);font-size:9px;text-transform:uppercase;white-space:nowrap">${c}</th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map(({ sym, q, stored, isMain, w52p, up }) => `
+            <tr style="border-bottom:0.5px solid var(--border);background:${isMain?'var(--gl)':'transparent'};cursor:pointer" onclick="${isMain?'':` loadStock('${sym}')`}">
+              <td style="padding:9px 8px;font-weight:${isMain?'700':'600'};color:${isMain?'var(--gm)':'var(--text)'}">${sym}${isMain?' ★':''}</td>
+              <td style="padding:9px 8px;text-align:right;font-weight:600">${q?.price > 0 ? fmtPrice(q.price) : '—'}</td>
+              <td style="padding:9px 8px;text-align:right;color:${up?'var(--g)':'var(--r)'};font-weight:600">${q?.changePct != null ? (up?'+':'')+q.changePct.toFixed(2)+'%' : '—'}</td>
+              <td style="padding:9px 8px;text-align:right">${q?.pe > 0 ? q.pe.toFixed(1) : '—'}</td>
+              <td style="padding:9px 8px;text-align:right;white-space:nowrap">${q?.marketCap ? fmtMktCap(q.marketCap) : '—'}</td>
+              <td style="padding:9px 8px;text-align:right">${stored?.promoter > 0 ? stored.promoter+'%' : '—'}</td>
+              <td style="padding:9px 8px;text-align:right;color:${w52p > 70?'var(--g)':w52p < 30?'var(--r)':'var(--a)'}">${w52p != null ? w52p+'%' : '—'}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div style="font-size:10px;color:var(--muted);margin-top:8px">52W = position in 52-week range. Tap any row to open that stock's full analysis. Green highlight = selected stock.</div>`;
 }
 
 // ── COMPANY TAB ───────────────────────────────────────────────────
@@ -1755,47 +1867,101 @@ function buildCompanyTab(s) {
     <div class="disc">Company details from public NSE/BSE filings. Shareholding from latest quarterly disclosure. Links open official websites.</div>`;
 }
 
-// ── SWOT TAB — Replaced with honest Data Quality & Learning Guide ─
+// ── RESEARCH TAB — News insights + data completeness + analysis guide
 function buildSWOTTab(s) {
-  const sym = s.nseCode || currentSym || '';
-  const mktCapCr = s.mktCap > 0 ? Math.round(s.mktCap / 1e7) : 0;
-  const hasGoodData = s.pe > 0 && s.mktCap > 0 && s.w52High > 0;
+  const sym     = s.nseCode || currentSym || '';
+  const name    = s.name || sym;
+  const pe      = s.pe || 0;
+  const mktCapCr= s.mktCap > 0 ? Math.round(s.mktCap / 1e7) : 0;
+  const w52pct  = s.w52High > s.w52Low ? Math.round((s.price - s.w52Low) / (s.w52High - s.w52Low) * 100) : 50;
+  const bench   = BENCH[s.sector] || {};
+
+  // Signal-based insights from available data — honest, factual, not advisory
+  const insights = [];
+  if (pe > 0 && bench.pe) {
+    if (pe < bench.pe * 0.8) insights.push({ type:'positive', text:`P/E of ${pe.toFixed(1)}x is below sector average of ${bench.pe}x — the stock appears cheaper than most peers on earnings basis. This could mean undervaluation or lower growth expectations.` });
+    else if (pe > bench.pe * 1.5) insights.push({ type:'caution', text:`P/E of ${pe.toFixed(1)}x is significantly above sector average of ${bench.pe}x — the market is pricing in high future growth. If growth disappoints, the stock could fall sharply.` });
+  }
+  if (w52pct > 80) insights.push({ type:'caution', text:`Price is near its 52-week high (${w52pct}% of range). Stocks near yearly highs can have strong momentum but also carry higher profit-booking risk.` });
+  if (w52pct < 20) insights.push({ type:'caution', text:`Price is near its 52-week low (${w52pct}% of range). This could signal ongoing business trouble or a buying opportunity — need to check fundamentals to decide which.` });
+  if (s.promoter > 60) insights.push({ type:'positive', text:`High promoter holding of ${s.promoter}% — founders have significant skin in the game. This generally signals management confidence in the company's future.` });
+  if (s.promoter > 0 && s.promoter < 20) insights.push({ type:'caution', text:`Low promoter holding of ${s.promoter}% — founders hold relatively little of the company. This may be worth investigating further.` });
+  if (s.pledgePct > 10) insights.push({ type:'risk', text:`⚠️ ${s.pledgePct}% of promoter shares are pledged as collateral. Heavy pledging is a risk factor — if the stock falls, lenders may force sell.` });
+  if (s.fii > 30) insights.push({ type:'positive', text:`High FII holding of ${s.fii}% shows strong foreign institutional interest. Global funds see this stock as worth holding.` });
+  if (mktCapCr > 0) insights.push({ type:'neutral', text:`${mktCapCr > 20000 ? 'Large Cap' : mktCapCr > 5000 ? 'Mid Cap' : 'Small Cap'} company (₹${mktCapCr.toLocaleString('en-IN')} Cr). ${mktCapCr > 20000 ? 'Higher stability, included in major indices, institutional coverage.' : mktCapCr > 5000 ? 'Balance of growth potential and stability.' : 'Higher growth potential but also higher volatility and less analyst coverage.'}` });
+  if (!insights.length) insights.push({ type:'neutral', text:'Load fundamentals in the Score and Financials tabs to get data-driven insights about this company.' });
+
+  const typeStyle = {
+    positive: { bg:'var(--gl)', border:'var(--g)', icon:'✅', col:'var(--g)' },
+    caution:  { bg:'var(--al)', border:'var(--a)', icon:'⚠️', col:'var(--a)' },
+    risk:     { bg:'var(--rl)', border:'var(--r)', icon:'🔴', col:'var(--r)' },
+    neutral:  { bg:'var(--bg)', border:'var(--border)', icon:'ℹ️', col:'var(--muted)' },
+  };
 
   return `
-    <div style="background:var(--al);border-radius:9px;padding:12px;margin-bottom:12px">
-      <div style="font-size:12px;font-weight:700;color:var(--a);margin-bottom:5px">⚠️ Why we removed SWOT from this app</div>
-      <div style="font-size:11px;color:var(--text);line-height:1.6">A meaningful SWOT (Strengths, Weaknesses, Opportunities, Threats) requires deep knowledge of the company's business, management, competition, and industry. Generating it from price data alone would be misleading. We do not want to give you incorrect information about a company.</div>
+    <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">Data-Driven Insights: ${sym}</div>
+
+    ${insights.map(ins => {
+      const st = typeStyle[ins.type];
+      return `<div style="background:${st.bg};border:0.5px solid ${st.border};border-radius:10px;padding:10px 12px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start">
+        <div style="font-size:16px;flex-shrink:0">${st.icon}</div>
+        <div style="font-size:11px;color:var(--text);line-height:1.6">${ins.text}</div>
+      </div>`;
+    }).join('')}
+
+    <!-- Live news for this stock -->
+    <div style="margin-top:14px;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Latest News — ${name}</div>
+    <div id="stockNewsBox">
+      <div style="background:var(--bl);border-radius:10px;padding:12px;cursor:pointer;display:flex;align-items:center;gap:12px" onclick="loadStockNews('${sym}','${name}')">
+        <div style="font-size:24px">📰</div>
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--b)">Load Latest News</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:2px">Fetch recent news about ${name} from Google News</div>
+        </div>
+      </div>
     </div>
 
-    <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">Data quality for ${sym}</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:14px">
+    <!-- Data completeness -->
+    <div style="margin-top:14px;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Data in StockSense for ${sym}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:12px">
       ${[
-        ['Price Data', s.price > 0, 'Live from Yahoo Finance'],
-        ['P/E Ratio', s.pe > 0, s.pe > 0 ? 'Available' : 'Not in Yahoo data'],
-        ['Market Cap', s.mktCap > 0, s.mktCap > 0 ? 'Available' : 'Not available'],
-        ['52W Range', s.w52High > 0, 'Available'],
-        ['Shareholding', s.promoter > 0, s.promoter > 0 ? 'From BSE quarterly filing' : 'Not in our database yet'],
-        ['P&L / Balance Sheet', false, 'Available on Screener.in'],
-      ].map(([label, ok, note]) => `
-        <div style="background:${ok ? 'var(--gl)' : 'var(--bg)'};border:0.5px solid var(--border);border-radius:8px;padding:9px 10px">
-          <div style="font-size:10px;font-weight:700;color:${ok ? 'var(--g)' : 'var(--muted)'};">${ok ? '✅' : '○'} ${label}</div>
-          <div style="font-size:9px;color:var(--muted);margin-top:2px">${note}</div>
+        ['✅ Live Price',        s.price > 0],
+        ['✅ % Change',          s.changePct != null],
+        [s.pe > 0 ? '✅ P/E Ratio' : '○ P/E Ratio',   s.pe > 0],
+        [s.mktCap > 0 ? '✅ Market Cap' : '○ Market Cap', s.mktCap > 0],
+        [s.w52High > 0 ? '✅ 52W Range' : '○ 52W Range',  s.w52High > 0],
+        [s.promoter > 0 ? '✅ Shareholding' : '○ Shareholding', s.promoter > 0],
+        ['📊 P&L (tap Score tab)', true],
+        ['📊 Balance Sheet (tap Financials)', true],
+      ].map(([label, ok]) => `
+        <div style="background:${ok?'var(--gl)':'var(--bg)'};border-radius:8px;padding:8px 10px;border:0.5px solid var(--border)">
+          <div style="font-size:10px;font-weight:600;color:${ok?'var(--g)':'var(--muted)'}">${label}</div>
         </div>`).join('')}
     </div>
 
-    <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">How to do your own SWOT</div>
-    ${[
-      ['📊 Financials (Screener.in)', 'Look at 5-year revenue and profit trend. Is it growing consistently? Are margins improving or falling?', `https://www.screener.in/company/${sym}/`],
-      ['📋 Annual Report (BSE)', 'Read the MD&A section. Management explains their business outlook, risks, and strategy honestly here.', `https://www.bseindia.com/stock-share-price/${sym.toLowerCase()}/equity/`],
-      ['📰 Business News', 'Search for recent news about the company and its industry. What are analysts saying?', `https://news.google.com/search?q=${sym}+NSE+India`],
-      ['🏭 Industry Reports', 'IBEF.org has free sector reports. Understanding the industry helps evaluate the company\'s position.', 'https://www.ibef.org/industry'],
-    ].map(([title, desc, url]) => `
-      <a href="${url}" target="_blank" style="display:block;background:var(--card);border:0.5px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;text-decoration:none">
-        <div style="font-size:11px;font-weight:600;color:var(--b);margin-bottom:4px">${title} ↗</div>
-        <div style="font-size:10px;color:var(--muted);line-height:1.5">${desc}</div>
-      </a>`).join('')}
+    <div class="disc">Insights are generated from live market data only. They are observational — not buy/sell recommendations. For full analysis, use the Score tab (fundamentals) and Financials tab (P&L). StockSense is an educational tool — not SEBI-registered investment advice.</div>`;
+}
 
-    <div class="disc">StockSense does not generate SWOT analysis because doing so without proper research would be misleading. The links above give you the tools to build your own. This is the correct way to learn.</div>`;
+async function loadStockNews(sym, name) {
+  const box = document.getElementById('stockNewsBox');
+  if (!box) return;
+  box.innerHTML = '<div style="text-align:center;padding:14px;color:var(--muted);font-size:12px">⏳ Fetching news…</div>';
+  const data = await api('news', { q: name + ' NSE India stock' });
+  if (!data?.news?.length) {
+    box.innerHTML = '<div style="background:var(--bg);border-radius:9px;padding:10px;font-size:11px;color:var(--muted)">No recent news found for this stock.</div>';
+    return;
+  }
+  const SC = { positive:{bg:'var(--gl)',col:'var(--g)',ico:'▲'}, neutral:{bg:'var(--al)',col:'var(--a)',ico:'→'}, negative:{bg:'var(--rl)',col:'var(--r)',ico:'▼'} };
+  box.innerHTML = data.news.slice(0, 8).map(n => {
+    const st = SC[n.sentiment] || SC.neutral;
+    return `<div style="padding:10px 0;border-bottom:0.5px solid var(--border)">
+      <div style="font-size:12px;font-weight:500;line-height:1.45;margin-bottom:5px;color:var(--text)">${n.title}</div>
+      <div style="display:flex;align-items:center;gap:7px">
+        <div style="font-size:9px;font-weight:700;border-radius:4px;padding:2px 7px;background:${st.bg};color:${st.col}">${st.ico} ${n.sentiment}</div>
+        <div style="font-size:10px;color:var(--muted)">${n.source} · ${n.timeAgo}</div>
+      </div>
+    </div>`;
+  }).join('') + '<div style="font-size:10px;color:var(--muted);padding-top:8px">News from Google News RSS. ⚠️ News sentiment is auto-detected — verify before acting on it.</div>';
 }
 
 // ── HOME — LIVE INDICES ──────────────────────────────────────────
@@ -1844,7 +2010,6 @@ function updateMoodCard(nifty, sensex, vix) {
   const card  = document.getElementById('moodCardWrap');
   const title = document.getElementById('moodTitle');
   const reason= document.getElementById('moodReason');
-  const moodIdx = document.getElementById('moodIdx');
   if (card) card.style.background = up ? 'var(--gl)' : 'var(--rl)';
 
   // Market open/closed check (IST = UTC+5:30)
@@ -1869,38 +2034,53 @@ function updateMoodCard(nifty, sensex, vix) {
     reason.style.color = up ? 'var(--g)' : 'var(--r)';
     reason.innerHTML = `<b>${statusIcon} ${statusTxt}</b><br>Nifty 50 ${up ? 'up' : 'down'} ${pct.toFixed(2)}% at ${nifty.value?.toLocaleString('en-IN', {maximumFractionDigits:0})}${sensex ? ` · Sensex ${sensex.value?.toLocaleString('en-IN', {maximumFractionDigits:0})}` : ''}. Has ${moveSize}.<br><span style="font-size:10px;opacity:0.8">${explainer}</span>`;
   }
-  if (moodIdx) {
-    moodIdx.innerHTML = [nifty, sensex].filter(Boolean).map(i => {
+  // Show Nifty + Sensex values AND % prominently
+  const idxRow = document.getElementById('moodIdxRow');
+  if (idxRow) {
+    idxRow.innerHTML = [nifty, sensex].filter(Boolean).map(i => {
       const u = i.changePct >= 0;
-      return `<div class="midx"><div class="midx-n">${i.name.replace('NIFTY ','').replace('SENSEX','Sensex')}</div><div class="midx-v" style="color:${u?'var(--g)':'var(--r)'}">${u?'+':''}${i.changePct.toFixed(2)}%</div></div>`;
+      const col = u ? 'var(--g)' : 'var(--r)';
+      return `<div style="background:rgba(0,0,0,0.06);border-radius:8px;padding:6px 10px;min-width:100px">
+        <div style="font-size:9px;font-weight:600;opacity:0.7;margin-bottom:2px">${i.name}</div>
+        <div style="font-size:16px;font-weight:700;font-family:'DM Serif Display',serif;color:${col}">${i.value?.toLocaleString('en-IN',{maximumFractionDigits:0})}</div>
+        <div style="font-size:12px;font-weight:600;color:${col}">${u?'▲':'▼'} ${u?'+':''}${i.changePct.toFixed(2)}%</div>
+      </div>`;
     }).join('');
   }
+  // Keep moodIdx for backward compat (ticker)
+  const moodIdx = document.getElementById('moodIdx');
+  if (moodIdx) moodIdx.innerHTML = '';
 }
 
 // ── HOME — DARK HORSE (auto-calculated) ─────────────────────────
-const DH_CANDIDATES = ['SUNPHARMA','HAL','DIXON','PERSISTENT','TCS','HDFCBANK','MARUTI','BHARTIARTL','LT','RELIANCE','INFY','SBIN','TATASTEEL','NTPC','WIPRO'];
+// ── HOME — DARK HORSE — scans real Nifty 100 via marketscan API ──
 
 async function loadDarkHorse() {
-  // Use batch — ONE server call, ONE session fetch for all candidates
-  const data = await api('batch', { symbols: DH_CANDIDATES.join(',') });
+  // Use real market scan — Nifty 50 + Nifty Next 50 (100 stocks)
+  const dhLoad = document.getElementById('dhLoading');
+  if (dhLoad) dhLoad.textContent = 'Scanning Nifty 100 stocks live…';
+
+  const data = await api('marketscan');
+  const countEl = document.getElementById('dhCandCount');
 
   if (!data?.quotes || data.loaded === 0) {
-    const dhLoad = document.getElementById('dhLoading');
-    if (dhLoad) dhLoad.textContent = 'Live data unavailable — refresh to retry';
+    if (dhLoad) dhLoad.textContent = 'Could not load market data — refresh to retry';
     return;
   }
+  if (countEl) countEl.textContent = data.scanned || data.total || data.loaded;
 
   const results = [];
-  DH_CANDIDATES.forEach(sym => {
-    const live = data.quotes[sym];
+  Object.entries(data.quotes).forEach(([sym, live]) => {
     if (!live?.price) return;
-    const stored  = STOCKS[sym];
-    const w52pct  = live.w52High > live.w52Low ? (live.price - live.w52Low) / (live.w52High - live.w52Low) : 0.5;
+    const stored     = STOCKS[sym];
+    const w52pct     = live.w52High > live.w52Low ? (live.price - live.w52Low) / (live.w52High - live.w52Low) : 0.5;
     const underRadar = w52pct < 0.75 && w52pct > 0.3;
-    const volScore   = live.volume > 500000 ? 2 : live.volume > 100000 ? 1 : 0;
-    const dhScore    = (w52pct * 6) + (Math.abs(live.changePct) * 0.4) + volScore + (underRadar ? 2.5 : 0);
-    const score      = calcScore(buildLivePillars(live));
-    results.push({ sym, live, stored, dhScore, w52pct, underRadar, score });
+    const volScore   = live.volume > 1000000 ? 3 : live.volume > 500000 ? 2 : live.volume > 100000 ? 1 : 0;
+    const posScore   = +(w52pct * 6).toFixed(1);
+    const momScore   = +(Math.abs(live.changePct) * 0.4).toFixed(1);
+    const radScore   = underRadar ? 2.5 : 0;
+    const dhScore    = posScore + momScore + volScore + radScore;
+    results.push({ sym, live, stored, dhScore, posScore, momScore, volScore, radScore, w52pct, underRadar });
   });
 
   if (!results.length) return;
@@ -1908,19 +2088,28 @@ async function loadDarkHorse() {
   const dh = results[0];
   const up = dh.live.changePct >= 0;
 
-  const dhLoad = document.getElementById('dhLoading'); if (dhLoad) dhLoad.style.display = 'none';
-  const dhCont = document.getElementById('dhContent'); if (dhCont) dhCont.style.display = 'block';
+  if (dhLoad) dhLoad.style.display = 'none';
+  document.getElementById('dhContent')?.style && (document.getElementById('dhContent').style.display = 'block');
   const dhCard = document.getElementById('dhCard');
   if (dhCard) dhCard.onclick = () => loadStock(dh.sym);
 
   const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
   set('dhSym',  dh.live.longName || dh.stored?.name || dh.sym);
   set('dhName', `${dh.sym} · ${dh.stored?.sector || 'NSE Listed'}`);
-  set('dhWhy',  `At ${Math.round(dh.w52pct * 100)}% of its 52-week range (₹${dh.live.w52Low.toLocaleString('en-IN')} – ₹${dh.live.w52High.toLocaleString('en-IN')}). ${dh.underRadar ? 'In the mid-zone — not overextended, under the radar.' : 'Near yearly high — strong momentum.'} Current price ₹${dh.live.price.toLocaleString('en-IN')}.`);
+  set('dhWhy',  `Price ₹${dh.live.price.toLocaleString('en-IN')} · At ${Math.round(dh.w52pct * 100)}% of 52W range (₹${dh.live.w52Low?.toLocaleString('en-IN')}–₹${dh.live.w52High?.toLocaleString('en-IN')}). ${dh.underRadar ? 'Mid-zone — not overextended. Worth watching.' : 'Near yearly high — strong momentum.'}`);
   set('dhMove',  (up ? '+' : '') + dh.live.changePct.toFixed(2) + '%');
-  set('dhScore', dh.score.toFixed(1) + '/10');
+  set('dhRadar', Math.round(dh.w52pct * 100) + '% of range');
   set('dhVol',   fmtVol(dh.live.volume));
-  set('dhRadar', dh.underRadar ? '✓ Yes' : '~ Extreme');
+  set('dhScore', dh.dhScore.toFixed(1));
+
+  // Transparent calculation breakdown
+  const calcEl = document.getElementById('dhCalc');
+  if (calcEl) {
+    const top5 = results.slice(0, 5);
+    calcEl.innerHTML = `<b>DH Score formula:</b> 52W Position×6 + |%Change|×0.4 + Volume(0–3) + Mid-zone bonus(2.5)<br><br>
+<b>Top 5 from ${results.length} stocks scanned:</b><br>
+${top5.map((r, i) => `${i+1}. ${r.sym}: ${r.dhScore.toFixed(1)} pts — pos:${r.posScore} mom:${r.momScore} vol:${r.volScore} radar:${r.radScore} (52W:${Math.round(r.w52pct*100)}%)`).join('<br>')}`;
+  }
 
   const firstMv = document.querySelector('#dhCard .dh-mv');
   if (firstMv) firstMv.style.color = up ? '#4ade80' : '#f87171';
@@ -2187,26 +2376,26 @@ function renderNews(cat, el) {
 }
 
 // ── HEATMAP — Live sector data, populated from movers ────────────
-const HEATMAP_SYMS = [
-  { name:'IT',       sym:'INFY'      },
-  { name:'Banking',  sym:'HDFCBANK'  },
-  { name:'Pharma',   sym:'SUNPHARMA' },
-  { name:'Auto',     sym:'MARUTI'    },
-  { name:'FMCG',     sym:'ITC'       },
-  { name:'Energy',   sym:'RELIANCE'  },
-  { name:'Infra',    sym:'LT'        },
-  { name:'Defence',  sym:'HAL'       },
-  { name:'EMS',      sym:'DIXON'     },
-  { name:'Metals',   sym:'TATASTEEL' },
-  { name:'Power',    sym:'NTPC'      },
-  { name:'Telecom',  sym:'BHARTIARTL'},
-];
+// Map sectors to all their stocks for drill-down
+const SECTOR_STOCKS = {
+  'IT':       ['TCS','INFY','WIPRO','HCLTECH','LTIM','PERSISTENT','MPHASIS','COFORGE','TATAELXSI'],
+  'Banking':  ['HDFCBANK','ICICIBANK','KOTAKBANK','AXISBANK','SBIN','INDUSINDBK','BANDHANBNK','IDFCFIRSTB'],
+  'Pharma':   ['SUNPHARMA','DRREDDY','CIPLA','DIVISLAB','AUROPHARMA','LUPIN','BIOCON','ALKEM'],
+  'Auto':     ['MARUTI','TATAMOTORS','M&M','BAJAJ-AUTO','HEROMOTOCO','EICHERMOT','TVSMOTORS','ASHOKLEY'],
+  'FMCG':     ['ITC','HINDUNILVR','NESTLEIND','DABUR','MARICO','COLPAL','EMAMILTD','GODREJCP'],
+  'Energy':   ['RELIANCE','ONGC','BPCL','IOC','GAIL','OIL','HINDPETRO','MRPL'],
+  'Infra':    ['LT','ADANIPORTS','IRFC','RVNL','KEC','KALPATPOWR','PNCINFRA','GPPL'],
+  'Defence':  ['HAL','BEL','MAZDOCK','BHARATFORG','BDL','MIDHANI','BEML','GRSE'],
+  'EMS':      ['DIXON','KAYNES','AMBER','SYRMA','AVALON','PGEL','IDEAFORGE'],
+  'Metals':   ['TATASTEEL','JSWSTEEL','HINDALCO','SAIL','VEDL','NMDC','HINDCOPPER','NALCO'],
+  'Power':    ['NTPC','POWERGRID','TATAPOWER','ADANIGREEN','CESC','TORNTPOWER','NHPC','SJVN'],
+  'Telecom':  ['BHARTIARTL','INDUSTOWER','TATACOMM','RAILTEL','HFCL'],
+};
 
 function buildHeatmap() {
   const el = document.getElementById('heatmapGrid'); if (!el) return;
-  // Show skeleton — data will be filled by updateHeatmapFromMovers once movers load
   el.innerHTML = HEATMAP_SYMS.map(s =>
-    `<div class="hm-cell shimmer" style="height:60px" id="hm-${s.sym}" onclick="loadStock('${s.sym}')"></div>`
+    `<div class="hm-cell shimmer" style="height:60px" id="hm-${s.sym}" onclick="showSectorDrill('${s.name}')"></div>`
   ).join('');
 }
 
@@ -2215,7 +2404,7 @@ function updateHeatmapFromMovers(results) {
     const found = results.find(r => r.sym === sym);
     const cell  = document.getElementById('hm-' + sym); if (!cell) return;
     cell.className = 'hm-cell';
-    cell.onclick   = () => loadStock(sym);
+    cell.onclick   = () => showSectorDrill(name);
     if (!found?.live?.price) {
       cell.style.background = 'var(--border)';
       cell.innerHTML = `<div class="hm-n" style="color:var(--muted)">${name}</div><div class="hm-v" style="color:var(--muted)">—</div>`;
@@ -2229,6 +2418,63 @@ function updateHeatmapFromMovers(results) {
       : `rgba(192,57,43,${0.12 + intensity * 0.45})`;
     const col = up ? 'var(--g)' : 'var(--r)';
     cell.innerHTML = `<div class="hm-n" style="color:${col}">${name}</div><div class="hm-v" style="color:${col}">${up ? '+' : ''}${chg.toFixed(2)}%</div>`;
+  });
+}
+
+// Sector drill-down modal — shows all stocks in the sector
+function showSectorDrill(sectorName) {
+  const stocks = SECTOR_STOCKS[sectorName] || [];
+  if (!stocks.length) return;
+
+  // Create or reuse overlay
+  let overlay = document.getElementById('sectorOverlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'sectorOverlay';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:500;display:flex;align-items:flex-end;justify-content:center';
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+    document.body.appendChild(overlay);
+  }
+
+  overlay.innerHTML = `
+    <div style="background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:520px;max-height:80vh;overflow-y:auto;padding:20px 16px 30px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div>
+          <div style="font-size:16px;font-weight:700;font-family:'DM Serif Display',serif">${sectorName} Sector</div>
+          <div style="font-size:11px;color:var(--muted)">${stocks.length} stocks — tap any to research</div>
+        </div>
+        <div onclick="document.getElementById('sectorOverlay').remove()" style="font-size:22px;cursor:pointer;color:var(--muted);padding:4px 8px">✕</div>
+      </div>
+      <div id="sectorDrillList">
+        ${stocks.map(sym => `
+          <div onclick="document.getElementById('sectorOverlay').remove();loadStock('${sym}')"
+            style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:0.5px solid var(--border);cursor:pointer">
+            <div>
+              <div style="font-size:13px;font-weight:600">${sym}</div>
+              <div style="font-size:10px;color:var(--muted)">${STOCKS[sym]?.name || 'Tap to load live data'}</div>
+            </div>
+            <div style="text-align:right" id="drill-${sym}">
+              <div style="font-size:11px;color:var(--muted)">Loading…</div>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+
+  // Load live prices for all stocks in sector
+  api('batch', { symbols: stocks.join(',') }).then(data => {
+    if (!data?.quotes) return;
+    stocks.forEach(sym => {
+      const q = data.quotes[sym];
+      const el = document.getElementById('drill-' + sym);
+      if (!el) return;
+      if (q?.price) {
+        const up = q.changePct >= 0;
+        el.innerHTML = `<div style="font-size:13px;font-weight:700">${fmtPrice(q.price)}</div>
+          <div style="font-size:11px;font-weight:600;color:${up?'var(--g)':'var(--r)'}">${up?'+':''}${q.changePct.toFixed(2)}%</div>`;
+      } else {
+        el.innerHTML = `<div style="font-size:10px;color:var(--muted)">N/A</div>`;
+      }
+    });
   });
 }
 async function buildIPOs() {
