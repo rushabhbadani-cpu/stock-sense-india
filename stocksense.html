@@ -1,83 +1,52 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StockSense India | Auditor Terminal</title>
-    <style>
-        :root { --primary: #1a365d; --accent: #2b6cb0; --bg: #f7fafc; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 20px; }
-        .container { max-width: 1200px; margin: auto; }
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--primary); padding-bottom: 10px; margin-bottom: 20px; }
-        .search-area { display: flex; gap: 10px; }
-        input { padding: 12px; width: 300px; border: 1px solid #cbd5e0; border-radius: 4px; }
-        button { padding: 12px 24px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        .card { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th { background: #edf2f7; text-align: left; padding: 12px; border-bottom: 2px solid #cbd5e0; }
-        td { padding: 12px; border-bottom: 1px solid #edf2f7; font-size: 14px; line-height: 1.5; }
-        .highlight-green { background: #f0fff4; color: #2f855a; font-weight: bold; }
-        .price-large { font-size: 2.5em; font-weight: bold; margin: 10px 0; color: var(--primary); }
-        .meta-text { font-size: 1.1em; color: #4a5568; margin-bottom: 10px; }
-    </style>
-</head>
-<body>
+async function loadStock(sym) {
+    if(!sym) return;
+    showPage('research'); // Switch to your original research tab
+    
+    // UI Loading State (Your CSS classes)
+    const priceEl = document.querySelector('.res-price');
+    if(priceEl) priceEl.innerText = "Syncing...";
 
-<div class="container">
-    <div class="header">
-        <h1>StockSense <span style="color: var(--accent);">India</span></h1>
-        <div class="search-area">
-            <input type="text" id="userInput" placeholder="Search Company (e.g. Infosys)">
-            <button onclick="runAudit()">Audit Stock</button>
-        </div>
-    </div>
+    try {
+        // 1. Get Live Price & Analysis Data
+        const pRes = await fetch(`/api/market?action=quote&symbol=${sym}`);
+        const p = await pRes.json();
 
-    <div id="status" style="display:none; padding: 10px; color: var(--accent); font-weight: bold;">🔍 Reconciling Data Fields...</div>
-
-    <div id="dashboard" style="display:none;">
-        <div class="card">
-            <h2 id="compName" style="margin:0; text-transform: uppercase;">Company</h2>
-            <div id="priceDisplay" class="price-large">₹0.00</div>
-            <div id="metaDisplay" class="meta-text">52W High: -- | 52W Low: --</div>
-        </div>
-
-        <div class="card">
-            <h3>Corporate Ledger (Dividends & Board Meetings)</h3>
-            <div id="corporateTable"></div>
-        </div>
-    </div>
-</div>
-
-<script>
-    async function runAudit() {
-        const query = document.getElementById('userInput').value;
-        const status = document.getElementById('status');
-        const dash = document.getElementById('dashboard');
+        // Populate your original UI fields
+        document.getElementById('resSym').innerText = sym;
+        document.getElementById('resName').innerText = p.name || sym;
+        document.getElementById('resPrice').innerText = `₹${p.price || 'N/A'}`;
         
-        if(!query) return;
-        status.style.display = 'block';
-        dash.style.display = 'none';
+        // Update Portfolio Logic (If item is in portfolio)
+        updatePortfolioPrice(sym, p.price);
 
-        try {
-            // 1. Search for the proper Symbol
-            const sRes = await fetch(`/api/market?action=search&q=${encodeURIComponent(query)}`);
-            const sData = await sRes.json();
-            
-            // Handle different search result formats
-            const symbol = sData[0]?.symbol || sData.symbol || query; 
+        // Populate Analysis Tab (Key Statistics)
+        const analysisHtml = `
+            <div class="stat-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:15px;">
+                <div><small>P/E Ratio</small><br><b>${p.pe}</b></div>
+                <div><small>Div. Yield</small><br><b>${p.yield}</b></div>
+                <div><small>Market Cap</small><br><b>${p.marketCap}</b></div>
+                <div><small>Revenue</small><br><b>${p.revenue}</b></div>
+            </div>
+        `;
+        const analysisTab = document.getElementById('analysisTab'); // Match your tab ID
+        if(analysisTab) analysisTab.innerHTML = analysisHtml;
 
-            // 2. Fetch Price and Corporate Data in parallel for speed
-            const [pRes, cRes] = await Promise.all([
-                fetch(`/api/market?action=details&symbol=${symbol}`),
-                fetch(`/api/market?action=corporate&symbol=${symbol}`)
-            ]);
+        // 2. Get Corporate Ledger (The Board Meetings you need)
+        const cRes = await fetch(`/api/market?action=corporate&symbol=${sym}`);
+        const c = await cRes.json();
+        
+        let corpTable = '<table style="width:100%; font-size:12px;">';
+        const meetings = c.board_meetings?.data || [];
+        meetings.slice(0, 10).forEach(m => {
+            corpTable += `<tr style="border-bottom:1px solid #eee;">
+                            <td style="padding:10px; font-weight:700;">${m[0]}</td>
+                            <td style="padding:10px;">${m[1]}</td>
+                          </tr>`;
+        });
+        const corporateTab = document.getElementById('corporateTab'); // Match your tab ID
+        if(corporateTab) corporateTab.innerHTML = corpTable + '</table>';
 
-            const pData = await pRes.json();
-            const cData = await cRes.json();
-
-            // 3. Update the UI with the corrected mapping
-            updateUI(pData, cData, symbol);
-
-        } catch (e) {
-            console.error("Audit Error:", e);
-            alert("
+    } catch (e) {
+        console.error("Audit Failed", e);
+    }
+}
