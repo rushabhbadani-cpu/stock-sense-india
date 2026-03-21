@@ -1,13 +1,13 @@
-// StockSense India — Market Proxy v10.0
-// Key fix: session fetched ONCE per handler call, reused for all data fetches
-// getDailyChange merged into yahooFetch using 5d range to save one round-trip per quote
+// StockSense India — Market Proxy v11.0
+// Key change: batch quote action fetches multiple symbols in one serverless call
+// This means ONE session fetch + parallel data fetches instead of N×session fetches
 // Place at: /api/market.js
 
 // ── YAHOO SESSION ─────────────────────────────────────────────────
 async function getSession() {
   try {
     const r1 = await fetch('https://fc.yahoo.com', {
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36' },
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
       signal: AbortSignal.timeout(6000),
       redirect: 'follow',
     });
@@ -15,16 +15,13 @@ async function getSession() {
     const cookie = rawCookie.split(',').map(c => c.trim().split(';')[0]).filter(c => c.includes('=')).join('; ');
     const r2 = await fetch('https://query2.finance.yahoo.com/v1/test/getcrumb', {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         'Cookie': cookie,
       },
       signal: AbortSignal.timeout(6000),
     });
     const crumb = (await r2.text()).trim();
-    if (!crumb || crumb.includes('<') || crumb.length < 3) {
-      console.error('Bad crumb:', crumb.substring(0, 30));
-      return null;
-    }
+    if (!crumb || crumb.includes('<') || crumb.length < 3) return null;
     console.log(`Session OK crumb=${crumb.substring(0, 8)}`);
     return { cookie, crumb };
   } catch (e) {
@@ -33,14 +30,13 @@ async function getSession() {
   }
 }
 
-// ── YAHOO FETCH ───────────────────────────────────────────────────
+// ── YAHOO FETCH — always 5d/1d for real daily % change ───────────
 async function yahooFetch(sym, session, range = '5d', interval = '1d') {
-  // Default to 5d/1d so we always have prev close for % change calculation
   const crumbParam = session?.crumb ? `&crumb=${encodeURIComponent(session.crumb)}` : '';
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?interval=${interval}&range=${range}${crumbParam}`;
   const res = await fetch(url, {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
       'Accept': 'application/json',
       'Cookie': session?.cookie || '',
     },
@@ -52,23 +48,27 @@ async function yahooFetch(sym, session, range = '5d', interval = '1d') {
   return json;
 }
 
-// ── EXTRACT PRICE + DAILY CHANGE from 5d data (single fetch) ─────
-function extractQuoteData(data, symbol) {
+// ── EXTRACT QUOTE from 5d data (price + real daily change) ────────
+function extractQuote(data, symbol) {
   const result = data?.chart?.result?.[0];
   if (!result) return null;
-  const m      = result.meta;
-  const price  = m.regularMarketPrice || m.previousClose || 0;
-  if (price <= 0) return null;
-
-  // Get real daily change from closes array (works on weekends too)
+  const m     = result.meta;
+  // Price: prefer regularMarketPrice, fall back to previousClose, then last close in array
   const closes = (result.indicators?.quote?.[0]?.close || []).filter(c => c != null && c > 0);
-  const prev   = closes.length >= 2 ? closes[closes.length - 2] : (m.previousClose || price);
-
+  const price  = m.regularMarketPrice > 0 ? m.regularMarketPrice
+               : m.previousClose      > 0 ? m.previousClose
+               : closes.length > 0        ? closes[closes.length - 1]
+               : 0;
+  if (price <= 0) return null;
+  // Real daily change from last two valid closes
+  const prev = closes.length >= 2 ? closes[closes.length - 2]
+             : m.previousClose > 0 ? m.previousClose
+             : price;
   return {
     symbol,
     price:     +price.toFixed(2),
     change:    +(price - prev).toFixed(2),
-    changePct: +((price - prev) / prev * 100).toFixed(2),
+    changePct: prev > 0 ? +((price - prev) / prev * 100).toFixed(2) : 0,
     open:      +(m.regularMarketOpen    || price).toFixed(2),
     high:      +(m.regularMarketDayHigh || price).toFixed(2),
     low:       +(m.regularMarketDayLow  || price).toFixed(2),
@@ -84,12 +84,12 @@ function extractQuoteData(data, symbol) {
   };
 }
 
-// ── QUOTE — single fetch gets price + daily change ────────────────
+// ── SINGLE QUOTE ──────────────────────────────────────────────────
 async function getQuote(symbol, session) {
   for (const sym of [`${symbol}.NS`, `${symbol}.BO`, symbol]) {
     try {
-      const data   = await yahooFetch(sym, session, '5d', '1d');
-      const result = extractQuoteData(data, symbol);
+      const data   = await yahooFetch(sym, session);
+      const result = extractQuote(data, symbol);
       if (result) {
         console.log(`Quote ${sym}: ₹${result.price} ${result.changePct >= 0 ? '+' : ''}${result.changePct}%`);
         return { ...result, source: sym };
@@ -97,6 +97,42 @@ async function getQuote(symbol, session) {
     } catch (e) { console.error(`Quote ${sym}:`, e.message); }
   }
   return null;
+}
+
+// ── BATCH QUOTES — all symbols in ONE serverless call ─────────────
+// Frontend sends symbols as comma-separated string: ?action=batch&symbols=TCS,INFY,HDFCBANK
+async function getBatchQuotes(symbolsStr, session) {
+  const symbols = symbolsStr.split(',').map(s => s.trim().toUpperCase()).filter(Boolean).slice(0, 25);
+  console.log(`Batch: fetching ${symbols.length} symbols in parallel`);
+
+  // Fetch all in parallel — session already established, so this is fast
+  const results = await Promise.allSettled(
+    symbols.map(async (symbol) => {
+      for (const sym of [`${symbol}.NS`, `${symbol}.BO`, symbol]) {
+        try {
+          const data   = await yahooFetch(sym, session);
+          const result = extractQuote(data, symbol);
+          if (result) return { ...result, source: sym };
+        } catch {}
+      }
+      return null;
+    })
+  );
+
+  const quotes = {};
+  results.forEach((r, i) => {
+    const q = r.status === 'fulfilled' ? r.value : null;
+    if (q) {
+      quotes[symbols[i]] = q;
+      console.log(`  ${symbols[i]}: ₹${q.price} ${q.changePct >= 0 ? '+' : ''}${q.changePct}%`);
+    } else {
+      console.warn(`  ${symbols[i]}: no data`);
+    }
+  });
+
+  const loaded = Object.keys(quotes).length;
+  console.log(`Batch complete: ${loaded}/${symbols.length} loaded`);
+  return { quotes, loaded, total: symbols.length, live: loaded > 0 };
 }
 
 // ── HISTORY ───────────────────────────────────────────────────────
@@ -117,7 +153,7 @@ async function getHistory(symbol, range, interval, session) {
   return { prices: [], live: false };
 }
 
-// ── INDICES — parallel, single fetch each ─────────────────────────
+// ── INDICES ───────────────────────────────────────────────────────
 async function getIndices(session) {
   const MAP = {
     '^NSEI':'NIFTY 50', '^BSESN':'SENSEX', '^NSEBANK':'NIFTY BANK',
@@ -127,7 +163,7 @@ async function getIndices(session) {
   const results = await Promise.all(
     Object.entries(MAP).map(async ([sym, name]) => {
       try {
-        const data   = await yahooFetch(sym, session, '5d', '1d');
+        const data   = await yahooFetch(sym, session);
         const result = data?.chart?.result?.[0];
         if (!result) return null;
         const m      = result.meta;
@@ -161,7 +197,7 @@ async function getCommodities(session) {
   const results = await Promise.all(
     COMM.map(async (c) => {
       try {
-        const data   = await yahooFetch(c.sym, session, '5d', '1d');
+        const data   = await yahooFetch(c.sym, session);
         const result = data?.chart?.result?.[0];
         if (!result) return null;
         const price  = result.meta?.regularMarketPrice || 0;
@@ -192,7 +228,7 @@ async function getForex(session) {
   const results = await Promise.all(
     PAIRS.map(async (p) => {
       try {
-        const data   = await yahooFetch(p.sym, session, '5d', '1d');
+        const data   = await yahooFetch(p.sym, session);
         const result = data?.chart?.result?.[0];
         if (!result) return null;
         const rate   = result.meta?.regularMarketPrice || 0;
@@ -211,8 +247,11 @@ async function getForex(session) {
 // ── NEWS ──────────────────────────────────────────────────────────
 async function getNews(q) {
   try {
-    const query = encodeURIComponent(q || 'India stock market NSE Nifty Sensex');
-    const res   = await fetch(`https://news.google.com/rss/search?q=${query}+when:1d&hl=en-IN&gl=IN&ceid=IN:en`, {
+    // Use broader query and 3d window (catches weekends + more global news)
+    const baseQuery = q || 'India stock market NSE Nifty Sensex economy RBI';
+    const globalExtra = q ? '' : ' OR "global markets" OR "Fed rate" OR "crude oil" OR "US economy" OR war geopolitical';
+    const query = encodeURIComponent(baseQuery + globalExtra);
+    const res   = await fetch(`https://news.google.com/rss/search?q=${query}+when:3d&hl=en-IN&gl=IN&ceid=IN:en`, {
       headers: { 'Accept': 'application/rss+xml, text/xml' },
       signal: AbortSignal.timeout(8000),
     });
@@ -258,15 +297,15 @@ export default async function handler(req, res) {
   const action = p.action || 'quote';
 
   try {
-    // Session fetched ONCE per handler call — reused for all sub-requests
-    const session = (action !== 'news') ? await getSession() : null;
-    if (action !== 'news' && !session) {
-      console.error('No session — Yahoo unreachable');
+    const needsSession = action !== 'news';
+    const session = needsSession ? await getSession() : null;
+    if (needsSession && !session) {
       return res.status(200).json({ live: false, error: 'Could not connect to data source' });
     }
 
     let result;
     if      (action === 'quote')       result = (await getQuote(p.symbol || 'TCS', session)) || { live: false, error: 'No data', symbol: p.symbol };
+    else if (action === 'batch')       result = await getBatchQuotes(p.symbols || 'TCS', session);
     else if (action === 'history')     result = await getHistory(p.symbol || 'TCS', p.range || '1y', p.interval || '1wk', session);
     else if (action === 'indices')     result = await getIndices(session);
     else if (action === 'commodities') result = await getCommodities(session);
