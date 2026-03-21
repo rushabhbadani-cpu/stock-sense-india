@@ -1,4 +1,6 @@
-// StockSense India — Market Proxy v4.1 (Vercel format)
+// StockSense India — Market Proxy v5.0
+// Yahoo Finance v10 — complete financials for ANY stock, free, no key
+
 const https = require('https');
 
 function httpsGet(url, headers = {}) {
@@ -9,11 +11,13 @@ function httpsGet(url, headers = {}) {
       path: opts.pathname + opts.search,
       method: 'GET',
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept': 'application/json, text/plain, */*',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Cache-Control': 'no-cache',
         ...headers
       },
-      timeout: 8000
+      timeout: 10000
     };
     const req = https.request(options, (res) => {
       let data = '';
@@ -29,64 +33,204 @@ function httpsGet(url, headers = {}) {
   });
 }
 
+// Try NSE first, then BSE
+async function trySymbols(sym, path) {
+  const variants = [`${sym}.NS`, `${sym}.BO`, sym];
+  for (const s of variants) {
+    try {
+      const url = `https://query1.finance.yahoo.com${path.replace('{SYM}', encodeURIComponent(s))}`;
+      const r = await httpsGet(url);
+      if (r.status === 200 && r.body && !r.body.error) return { data: r.body, sym: s };
+    } catch {}
+  }
+  return null;
+}
+
+// ── QUOTE (price data) ────────────────────────────────────────────
 async function getQuote(symbol) {
-  const syms = [`${symbol}.NS`, `${symbol}.BO`, symbol];
-  for (const s of syms) {
-    try {
-      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(s)}?interval=1d&range=1d`;
-      const r = await httpsGet(url);
-      if (r.status === 200 && r.body?.chart?.result) {
-        const m = r.body.chart.result[0].meta;
-        const price = m.regularMarketPrice || m.previousClose || 0;
-        const prev = m.previousClose || price;
-        if (price > 0) return {
-          symbol, price: parseFloat(price.toFixed(2)),
-          change: parseFloat((price - prev).toFixed(2)),
-          changePct: parseFloat(((price - prev) / prev * 100).toFixed(2)),
-          open: parseFloat((m.regularMarketOpen || price).toFixed(2)),
-          high: parseFloat((m.regularMarketDayHigh || price).toFixed(2)),
-          low: parseFloat((m.regularMarketDayLow || price).toFixed(2)),
-          prevClose: parseFloat(prev.toFixed(2)),
-          volume: m.regularMarketVolume || 0,
-          w52High: parseFloat((m.fiftyTwoWeekHigh || price).toFixed(2)),
-          w52Low: parseFloat((m.fiftyTwoWeekLow || 0).toFixed(2)),
-          pe: parseFloat((m.trailingPE || 0).toFixed(2)),
-          marketCap: m.marketCap || 0,
-          longName: m.longName || m.shortName || symbol,
-          live: true
-        };
-      }
-    } catch {}
-  }
-  return null;
+  const res = await trySymbols(symbol, '/v8/finance/chart/{SYM}?interval=1d&range=1d');
+  if (!res?.data?.chart?.result) return null;
+  const r = res.data.chart.result[0];
+  const m = r.meta;
+  const price = m.regularMarketPrice || m.previousClose || 0;
+  const prev = m.previousClose || price;
+  const change = price - prev;
+  return {
+    symbol, price: +price.toFixed(2),
+    change: +change.toFixed(2),
+    changePct: prev > 0 ? +((change / prev) * 100).toFixed(2) : 0,
+    open: +(m.regularMarketOpen || price).toFixed(2),
+    high: +(m.regularMarketDayHigh || price).toFixed(2),
+    low: +(m.regularMarketDayLow || price).toFixed(2),
+    prevClose: +prev.toFixed(2),
+    volume: m.regularMarketVolume || 0,
+    w52High: +(m.fiftyTwoWeekHigh || price).toFixed(2),
+    w52Low: +(m.fiftyTwoWeekLow || 0).toFixed(2),
+    pe: +(m.trailingPE || 0).toFixed(2),
+    marketCap: m.marketCap || 0,
+    longName: m.longName || m.shortName || symbol,
+    exchange: m.exchangeName || 'NSE',
+    live: true
+  };
 }
 
+// ── FULL FINANCIALS via v10 quoteSummary ─────────────────────────
+async function getFinancials(symbol) {
+  const modules = [
+    'incomeStatementHistoryQuarterly',
+    'incomeStatementHistory',
+    'balanceSheetHistoryQuarterly',
+    'cashflowStatementHistory',
+    'defaultKeyStatistics',
+    'financialData',
+    'majorHoldersBreakdown',
+    'assetProfile',
+    'earningsHistory',
+    'summaryDetail'
+  ].join(',');
+
+  const res = await trySymbols(symbol, `/v10/finance/quoteSummary/{SYM}?modules=${modules}`);
+  if (!res?.data?.quoteSummary?.result) return null;
+
+  const d = res.data.quoteSummary.result[0];
+  const fmt = (v) => v?.raw ?? v?.fmt ?? null;
+  const fmtPct = (v) => v?.raw != null ? +(v.raw * 100).toFixed(1) : null;
+
+  // Quarterly results
+  const quarterlyIS = d.incomeStatementHistoryQuarterly?.incomeStatementHistory || [];
+  const quarterly = quarterlyIS.slice(0, 6).map(q => ({
+    period: q.endDate?.fmt || '',
+    revenue: fmt(q.totalRevenue),
+    profit: fmt(q.netIncome),
+    ebitda: fmt(q.ebitda),
+    eps: fmt(q.dilutedEps),
+    revenueStr: q.totalRevenue?.fmt || '—',
+    profitStr: q.netIncome?.fmt || '—',
+  }));
+
+  // Annual P&L
+  const annualIS = d.incomeStatementHistory?.incomeStatementHistory || [];
+  const annual = annualIS.map(y => ({
+    period: y.endDate?.fmt || '',
+    revenue: fmt(y.totalRevenue),
+    profit: fmt(y.netIncome),
+    grossProfit: fmt(y.grossProfit),
+    eps: fmt(y.dilutedEps),
+    revenueStr: y.totalRevenue?.fmt || '—',
+    profitStr: y.netIncome?.fmt || '—',
+  }));
+
+  // Balance sheet
+  const bsQ = d.balanceSheetHistoryQuarterly?.balanceSheetStatements || [];
+  const balanceSheet = bsQ.slice(0, 4).map(b => ({
+    period: b.endDate?.fmt || '',
+    totalAssets: fmt(b.totalAssets),
+    totalLiab: fmt(b.totalLiab),
+    stockholderEquity: fmt(b.totalStockholderEquity),
+    cash: fmt(b.cash),
+    totalDebt: fmt(b.shortLongTermDebt),
+    assetsStr: b.totalAssets?.fmt || '—',
+    equityStr: b.totalStockholderEquity?.fmt || '—',
+  }));
+
+  // Cash flow
+  const cfH = d.cashflowStatementHistory?.cashflowStatements || [];
+  const cashflow = cfH.slice(0, 4).map(c => ({
+    period: c.endDate?.fmt || '',
+    operatingCF: fmt(c.totalCashFromOperatingActivities),
+    capex: fmt(c.capitalExpenditures),
+    freeCF: c.totalCashFromOperatingActivities?.raw && c.capitalExpenditures?.raw
+      ? c.totalCashFromOperatingActivities.raw + c.capitalExpenditures.raw : null,
+    operatingStr: c.totalCashFromOperatingActivities?.fmt || '—',
+  }));
+
+  // Key stats and ratios
+  const ks = d.defaultKeyStatistics || {};
+  const fd = d.financialData || {};
+  const sd = d.summaryDetail || {};
+  const ratios = {
+    pe: fmt(sd.trailingPE) || fmt(ks.forwardPE),
+    pb: fmt(ks.priceToBook),
+    roe: fmtPct(fd.returnOnEquity),
+    roa: fmtPct(fd.returnOnAssets),
+    debtToEquity: fd.debtToEquity?.raw != null ? +(fd.debtToEquity.raw / 100).toFixed(2) : null,
+    currentRatio: fmt(fd.currentRatio),
+    grossMargin: fmtPct(fd.grossMargins),
+    operatingMargin: fmtPct(fd.operatingMargins),
+    profitMargin: fmtPct(fd.profitMargins),
+    revenueGrowth: fmtPct(fd.revenueGrowth),
+    earningsGrowth: fmtPct(fd.earningsGrowth),
+    dividendYield: fmtPct(sd.dividendYield),
+    beta: fmt(ks.beta),
+    eps: fmt(ks.trailingEps),
+    bookValue: fmt(ks.bookValue),
+    sharesOutstanding: fmt(ks.sharesOutstanding),
+  };
+
+  // Shareholding
+  const mh = d.majorHoldersBreakdown || {};
+  const shareholding = {
+    insider: fmtPct(mh.insidersPercentHeld),
+    institution: fmtPct(mh.institutionsPercentHeld),
+    public: mh.insidersPercentHeld?.raw && mh.institutionsPercentHeld?.raw
+      ? +(100 - mh.insidersPercentHeld.raw * 100 - mh.institutionsPercentHeld.raw * 100).toFixed(1) : null,
+  };
+
+  // Company profile
+  const ap = d.assetProfile || {};
+  const officers = (ap.companyOfficers || []).slice(0, 5).map(o => ({
+    name: o.name || '',
+    title: o.title || '',
+    age: o.age || null,
+  }));
+
+  // Earnings history with surprise
+  const eh = d.earningsHistory?.history || [];
+  const earningsHistory = eh.slice(0, 8).map(e => ({
+    period: e.period || '',
+    date: e.quarter?.fmt || '',
+    epsActual: fmt(e.epsActual),
+    epsEstimate: fmt(e.epsEstimate),
+    surprisePct: fmtPct(e.surprisePercent),
+  }));
+
+  return {
+    quarterly, annual, balanceSheet, cashflow,
+    ratios, shareholding, officers,
+    earningsHistory,
+    description: ap.longBusinessSummary || '',
+    sector: ap.sector || '',
+    industry: ap.industry || '',
+    website: ap.website || '',
+    employees: ap.fullTimeEmployees || null,
+    country: ap.country || 'India',
+    city: ap.city || '',
+    nseUrl: `https://www.nseindia.com/get-quotes/equity?symbol=${symbol}`,
+    live: true
+  };
+}
+
+// ── HISTORY ───────────────────────────────────────────────────────
 async function getHistory(symbol, range, interval) {
-  const syms = [`${symbol}.NS`, `${symbol}.BO`, symbol];
-  for (const s of syms) {
-    try {
-      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(s)}?interval=${interval}&range=${range}`;
-      const r = await httpsGet(url);
-      if (r.status === 200 && r.body?.chart?.result) {
-        const res = r.body.chart.result[0];
-        const timestamps = res.timestamp || [];
-        const closes = res.indicators?.quote?.[0]?.close || [];
-        const prices = timestamps.map((ts, i) => ({
-          date: new Date(ts * 1000).toISOString().split('T')[0],
-          close: closes[i] ? parseFloat(closes[i].toFixed(2)) : null
-        })).filter(p => p.close !== null);
-        if (prices.length > 0) return { prices, live: true };
-      }
-    } catch {}
-  }
-  return null;
+  const res = await trySymbols(symbol, `/v8/finance/chart/{SYM}?interval=${interval}&range=${range}`);
+  if (!res?.data?.chart?.result) return null;
+  const r = res.data.chart.result[0];
+  const timestamps = r.timestamp || [];
+  const closes = r.indicators?.quote?.[0]?.close || [];
+  const prices = timestamps.map((ts, i) => ({
+    date: new Date(ts * 1000).toISOString().split('T')[0],
+    close: closes[i] ? +closes[i].toFixed(2) : null
+  })).filter(p => p.close !== null);
+  return { prices, live: prices.length > 0 };
 }
 
+// ── INDICES ───────────────────────────────────────────────────────
 async function getIndices() {
   const INDEX_MAP = {
-    '^NSEI': 'NIFTY 50', '^BSESN': 'SENSEX', '^NSEBANK': 'NIFTY BANK',
-    '^CNXIT': 'NIFTY IT', '^CNXPHARMA': 'NIFTY PHARMA',
-    '^CNXAUTO': 'NIFTY AUTO', '^CNXFMCG': 'NIFTY FMCG', '^INDIAVIX': 'INDIA VIX'
+    '^NSEI': 'NIFTY 50', '^BSESN': 'SENSEX',
+    '^NSEBANK': 'NIFTY BANK', '^CNXIT': 'NIFTY IT',
+    '^CNXPHARMA': 'NIFTY PHARMA', '^CNXAUTO': 'NIFTY AUTO',
+    '^CNXFMCG': 'NIFTY FMCG', '^INDIAVIX': 'INDIA VIX'
   };
   const results = [];
   for (const [sym, name] of Object.entries(INDEX_MAP)) {
@@ -97,12 +241,14 @@ async function getIndices() {
         const m = r.body.chart.result[0].meta;
         const price = m.regularMarketPrice || 0;
         const prev = m.previousClose || price;
-        if (price > 0) results.push({
+        results.push({
           name, symbol: sym,
-          value: parseFloat(price.toFixed(2)),
-          change: parseFloat((price - prev).toFixed(2)),
-          changePct: parseFloat(((price - prev) / prev * 100).toFixed(2)),
-          prevClose: parseFloat(prev.toFixed(2))
+          value: +price.toFixed(2),
+          change: +(price - prev).toFixed(2),
+          changePct: prev > 0 ? +((price - prev) / prev * 100).toFixed(2) : 0,
+          prevClose: +prev.toFixed(2),
+          high: +(m.regularMarketDayHigh || price).toFixed(2),
+          low: +(m.regularMarketDayLow || price).toFixed(2),
         });
       }
     } catch {}
@@ -110,18 +256,19 @@ async function getIndices() {
   return { indices: results, live: results.length > 0 };
 }
 
+// ── COMMODITIES ───────────────────────────────────────────────────
 async function getCommodities() {
   const COMM = [
-    { sym: 'GC=F',  label: 'Gold',        icon: '🥇', unit: 'USD/oz',   impact: 'Safe haven — rises in uncertainty' },
-    { sym: 'SI=F',  label: 'Silver',       icon: '🥈', unit: 'USD/oz',   impact: 'Industrial + safe haven demand' },
-    { sym: 'CL=F',  label: 'Crude Oil',    icon: '🛢️', unit: 'USD/bbl',  impact: 'High = bad for aviation, paints, OMCs' },
-    { sym: 'NG=F',  label: 'Natural Gas',  icon: '🔥', unit: 'USD/MMBtu',impact: 'Affects power sector margins' },
-    { sym: 'HG=F',  label: 'Copper',       icon: '🔶', unit: 'USD/lb',   impact: 'Economic barometer — rises with growth' },
-    { sym: 'ALI=F', label: 'Aluminium',    icon: '🔩', unit: 'USD/MT',   impact: 'Auto and packaging sector input' },
-    { sym: 'ZC=F',  label: 'Corn',         icon: '🌽', unit: 'USc/bu',   impact: 'Agri commodity — FMCG input cost' },
-    { sym: 'ZW=F',  label: 'Wheat',        icon: '🌾', unit: 'USc/bu',   impact: 'Food inflation indicator' },
-    { sym: 'ZS=F',  label: 'Soybean',      icon: '🫘', unit: 'USc/bu',   impact: 'Edible oil prices — FMCG impact' },
-    { sym: 'CT=F',  label: 'Cotton',       icon: '☁️', unit: 'USc/lb',   impact: 'Textile sector input cost' },
+    { sym: 'GC=F',  label: 'Gold',       icon: '🥇', unit: 'USD/oz' },
+    { sym: 'SI=F',  label: 'Silver',      icon: '🥈', unit: 'USD/oz' },
+    { sym: 'CL=F',  label: 'Crude Oil',   icon: '🛢️', unit: 'USD/bbl' },
+    { sym: 'NG=F',  label: 'Natural Gas', icon: '🔥', unit: 'USD/MMBtu' },
+    { sym: 'HG=F',  label: 'Copper',      icon: '🔶', unit: 'USD/lb' },
+    { sym: 'ALI=F', label: 'Aluminium',   icon: '🔩', unit: 'USD/MT' },
+    { sym: 'ZC=F',  label: 'Corn',        icon: '🌽', unit: 'USc/bu' },
+    { sym: 'ZW=F',  label: 'Wheat',       icon: '🌾', unit: 'USc/bu' },
+    { sym: 'ZS=F',  label: 'Soybean',     icon: '🫘', unit: 'USc/bu' },
+    { sym: 'CT=F',  label: 'Cotton',      icon: '☁️', unit: 'USc/lb' },
   ];
   const results = [];
   for (const c of COMM) {
@@ -132,26 +279,24 @@ async function getCommodities() {
         const m = r.body.chart.result[0].meta;
         const price = m.regularMarketPrice || 0;
         const prev = m.previousClose || price;
-        if (price > 0) results.push({
-          ...c, price: parseFloat(price.toFixed(2)),
-          changePct: parseFloat(((price - prev) / prev * 100).toFixed(2))
-        });
+        results.push({ ...c, price: +price.toFixed(2), changePct: prev > 0 ? +((price - prev) / prev * 100).toFixed(2) : 0 });
       }
     } catch {}
   }
   return { commodities: results, live: results.length > 0 };
 }
 
+// ── FOREX ─────────────────────────────────────────────────────────
 async function getForex() {
   const PAIRS = [
-    { sym: 'INR=X',    label: 'USD/INR', flag: '🇺🇸', sub: 'US Dollar',       impact: 'IT exports gain when rupee weakens' },
-    { sym: 'AEDINR=X', label: 'AED/INR', flag: '🇦🇪', sub: 'UAE Dirham',      impact: 'Key for Indian expat remittances' },
-    { sym: 'EURINR=X', label: 'EUR/INR', flag: '🇪🇺', sub: 'Euro',            impact: 'European export competitiveness' },
-    { sym: 'GBPINR=X', label: 'GBP/INR', flag: '🇬🇧', sub: 'British Pound',   impact: 'UK trade and IT services' },
-    { sym: 'JPYINR=X', label: 'JPY/INR', flag: '🇯🇵', sub: 'Japanese Yen',    impact: 'Japanese FDI indicator' },
-    { sym: 'CNHINR=X', label: 'CNH/INR', flag: '🇨🇳', sub: 'Chinese Yuan',    impact: 'Trade competition with China' },
-    { sym: 'SARINR=X', label: 'SAR/INR', flag: '🇸🇦', sub: 'Saudi Riyal',     impact: 'Oil prices and Gulf remittances' },
-    { sym: 'SGDINR=X', label: 'SGD/INR', flag: '🇸🇬', sub: 'Singapore Dollar',impact: 'ASEAN investment flows' },
+    { sym: 'INR=X',    label: 'USD/INR', flag: '🇺🇸', sub: 'US Dollar' },
+    { sym: 'AEDINR=X', label: 'AED/INR', flag: '🇦🇪', sub: 'UAE Dirham' },
+    { sym: 'EURINR=X', label: 'EUR/INR', flag: '🇪🇺', sub: 'Euro' },
+    { sym: 'GBPINR=X', label: 'GBP/INR', flag: '🇬🇧', sub: 'British Pound' },
+    { sym: 'JPYINR=X', label: 'JPY/INR', flag: '🇯🇵', sub: 'Japanese Yen' },
+    { sym: 'CNHINR=X', label: 'CNH/INR', flag: '🇨🇳', sub: 'Chinese Yuan' },
+    { sym: 'SARINR=X', label: 'SAR/INR', flag: '🇸🇦', sub: 'Saudi Riyal' },
+    { sym: 'SGDINR=X', label: 'SGD/INR', flag: '🇸🇬', sub: 'Singapore Dollar' },
   ];
   const results = [];
   for (const p of PAIRS) {
@@ -162,16 +307,14 @@ async function getForex() {
         const m = r.body.chart.result[0].meta;
         const rate = m.regularMarketPrice || 0;
         const prev = m.previousClose || rate;
-        if (rate > 0) results.push({
-          ...p, rate: parseFloat(rate.toFixed(4)),
-          changePct: parseFloat(((rate - prev) / prev * 100).toFixed(2))
-        });
+        results.push({ ...p, rate: +rate.toFixed(4), changePct: prev > 0 ? +((rate - prev) / prev * 100).toFixed(2) : 0 });
       }
     } catch {}
   }
   return { forex: results, live: results.length > 0 };
 }
 
+// ── NEWS ──────────────────────────────────────────────────────────
 async function getNews(q) {
   try {
     const query = encodeURIComponent(q || 'India stock market NSE Nifty Sensex');
@@ -184,8 +327,9 @@ async function getNews(q) {
       while ((match = itemRegex.exec(r.body)) !== null && items.length < 20) {
         const content = match[1];
         const title = (content.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>/) || content.match(/<title>(.*?)<\/title>/))?.[1] || '';
-        const source = content.match(/<source[^>]*>(.*?)<\/source>/)?.[1] || 'News';
-        const pubDate = content.match(/<pubDate>(.*?)<\/pubDate>/)?.[1] || '';
+        const source = (content.match(/<source[^>]*>(.*?)<\/source>/))?.[1] || 'News';
+        const pubDate = (content.match(/<pubDate>(.*?)<\/pubDate>/))?.[1] || '';
+        const link = (content.match(/<link>(.*?)<\/link>/))?.[1] || '';
         if (title) {
           const tl = title.toLowerCase();
           const sentiment = tl.includes('fall')||tl.includes('drop')||tl.includes('crash')||tl.includes('loss')||tl.includes('decline') ? 'negative'
@@ -193,7 +337,7 @@ async function getNews(q) {
           const d = new Date(pubDate);
           const hrs = Math.round((new Date() - d) / 3600000);
           const timeAgo = hrs < 1 ? 'Just now' : hrs < 24 ? `${hrs}h ago` : `${Math.round(hrs/24)}d ago`;
-          items.push({ title: title.replace(/ - [^-]+$/, '').trim().slice(0, 120), source, sentiment, timeAgo });
+          items.push({ title: title.replace(/ - [^-]+$/, '').trim().slice(0, 120), source, sentiment, timeAgo, link });
         }
       }
       return { news: items, live: items.length > 0 };
@@ -202,20 +346,22 @@ async function getNews(q) {
   return { news: [], live: false };
 }
 
-// ── VERCEL HANDLER FORMAT ─────────────────────────────────────────
-module.exports = async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Content-Type', 'application/json');
-  res.setHeader('Cache-Control', 'no-cache');
-
-  const p = req.query || {};
+// ── MAIN HANDLER ──────────────────────────────────────────────────
+exports.handler = async (event) => {
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Content-Type': 'application/json',
+    'Cache-Control': 'no-cache'
+  };
+  const p = event.queryStringParameters || {};
   const action = p.action || 'quote';
 
   try {
     let result;
     if (action === 'quote') {
-      const q = await getQuote(p.symbol || 'TCS');
-      result = q || { live: false, error: 'No data', symbol: p.symbol };
+      result = await getQuote(p.symbol || 'TCS') || { live: false, error: 'No data' };
+    } else if (action === 'financials') {
+      result = await getFinancials(p.symbol || 'TCS') || { live: false, error: 'No data' };
     } else if (action === 'history') {
       result = await getHistory(p.symbol || 'TCS', p.range || '1y', p.interval || '1wk') || { live: false, prices: [] };
     } else if (action === 'indices') {
@@ -229,8 +375,8 @@ module.exports = async (req, res) => {
     } else {
       result = { error: 'Unknown action' };
     }
-    res.status(200).json(result);
+    return { statusCode: 200, headers, body: JSON.stringify(result) };
   } catch (e) {
-    res.status(200).json({ live: false, error: e.message });
+    return { statusCode: 200, headers, body: JSON.stringify({ live: false, error: e.message }) };
   }
 };
