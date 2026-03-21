@@ -1,63 +1,59 @@
-// 1. Identify your elements
-const searchInp = document.querySelector('.srch-inp');
-const searchDrop = document.querySelector('.srch-drop');
-
-// 2. SEARCH AS YOU TYPE
-searchInp.addEventListener('input', async (e) => {
-    const query = e.target.value;
-    if (query.length < 2) {
-        searchDrop.classList.remove('open');
-        return;
-    }
-
-    try {
-        // We use /api/market directly for Vercel
-        const res = await fetch(`/api/market?action=search&q=${encodeURIComponent(query)}`);
-        const data = await res.json();
-        
-        if (data.results && data.results.length > 0) {
-            searchDrop.innerHTML = data.results.map(s => `
-                <div class="sditem" onclick="window.selectStock('${s.symbol}')">
-                    <span class="sdname">${s.symbol}</span>
-                    <span class="sdsect">${s.name}</span>
-                </div>
-            `).join('');
-            searchDrop.classList.add('open');
-        }
-    } catch (err) {
-        console.error("Search failed:", err);
-    }
-});
-
-// 3. FETCH DATA (Attached to 'window' so the click works)
-window.selectStock = async function(symbol) {
-    searchDrop.classList.remove('open');
-    searchInp.value = symbol;
+// api/market.js
+export default async function handler(req, res) {
+    const { action, q, symbol } = req.query;
     
-    try {
-        const res = await fetch(`/api/market?action=quote&symbol=${symbol}`);
-        const stock = await res.json();
-        
-        if (stock && stock.price) {
-            // Update the UI elements you already have
-            const dhSym = document.querySelector('.dh-sym');
-            const dhName = document.querySelector('.dh-name');
-            const dhPrice = document.querySelector('.dh-mv'); 
-            
-            if(dhSym) dhSym.innerText = stock.symbol;
-            if(dhName) dhName.innerText = stock.longName;
-            if(dhPrice) dhPrice.innerText = "₹" + stock.price.toLocaleString('en-IN');
-        } else {
-            console.error("Stock data incomplete", stock);
-        }
-    } catch (err) {
-        console.error("Could not load live price:", err);
-    }
-};
+    // YOUR RAPIDAPI CONFIGURATION
+    const RAPID_KEY = '06c40cc462msh2a69c4bed748376p121936jsna8eb70935d62';
+    const RAPID_HOST = 'yh-finance.p.rapidapi.com'; 
 
-// Close dropdown if user clicks outside
-document.addEventListener('click', (e) => {
-    if (!searchInp.contains(e.target) && !searchDrop.contains(e.target)) {
-        searchDrop.classList.remove('open');
+    const headers = {
+        'x-rapidapi-key': RAPID_KEY,
+        'x-rapidapi-host': RAPID_HOST
+    };
+
+    try {
+        // --- ACTION: SEARCH (Autocomplete) ---
+        if (action === 'search') {
+            const response = await fetch(`https://${RAPID_HOST}/auto-complete?q=${q}&region=IN`, { headers });
+            const data = await response.json();
+            
+            // Filters only for STOCKS to keep the list clean
+            const results = (data.quotes || [])
+                .filter(item => item.quoteType === "EQUITY")
+                .map(item => ({
+                    symbol: item.symbol,
+                    name: item.shortname || item.longname || item.symbol
+                }));
+            
+            return res.status(200).json({ results });
+        }
+
+        // --- ACTION: QUOTE (Detailed Info + Educational Data) ---
+        if (action === 'quote') {
+            // We fetch "Summary" which includes Price, P/E, High/Low, and Market Cap
+            const response = await fetch(`https://${RAPID_HOST}/stock/v2/get-summary?symbol=${symbol}&region=IN`, { headers });
+            const data = await response.json();
+
+            if (!data.price) return res.status(404).json({ error: "Stock not found" });
+
+            // Standardizing the response for your Homepage/Research tabs
+            const cleanData = {
+                symbol: data.symbol,
+                longName: data.price.longName || data.symbol,
+                price: data.price.regularMarketPrice?.raw || 0,
+                changePercent: data.price.regularMarketChangePercent?.fmt || "0%",
+                high52: data.summaryDetail?.fiftyTwoWeekHigh?.fmt || "N/A",
+                low52: data.summaryDetail?.fiftyTwoWeekLow?.fmt || "N/A",
+                pe: data.summaryDetail?.trailingPE?.raw || null,
+                sector: data.summaryProfile?.sector || "General",
+                description: data.summaryProfile?.longBusinessSummary || ""
+            };
+            
+            return res.status(200).json(cleanData);
+        }
+
+    } catch (error) {
+        console.error("Backend Error:", error);
+        res.status(500).json({ error: "API Connection Failed" });
     }
-});
+}
