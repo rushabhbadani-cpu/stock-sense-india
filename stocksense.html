@@ -1,59 +1,64 @@
-<script>
-    const API = '/api/market';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StockSense India</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --b: #1a5fa8; --bg: #f7f6f2; --card: #fff; --text: #1a1a18; }
+        body { font-family: 'DM Sans', sans-serif; background: var(--bg); margin:0; }
+        .nav-top { background: var(--card); padding: 15px; text-align: center; border-bottom: 1px solid #ddd; color: var(--b); font-weight: bold; }
+        .container { padding: 20px; max-width: 500px; margin: 0 auto; }
+        input { width: 100%; padding: 15px; border-radius: 10px; border: 1px solid #ccc; box-sizing: border-box; }
+        .result-card { background: #fff; padding: 20px; border-radius: 15px; margin-top: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); display: none; }
+        .drop { background: #fff; border: 1px solid #ddd; border-radius: 10px; margin-top: 5px; max-height: 200px; overflow-y: auto; }
+        .drop-item { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="nav-top">STOCKSENSE INDIA</div>
+    <div class="container">
+        <input type="text" id="srch" placeholder="Search (e.g. Reliance, HDFC)..." oninput="doSearch(this.value)">
+        <div id="drop" class="drop"></div>
+        <div id="res" class="result-card"></div>
+    </div>
 
-    async function doSearch(q, dropId) {
-        const drop = document.getElementById(dropId);
-        if (q.length < 2) { drop.classList.remove('open'); return; }
-        try {
-            const res = await fetch(`${API}?action=search&q=${encodeURIComponent(q)}`);
+    <script>
+        async function doSearch(q) {
+            const d = document.getElementById('drop');
+            if (q.length < 2) { d.innerHTML = ''; return; }
+            const res = await fetch(`/api/market?action=search&q=${q}`);
             const data = await res.json();
-            if (data.results && data.results.length > 0) {
-                drop.innerHTML = data.results.map(s => `
-                    <div class="res-item" onclick="selectStock('${s.symbol}')">
-                        <b>${s.symbol}</b> <span>${s.name}</span>
-                    </div>
-                `).join('');
-                drop.classList.add('open');
+            d.innerHTML = (data.results || []).map(s => `
+                <div class="drop-item" onclick="loadStock('${s.symbol}')">
+                    <b>${s.symbol}</b> - ${s.shortname || ''}
+                </div>
+            `).join('');
+        }
+
+        async function loadStock(sym) {
+            document.getElementById('drop').innerHTML = '';
+            const card = document.getElementById('res');
+            card.style.display = 'block';
+            card.innerHTML = "Loading data for " + sym + "...";
+
+            try {
+                const res = await fetch(`/api/market?action=quote&symbol=${sym}`);
+                const s = await res.json();
+                card.innerHTML = `
+                    <h2 style="margin:0">${s.symbol}</h2>
+                    <p style="color:gray">${s.name}</p>
+                    <div style="font-size:24px; font-weight:bold; color:#1a5fa8">₹${s.price.toLocaleString('en-IN')}</div>
+                    <div style="color:${s.changePct >= 0 ? 'green' : 'red'}">${s.changePct.toFixed(2)}%</div>
+                    <hr>
+                    <p><b>52W High:</b> ₹${s.high52.toLocaleString('en-IN')}</p>
+                    <p><b>P/E Ratio:</b> ${s.pe || 'N/A'}</p>
+                `;
+            } catch (e) {
+                card.innerHTML = "Error fetching data. Please try again.";
             }
-        } catch (e) { console.error("Search failed", e); }
-    }
-
-    async function selectStock(sym) {
-        document.querySelectorAll('.drop').forEach(d => d.classList.remove('open'));
-        go('research');
-        const det = document.getElementById('details');
-        det.innerHTML = '<div class="card">Loading ' + sym + '...</div>';
-
-        try {
-            const res = await fetch(`${API}?action=quote&symbol=${encodeURIComponent(sym)}`);
-            const s = await res.json();
-
-            let score = 0;
-            if (s.pe > 0 && s.pe < 25) score += 40;
-            if (s.changePct > 0) score += 30;
-            if (s.price > (s.high52 * 0.8)) score += 30;
-
-            det.innerHTML = `
-                <div class="card">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px">
-                        <div><h1>${s.symbol}</h1><small>${s.name}</small></div>
-                        <div class="score">${score}</div>
-                    </div>
-                    <div style="font-size:24px; font-weight:700">₹${s.price.toLocaleString('en-IN')}</div>
-                    <div class="${s.changePct >= 0 ? 'green' : 'red'}">${s.changePct.toFixed(2)}%</div>
-                    <div style="margin-top:15px; font-size:13px; background:#f0f7ff; padding:10px; border-radius:8px;">
-                        <b>Insight:</b> This stock scored ${score}/100 based on your weighted criteria.
-                    </div>
-                </div>`;
-        } catch (e) { det.innerHTML = '<div class="card">Error loading data.</div>'; }
-    }
-
-    function go(id) {
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    }
-
-    document.getElementById('hSearch').oninput = (e) => doSearch(e.target.value, 'hDrop');
-    document.getElementById('rSearch').oninput = (e) => doSearch(e.target.value, 'rDrop');
-</script>
+        }
+    </script>
+</body>
+</html>
