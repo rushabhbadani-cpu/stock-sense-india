@@ -1,96 +1,152 @@
-<script>
-    const API_URL = '/api/market';
-
-    function setupSearch(inpId, dropId) {
-        const inp = document.getElementById(inpId);
-        const drop = document.getElementById(dropId);
-        let timer;
-
-        inp.addEventListener('input', () => {
-            clearTimeout(timer);
-            const q = inp.value.trim();
-            if (q.length < 2) return drop.classList.remove('open');
-
-            timer = setTimeout(async () => {
-                try {
-                    const res = await fetch(`${API_URL}?action=search&q=${encodeURIComponent(q)}`);
-                    const data = await res.json();
-                    if (data.results) {
-                        drop.innerHTML = data.results.map(s => `
-                            <div class="sditem" onclick="handleSelect('${s.symbol}', '${inpId}', '${dropId}')">
-                                <b>${s.symbol}</b>
-                                <span style="font-size:11px;color:var(--muted)">${s.name}</span>
-                            </div>
-                        `).join('');
-                        drop.classList.add('open');
-                    }
-                } catch (e) { console.error("Search error:", e); }
-            }, 400);
-        });
-    }
-
-    async function handleSelect(sym, inpId, dropId) {
-        document.getElementById(dropId).classList.remove('open');
-        document.getElementById(inpId).value = sym;
-        showPage('research'); // Switch to research tab
-        loadStock(sym);
-    }
-
-    async function loadStock(sym) {
-        const rCard = document.querySelector('.rcard');
-        rCard.style.display = 'block';
-        rCard.innerHTML = `<div style="padding:40px;text-align:center;">🔍 Analyzing ${sym}...</div>`;
-
-        try {
-            const res = await fetch(`${API_URL}?action=quote&symbol=${encodeURIComponent(sym)}`);
-            const s = await res.json();
-
-            if (s.error) throw new Error(s.error);
-
-            // Calculation Logic
-            let score = 0;
-            if (s.pe > 0 && s.pe < 30) score += 40; 
-            if (s.changePct > 0) score += 30;
-            if (s.price > (s.high52 * 0.75)) score += 30;
-
-            rCard.innerHTML = `
-                <div class="rhead">
-                    <div>
-                        <div class="rsym">${s.symbol}</div>
-                        <div class="rname">${s.name}</div>
-                    </div>
-                    <div class="ring ${score > 60 ? 'rg' : 'ra'}">
-                        <div class="rn">${score}</div>
-                        <div class="rd">SCORE</div>
-                    </div>
-                </div>
-                <div class="pstrip">
-                    <div class="pc"><div class="plbl">PRICE</div><div class="pval">₹${s.price.toLocaleString('en-IN')}</div></div>
-                    <div class="pc"><div class="plbl">CHG%</div><div class="pval ${s.changePct >= 0 ? 'up' : 'dn'}">${s.changePct.toFixed(2)}%</div></div>
-                    <div class="pc"><div class="plbl">52W HIGH</div><div class="pval">₹${s.high52.toLocaleString('en-IN')}</div></div>
-                    <div class="pc"><div class="plbl">P/E RATIO</div><div class="pval">${s.pe ? s.pe.toFixed(1) : 'N/A'}</div></div>
-                </div>
-                <div class="edu-box">
-                    <strong>Smart Insight:</strong> This stock has a score of ${score}/100. 
-                    ${score > 70 ? 'Strong fundamentals detected.' : 'Suggested for further peer comparison.'}
-                </div>
-            `;
-        } catch (e) {
-            rCard.innerHTML = `<div style="padding:40px;text-align:center;color:red;">⚠️ Data Unavailable for ${sym}. Try another stock.</div>`;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>StockSense India — Live Market Learning</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --b: #1a5fa8; --bg: #f7f6f2; --card: #ffffff; --text: #1a1a18;
+            --muted: #6b6b65; --border: #e4e2db; --g: #1a7c4a; --r: #c0392b;
         }
-    }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'DM Sans', sans-serif; }
+        body { background: var(--bg); color: var(--text); padding-bottom: 80px; }
+        
+        /* Header & Pages */
+        header { background: var(--card); padding: 20px; border-bottom: 1px solid var(--border); text-align: center; }
+        .page { display: none; padding: 16px; max-width: 500px; margin: 0 auto; }
+        .page.active { display: block; }
 
-    function showPage(p) {
-        document.querySelectorAll('.page').forEach(pg => pg.classList.remove('act'));
-        document.getElementById(p + 'Page').classList.add('act');
-        const navItems = document.querySelectorAll('.nitem');
-        navItems.forEach(ni => ni.classList.remove('on'));
-        if(p === 'home') navItems[0].classList.add('on');
-        if(p === 'research') navItems[1].classList.add('on');
-    }
+        /* Search Styles */
+        .search-container { position: relative; margin-bottom: 20px; }
+        input { width: 100%; padding: 15px; border-radius: 12px; border: 1px solid var(--border); outline: none; font-size: 16px; }
+        .dropdown { position: absolute; top: 100%; left: 0; right: 0; background: var(--card); border: 1px solid var(--border); border-radius: 12px; max-height: 250px; overflow-y: auto; display: none; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .dropdown.open { display: block; }
+        .item { padding: 12px; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; justify-content: space-between; }
+        .item:hover { background: #f0f0f0; }
 
-    document.addEventListener('DOMContentLoaded', () => {
-        setupSearch('homeSearch', 'homeDrop');
-        setupSearch('resSearch', 'resDrop');
-    });
-</script>
+        /* Result Card */
+        .card { background: var(--card); border-radius: 16px; padding: 20px; border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .row { display: flex; justify-content: space-between; margin-bottom: 15px; }
+        .price { font-size: 28px; font-weight: 700; color: var(--b); }
+        .score-circle { width: 70px; height: 70px; border-radius: 50%; border: 5px solid var(--b); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 20px; }
+        .label { font-size: 12px; color: var(--muted); text-transform: uppercase; }
+        .val { font-size: 16px; font-weight: 500; }
+        .green { color: var(--g); } .red { color: var(--r); }
+        
+        /* Footer Nav */
+        nav { position: fixed; bottom: 0; width: 100%; background: var(--card); display: flex; border-top: 1px solid var(--border); }
+        .n-btn { flex: 1; padding: 15px; text-align: center; cursor: pointer; color: var(--muted); font-size: 12px; }
+        .n-btn.active { color: var(--b); font-weight: 700; }
+    </style>
+</head>
+<body>
+
+    <header><h3>StockSense India</h3></header>
+
+    <div id="home" class="page active">
+        <h2 style="margin-bottom:15px">Market Discovery</h2>
+        <div class="search-container">
+            <input type="text" id="hSearch" placeholder="Search Company (e.g. Tata)">
+            <div id="hDrop" class="dropdown"></div>
+        </div>
+        <div class="card">
+            <p style="color:var(--muted)">Search for a stock to see the live <b>Learning Scorecard</b>. This app helps you understand fundamentals through automated analysis.</p>
+        </div>
+    </div>
+
+    <div id="research" class="page">
+        <div class="search-container">
+            <input type="text" id="rSearch" placeholder="Change symbol...">
+            <div id="rDrop" class="dropdown"></div>
+        </div>
+        <div id="resultArea">
+            <div class="card" style="text-align:center; color:var(--muted)">Select a stock to view details</div>
+        </div>
+    </div>
+
+    <nav>
+        <div class="n-btn active" onclick="nav('home')">🏠<br>Home</div>
+        <div class="n-btn" onclick="nav('research')">🔍<br>Research</div>
+    </nav>
+
+    <script>
+        const API = '/api/market';
+
+        function setupSearch(inpId, dropId) {
+            const inp = document.getElementById(inpId);
+            const drop = document.getElementById(dropId);
+            let timer;
+
+            inp.addEventListener('input', () => {
+                clearTimeout(timer);
+                if (inp.value.length < 2) return drop.classList.remove('open');
+                timer = setTimeout(async () => {
+                    const res = await fetch(`${API}?action=search&q=${inp.value}`);
+                    const data = await res.json();
+                    drop.innerHTML = data.results.map(s => `
+                        <div class="item" onclick="select('${s.symbol}')">
+                            <span><b>${s.symbol}</b></span>
+                            <span style="font-size:10px">${s.name.slice(0,20)}</span>
+                        </div>
+                    `).join('');
+                    drop.classList.add('open');
+                }, 400);
+            });
+        }
+
+        async function select(sym) {
+            document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('open'));
+            nav('research');
+            const area = document.getElementById('resultArea');
+            area.innerHTML = `<div class="card">Loading ${sym}...</div>`;
+
+            try {
+                const res = await fetch(`${API}?action=quote&symbol=${sym}`);
+                const s = await res.json();
+
+                let score = 0;
+                if (s.pe > 0 && s.pe < 25) score += 40;
+                if (s.changePct > 0) score += 30;
+                if (s.price > (s.high52 * 0.8)) score += 30;
+
+                area.innerHTML = `
+                    <div class="card">
+                        <div class="row">
+                            <div>
+                                <h1 style="font-size:32px">${s.symbol}</h1>
+                                <p style="color:var(--muted)">${s.name}</p>
+                            </div>
+                            <div class="score-circle" style="border-color:${score > 60 ? '#1a7c4a' : '#d4870a'}">${score}</div>
+                        </div>
+                        <div class="price">₹${s.price.toLocaleString('en-IN')}</div>
+                        <p class="${s.changePct >= 0 ? 'green' : 'red'}" style="margin-bottom:20px">
+                            ${s.changePct >= 0 ? '▲' : '▼'} ${s.changePct.toFixed(2)}%
+                        </p>
+                        <div class="row">
+                            <div><div class="label">52W High</div><div class="val">₹${s.high52.toLocaleString('en-IN')}</div></div>
+                            <div><div class="label">P/E Ratio</div><div class="val">${s.pe || 'N/A'}</div></div>
+                        </div>
+                        <div style="margin-top:20px; padding:12px; background:#f0f7ff; border-radius:8px; font-size:13px">
+                            <b>Educational Insight:</b> ${score > 70 ? 'High Score: Strong momentum and valuation.' : 'Moderate Score: Evaluate sector peers for comparison.'}
+                        </div>
+                    </div>
+                `;
+            } catch (e) {
+                area.innerHTML = `<div class="card" style="color:red">Error loading ${sym}. Try again.</div>`;
+            }
+        }
+
+        function nav(id) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            document.querySelectorAll('.n-btn').forEach(b => b.classList.remove('active'));
+            event?.currentTarget?.classList?.add('active');
+        }
+
+        setupSearch('hSearch', 'hDrop');
+        setupSearch('rSearch', 'rDrop');
+    </script>
+</body>
+</html>
