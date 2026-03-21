@@ -2120,7 +2120,23 @@ ${top5.map((r, i) => `${i+1}. ${r.sym}: ${r.dhScore.toFixed(1)} pts — pos:${r.
   if (firstMv) firstMv.style.color = up ? '#4ade80' : '#f87171';
 }
 
-// ── HOME — TOP MOVERS (live) ──────────────────────────────────────
+// ── HOME — TOP MOVERS + HEATMAP (live) ───────────────────────────
+// HEATMAP_SYMS: one representative stock per sector for the heatmap tiles
+const HEATMAP_SYMS = [
+  { name:'IT',       sym:'INFY'      },
+  { name:'Banking',  sym:'HDFCBANK'  },
+  { name:'Pharma',   sym:'SUNPHARMA' },
+  { name:'Auto',     sym:'MARUTI'    },
+  { name:'FMCG',     sym:'ITC'       },
+  { name:'Energy',   sym:'RELIANCE'  },
+  { name:'Infra',    sym:'LT'        },
+  { name:'Defence',  sym:'HAL'       },
+  { name:'EMS',      sym:'DIXON'     },
+  { name:'Metals',   sym:'TATASTEEL' },
+  { name:'Power',    sym:'NTPC'      },
+  { name:'Telecom',  sym:'BHARTIARTL'},
+];
+
 // Must include ALL HEATMAP_SYMS so heatmap always gets populated
 const MOVER_SYMS = [
   // All 12 heatmap stocks (required)
