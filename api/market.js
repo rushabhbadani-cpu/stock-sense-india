@@ -1,67 +1,69 @@
-// StockSense India — Market Proxy v12.0
-// Key changes:
-// 1. Dark Horse uses NSE indices API to scan ALL Nifty500 stocks, not a hardcoded list
-// 2. Uses 10d range to ensure weekend % change is always computed correctly
+// StockSense India — Market API v13.0 (clean rewrite)
+// KEY ARCHITECTURE: Yahoo /v7/finance/quote bulk endpoint
+// One HTTP call returns all 50 stocks — no per-stock loops, no timeouts
 // Place at: /api/market.js
 
-// ── YAHOO SESSION ─────────────────────────────────────────────────
+// ── SESSION ───────────────────────────────────────────────────────
 async function getSession() {
   try {
     const r1 = await fetch('https://fc.yahoo.com', {
       headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
-      signal: AbortSignal.timeout(6000), redirect: 'follow',
+      signal: AbortSignal.timeout(6000),
+      redirect: 'follow',
     });
     const rawCookie = r1.headers.get('set-cookie') || '';
     const cookie = rawCookie.split(',').map(c => c.trim().split(';')[0]).filter(c => c.includes('=')).join('; ');
     const r2 = await fetch('https://query2.finance.yahoo.com/v1/test/getcrumb', {
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Cookie': cookie },
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Cookie': cookie,
+      },
       signal: AbortSignal.timeout(6000),
     });
     const crumb = (await r2.text()).trim();
     if (!crumb || crumb.includes('<') || crumb.length < 3) return null;
-    console.log(`Session OK crumb=${crumb.substring(0, 8)}`);
+    console.log('Session OK crumb=' + crumb.substring(0, 8));
     return { cookie, crumb };
-  } catch (e) { console.error('getSession:', e.message); return null; }
+  } catch (e) {
+    console.error('getSession:', e.message);
+    return null;
+  }
 }
 
-// ── YAHOO FETCH ───────────────────────────────────────────────────
-// Uses 10d range by default — ensures 2+ trading days even on weekends
-async function yahooFetch(sym, session, range = '10d', interval = '1d') {
-  const crumbParam = session?.crumb ? `&crumb=${encodeURIComponent(session.crumb)}` : '';
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?interval=${interval}&range=${range}${crumbParam}`;
+// ── YAHOO CHART (single symbol, used for quote/history/indices) ───
+async function yahooFetch(sym, session, range, interval) {
+  range    = range    || '10d';
+  interval = interval || '1d';
+  const crumbParam = session && session.crumb ? '&crumb=' + encodeURIComponent(session.crumb) : '';
+  const url = 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(sym) + '?interval=' + interval + '&range=' + range + crumbParam;
   const res = await fetch(url, {
     headers: {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      'Accept': 'application/json', 'Cookie': session?.cookie || '',
+      'Accept': 'application/json',
+      'Cookie': session && session.cookie ? session.cookie : '',
     },
     signal: AbortSignal.timeout(8000),
   });
-  if (!res.ok) { console.error(`Yahoo ${sym} HTTP ${res.status}`); return null; }
+  if (!res.ok) { console.error('Chart ' + sym + ' HTTP ' + res.status); return null; }
   const json = await res.json();
-  if (json?.chart?.error?.code === 'Unauthorized') { console.error(`Yahoo ${sym} Unauthorized`); return null; }
+  if (json && json.chart && json.chart.error && json.chart.error.code === 'Unauthorized') return null;
   return json;
 }
 
-// ── EXTRACT QUOTE — price + real daily change from last 2 closes ──
+// ── EXTRACT QUOTE from chart data ────────────────────────────────
 function extractQuote(data, symbol) {
-  const result = data?.chart?.result?.[0];
+  var result = data && data.chart && data.chart.result && data.chart.result[0];
   if (!result) return null;
-  const m      = result.meta;
-  const closes = (result.indicators?.quote?.[0]?.close || []).filter(c => c != null && c > 0);
-  // Current price: use regularMarketPrice (live during session), else last close
-  const price  = m.regularMarketPrice > 0 ? m.regularMarketPrice
-               : closes.length > 0 ? closes[closes.length - 1]
-               : m.previousClose || 0;
+  var m      = result.meta;
+  var closes = (result.indicators && result.indicators.quote && result.indicators.quote[0] && result.indicators.quote[0].close || []).filter(function(c){ return c != null && c > 0; });
+  var price  = m.regularMarketPrice > 0 ? m.regularMarketPrice : closes.length > 0 ? closes[closes.length - 1] : m.previousClose || 0;
   if (price <= 0) return null;
-  // Previous close = second-to-last in 10d data (always available even on weekends)
-  const prev = closes.length >= 2 ? closes[closes.length - 2]
-             : m.previousClose > 0 ? m.previousClose
-             : price;
-  const changePct = prev > 0 ? +((price - prev) / prev * 100).toFixed(2) : 0;
-  console.log(`  ${symbol}: ₹${price.toFixed(0)} ${changePct >= 0 ? '+' : ''}${changePct}%`);
+  var prev   = closes.length >= 2 ? closes[closes.length - 2] : m.previousClose > 0 ? m.previousClose : price;
   return {
-    symbol, price: +price.toFixed(2),
-    change: +(price - prev).toFixed(2), changePct,
+    symbol:    symbol,
+    price:     +price.toFixed(2),
+    change:    +(price - prev).toFixed(2),
+    changePct: prev > 0 ? +((price - prev) / prev * 100).toFixed(2) : 0,
     open:      +(m.regularMarketOpen    || price).toFixed(2),
     high:      +(m.regularMarketDayHigh || price).toFixed(2),
     low:       +(m.regularMarketDayLow  || price).toFixed(2),
@@ -73,114 +75,162 @@ function extractQuote(data, symbol) {
     marketCap: m.marketCap || 0,
     longName:  m.longName  || m.shortName || symbol,
     currency:  m.currency  || 'INR',
-    live: true,
+    live:      true,
   };
 }
 
-// ── SINGLE QUOTE ──────────────────────────────────────────────────
+// ── SINGLE QUOTE — uses v7 bulk for accurate real-time price ─────
 async function getQuote(symbol, session) {
-  for (const sym of [`${symbol}.NS`, `${symbol}.BO`, symbol]) {
+  // Try v7 bulk first (real-time price, correct weekend %)
+  var bulkSym = symbol.replace(/&/g, '%26'); // handle M&M etc
+  var quotes  = await getBulkQuotes([bulkSym], session);
+  if (quotes[bulkSym] && quotes[bulkSym].price > 0) {
+    console.log('Quote v7 ' + symbol + ': Rs.' + quotes[bulkSym].price + ' ' + (quotes[bulkSym].changePct >= 0 ? '+' : '') + quotes[bulkSym].changePct + '%');
+    return Object.assign({}, quotes[bulkSym], { symbol: symbol });
+  }
+  // Fallback to chart endpoint
+  var syms = [symbol + '.NS', symbol + '.BO', symbol];
+  for (var i = 0; i < syms.length; i++) {
     try {
-      const data   = await yahooFetch(sym, session);
-      const result = extractQuote(data, symbol);
-      if (result) return { ...result, source: sym };
-    } catch (e) { console.error(`Quote ${sym}:`, e.message); }
+      var data = await yahooFetch(syms[i], session);
+      var r    = extractQuote(data, symbol);
+      if (r) { console.log('Quote chart ' + syms[i] + ': Rs.' + r.price); return Object.assign({}, r, { source: syms[i] }); }
+    } catch(e) { console.error('Quote ' + syms[i] + ':', e.message); }
   }
   return null;
 }
 
-// ── BATCH QUOTES — all symbols in ONE handler call ────────────────
-async function getBatchQuotes(symbolsStr, session) {
-  const symbols = symbolsStr.split(',').map(s => s.trim().toUpperCase()).filter(Boolean).slice(0, 60);
-  console.log(`Batch: ${symbols.length} symbols`);
-  const results = await Promise.allSettled(
-    symbols.map(async (symbol) => {
-      for (const sym of [`${symbol}.NS`, `${symbol}.BO`, symbol]) {
-        try {
-          const data = await yahooFetch(sym, session);
-          const r    = extractQuote(data, symbol);
-          if (r) return { ...r, source: sym };
-        } catch {}
-      }
-      return null;
-    })
-  );
-  const quotes = {};
-  results.forEach((r, i) => {
-    const q = r.status === 'fulfilled' ? r.value : null;
-    if (q) quotes[symbols[i]] = q;
-  });
-  console.log(`Batch complete: ${Object.keys(quotes).length}/${symbols.length}`);
-  return { quotes, loaded: Object.keys(quotes).length, total: symbols.length, live: true };
+// ── BULK QUOTE — Yahoo v7 returns ALL symbols in ONE HTTP request ─
+// This is the key fix. Instead of 50 separate requests that timeout,
+// we send ONE request and Yahoo returns all 50 results together.
+async function getBulkQuotes(symbols, session) {
+  var crumbParam = session && session.crumb ? '&crumb=' + encodeURIComponent(session.crumb) : '';
+  var symStr     = symbols.map(function(s){ return s + '.NS'; }).join(',');
+  var fields     = 'regularMarketPrice,regularMarketChangePercent,regularMarketChange,regularMarketPreviousClose,regularMarketVolume,fiftyTwoWeekHigh,fiftyTwoWeekLow,trailingPE,marketCap,shortName,longName';
+  // Do NOT encode symStr — Yahoo expects raw commas between symbols
+  var url        = 'https://query1.finance.yahoo.com/v7/finance/quote?symbols=' + symStr + '&fields=' + fields + crumbParam;
+
+  try {
+    var res = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Accept': 'application/json',
+        'Cookie': session && session.cookie ? session.cookie : '',
+      },
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!res.ok) { console.error('Bulk quote HTTP ' + res.status); return {}; }
+
+    var json      = await res.json();
+    var quoteList = json && json.quoteResponse && json.quoteResponse.result || [];
+    var quotes    = {};
+
+    quoteList.forEach(function(q) {
+      var price = q.regularMarketPrice || 0;
+      if (price <= 0) return;
+      var sym  = (q.symbol || '').replace(/\.(NS|BO)$/, '');
+      var prev = q.regularMarketPreviousClose || price;
+      var changePct = q.regularMarketChangePercent != null
+        ? +q.regularMarketChangePercent.toFixed(2)
+        : prev > 0 ? +((price - prev) / prev * 100).toFixed(2) : 0;
+      quotes[sym] = {
+        symbol: sym, price: +price.toFixed(2),
+        change:    +(price - prev).toFixed(2),
+        changePct: changePct,
+        prevClose: +prev.toFixed(2),
+        volume:    q.regularMarketVolume || 0,
+        w52High:   +(q.fiftyTwoWeekHigh  || price).toFixed(2),
+        w52Low:    +(q.fiftyTwoWeekLow   || 0).toFixed(2),
+        pe:        +(q.trailingPE        || 0).toFixed(2),
+        marketCap: q.marketCap || 0,
+        longName:  q.longName  || q.shortName || sym,
+        live:      true,
+      };
+    });
+
+    console.log('Bulk quote: ' + Object.keys(quotes).length + '/' + symbols.length + ' returned');
+    return quotes;
+  } catch(e) {
+    console.error('Bulk quote error:', e.message);
+    return {};
+  }
 }
 
-// ── HISTORY (with volume) ─────────────────────────────────────────
+// ── BATCH (used by ?action=batch) ────────────────────────────────
+async function getBatchQuotes(symbolsStr, session) {
+  var symbols = symbolsStr.split(',').map(function(s){ return s.trim().toUpperCase(); }).filter(Boolean).slice(0, 60);
+  console.log('Batch: ' + symbols.length + ' symbols via bulk endpoint');
+  var quotes  = await getBulkQuotes(symbols, session);
+  var loaded  = Object.keys(quotes).length;
+  console.log('Batch done: ' + loaded + '/' + symbols.length);
+  return { quotes: quotes, loaded: loaded, total: symbols.length, live: loaded > 0 };
+}
+
+// ── MARKET SCAN — Nifty 50 via single bulk request ───────────────
+async function getMarketScan(session) {
+  var NIFTY50 = [
+    'RELIANCE','TCS','HDFCBANK','BHARTIARTL','ICICIBANK','SBIN','INFY','HINDUNILVR','ITC','KOTAKBANK',
+    'LT','AXISBANK','BAJFINANCE','MARUTI','NTPC','HCLTECH','SUNPHARMA','POWERGRID','WIPRO','ULTRACEMCO',
+    'ADANIPORTS','NESTLEIND','TITAN','TATAMOTORS','ONGC','BAJAJFINSV','MM','JSWSTEEL','TATASTEEL','COALINDIA',
+    'GRASIM','CIPLA','DIVISLAB','BPCL','INDUSINDBK','TATACONSUM','DRREDDY','APOLLOHOSP','ASIANPAINT','EICHERMOT',
+    'HDFCLIFE','SBILIFE','TECHM','HEROMOTOCO','BRITANNIA','HINDALCO','ADANIENT','BAJAJ-AUTO','VEDL','UPL',
+  ];
+  console.log('Market scan: ' + NIFTY50.length + ' stocks — single bulk request');
+  var quotes = await getBulkQuotes(NIFTY50, session);
+  var loaded = Object.keys(quotes).length;
+  console.log('Market scan done: ' + loaded + '/' + NIFTY50.length);
+  return { quotes: quotes, loaded: loaded, total: NIFTY50.length, scanned: NIFTY50.length, live: loaded > 0 };
+}
+
+// ── HISTORY ───────────────────────────────────────────────────────
 async function getHistory(symbol, range, interval, session) {
-  for (const sym of [`${symbol}.NS`, `${symbol}.BO`, symbol]) {
+  var syms = [symbol + '.NS', symbol + '.BO', symbol];
+  for (var i = 0; i < syms.length; i++) {
     try {
-      const data = await yahooFetch(sym, session, range, interval);
-      const r    = data?.chart?.result?.[0];
+      var data = await yahooFetch(syms[i], session, range, interval);
+      var r    = data && data.chart && data.chart.result && data.chart.result[0];
       if (!r) continue;
-      const ts  = r.timestamp || [];
-      const cl  = r.indicators?.quote?.[0]?.close  || [];
-      const vol = r.indicators?.quote?.[0]?.volume || [];
-      const prices = ts
-        .map((t, i) => ({ date: new Date(t * 1000).toISOString().split('T')[0], close: cl[i] ? +cl[i].toFixed(2) : null, volume: vol[i] || 0 }))
-        .filter(p => p.close !== null);
-      if (prices.length) return { prices, live: true, symbol: sym };
-    } catch (e) { console.error(`History ${sym}:`, e.message); }
+      var ts   = r.timestamp || [];
+      var cl   = r.indicators && r.indicators.quote && r.indicators.quote[0] && r.indicators.quote[0].close || [];
+      var vol  = r.indicators && r.indicators.quote && r.indicators.quote[0] && r.indicators.quote[0].volume || [];
+      var prices = ts.map(function(t, idx) {
+        return { date: new Date(t * 1000).toISOString().split('T')[0], close: cl[idx] ? +cl[idx].toFixed(2) : null, volume: vol[idx] || 0 };
+      }).filter(function(p){ return p.close !== null; });
+      if (prices.length) return { prices: prices, live: true, symbol: syms[i] };
+    } catch(e) { console.error('History ' + syms[i] + ':', e.message); }
   }
   return { prices: [], live: false };
 }
 
 // ── INDICES ───────────────────────────────────────────────────────
 async function getIndices(session) {
-  const MAP = {
-    '^NSEI':'NIFTY 50', '^BSESN':'SENSEX', '^NSEBANK':'NIFTY BANK',
-    '^CNXIT':'NIFTY IT', '^CNXPHARMA':'NIFTY PHARMA',
-    '^CNXAUTO':'NIFTY AUTO', '^CNXFMCG':'NIFTY FMCG', '^INDIAVIX':'INDIA VIX',
-  };
-  const results = await Promise.all(
-    Object.entries(MAP).map(async ([sym, name]) => {
-      try {
-        const data   = await yahooFetch(sym, session);
-        const result = data?.chart?.result?.[0];
-        if (!result) return null;
-        const m      = result.meta;
-        const price  = m.regularMarketPrice || 0;
-        if (price <= 0) return null;
-        const closes = (result.indicators?.quote?.[0]?.close || []).filter(c => c != null && c > 0);
-        const prev   = closes.length >= 2 ? closes[closes.length - 2] : (m.previousClose || price);
-        return { name, symbol: sym, value: +price.toFixed(2), change: +(price-prev).toFixed(2), changePct: +((price-prev)/prev*100).toFixed(2), prevClose: +prev.toFixed(2) };
-      } catch (e) { console.error(`Index ${sym}:`, e.message); return null; }
-    })
-  );
-  const indices = results.filter(Boolean);
-  console.log(`Indices: ${indices.length}/8`);
-  return { indices, live: indices.length > 0 };
-}
-
-// ── MARKET SCAN — Nifty 50 + Nifty Next 50 (100 real stocks) ─────
-// Used by Dark Horse instead of a hardcoded 15-stock list
-async function getMarketScan(session) {
-  // Nifty 50 — official NSE index stocks, fetched in parallel
-  // 50 stocks is the sweet spot: comprehensive enough to find a real dark horse,
-  // fast enough to complete within Vercel's execution limit
-  const NIFTY50 = [
-    'RELIANCE','TCS','HDFCBANK','BHARTIARTL','ICICIBANK','SBIN','INFY','HINDUNILVR','ITC','KOTAKBANK',
-    'LT','AXISBANK','BAJFINANCE','MARUTI','NTPC','HCLTECH','SUNPHARMA','POWERGRID','WIPRO','ULTRACEMCO',
-    'ADANIPORTS','NESTLEIND','TITAN','TATAMOTORS','ONGC','BAJAJFINSV','M&M','JSWSTEEL','TATASTEEL','COALINDIA',
-    'GRASIM','CIPLA','DIVISLAB','BPCL','INDUSINDBK','TATACONSUM','DRREDDY','APOLLOHOSP','ASIANPAINT','EICHERMOT',
-    'HDFCLIFE','SBILIFE','TECHM','HEROMOTOCO','BRITANNIA','HINDALCO','ADANIENT','BAJAJ-AUTO','VEDL','UPL',
+  var MAP = [
+    ['^NSEI','NIFTY 50'],['^BSESN','SENSEX'],['^NSEBANK','NIFTY BANK'],
+    ['^CNXIT','NIFTY IT'],['^CNXPHARMA','NIFTY PHARMA'],
+    ['^CNXAUTO','NIFTY AUTO'],['^CNXFMCG','NIFTY FMCG'],['^INDIAVIX','INDIA VIX'],
   ];
-  console.log(`Market scan: fetching ${NIFTY50.length} Nifty50 stocks`);
-  const result = await getBatchQuotes(NIFTY50.join(','), session);
-  return { ...result, scanned: NIFTY50.length };
+  var results = await Promise.all(MAP.map(async function(entry) {
+    var sym = entry[0], name = entry[1];
+    try {
+      var data   = await yahooFetch(sym, session);
+      var result = data && data.chart && data.chart.result && data.chart.result[0];
+      if (!result) return null;
+      var m      = result.meta;
+      var price  = m.regularMarketPrice || 0;
+      if (price <= 0) return null;
+      var closes = (result.indicators && result.indicators.quote && result.indicators.quote[0] && result.indicators.quote[0].close || []).filter(function(c){ return c != null && c > 0; });
+      var prev   = closes.length >= 2 ? closes[closes.length - 2] : (m.previousClose || price);
+      return { name: name, symbol: sym, value: +price.toFixed(2), change: +(price-prev).toFixed(2), changePct: +((price-prev)/prev*100).toFixed(2), prevClose: +prev.toFixed(2) };
+    } catch(e) { console.error('Index ' + sym + ':', e.message); return null; }
+  }));
+  var indices = results.filter(Boolean);
+  console.log('Indices: ' + indices.length + '/8');
+  return { indices: indices, live: indices.length > 0 };
 }
 
 // ── COMMODITIES ───────────────────────────────────────────────────
 async function getCommodities(session) {
-  const COMM = [
+  var COMM = [
     { sym:'GC=F',  label:'Gold',      icon:'🥇', unit:'USD/oz',    impact:'Safe haven — rises in uncertainty' },
     { sym:'SI=F',  label:'Silver',    icon:'🥈', unit:'USD/oz',    impact:'Industrial + safe haven demand' },
     { sym:'CL=F',  label:'Crude Oil', icon:'🛢️', unit:'USD/bbl',   impact:'Rising oil hurts aviation & paints' },
@@ -192,26 +242,26 @@ async function getCommodities(session) {
     { sym:'ZS=F',  label:'Soybean',   icon:'🫘', unit:'USc/bu',    impact:'Edible oil prices — FMCG impact' },
     { sym:'CT=F',  label:'Cotton',    icon:'☁️', unit:'USc/lb',    impact:'Textile sector input cost' },
   ];
-  const results = await Promise.all(COMM.map(async (c) => {
+  var results = await Promise.all(COMM.map(async function(c) {
     try {
-      const data = await yahooFetch(c.sym, session);
-      const r    = data?.chart?.result?.[0];
+      var data = await yahooFetch(c.sym, session);
+      var r    = data && data.chart && data.chart.result && data.chart.result[0];
       if (!r) return null;
-      const price  = r.meta?.regularMarketPrice || 0;
+      var price  = r.meta && r.meta.regularMarketPrice || 0;
       if (price <= 0) return null;
-      const closes = (r.indicators?.quote?.[0]?.close || []).filter(v => v != null && v > 0);
-      const prev   = closes.length >= 2 ? closes[closes.length - 2] : (r.meta?.previousClose || price);
-      return { ...c, price: +price.toFixed(2), changePct: +((price-prev)/prev*100).toFixed(2) };
-    } catch (e) { return null; }
+      var closes = (r.indicators && r.indicators.quote && r.indicators.quote[0] && r.indicators.quote[0].close || []).filter(function(v){ return v != null && v > 0; });
+      var prev   = closes.length >= 2 ? closes[closes.length - 2] : (r.meta && r.meta.previousClose || price);
+      return Object.assign({}, c, { price: +price.toFixed(2), changePct: +((price-prev)/prev*100).toFixed(2) });
+    } catch(e) { return null; }
   }));
-  const commodities = results.filter(Boolean);
-  console.log(`Commodities: ${commodities.length}/10`);
-  return { commodities, live: commodities.length > 0 };
+  var commodities = results.filter(Boolean);
+  console.log('Commodities: ' + commodities.length + '/10');
+  return { commodities: commodities, live: commodities.length > 0 };
 }
 
 // ── FOREX ─────────────────────────────────────────────────────────
 async function getForex(session) {
-  const PAIRS = [
+  var PAIRS = [
     { sym:'INR=X',    label:'USD/INR', flag:'🇺🇸', sub:'US Dollar',       impact:'IT exports gain when rupee weakens' },
     { sym:'AEDINR=X', label:'AED/INR', flag:'🇦🇪', sub:'UAE Dirham',       impact:'Key for Indian expat remittances' },
     { sym:'EURINR=X', label:'EUR/INR', flag:'🇪🇺', sub:'Euro',             impact:'European export competitiveness' },
@@ -221,100 +271,99 @@ async function getForex(session) {
     { sym:'SARINR=X', label:'SAR/INR', flag:'🇸🇦', sub:'Saudi Riyal',      impact:'Oil & Gulf remittances' },
     { sym:'SGDINR=X', label:'SGD/INR', flag:'🇸🇬', sub:'Singapore Dollar', impact:'ASEAN investment flows' },
   ];
-  const results = await Promise.all(PAIRS.map(async (p) => {
+  var results = await Promise.all(PAIRS.map(async function(p) {
     try {
-      const data = await yahooFetch(p.sym, session);
-      const r    = data?.chart?.result?.[0];
+      var data = await yahooFetch(p.sym, session);
+      var r    = data && data.chart && data.chart.result && data.chart.result[0];
       if (!r) return null;
-      const rate   = r.meta?.regularMarketPrice || 0;
+      var rate   = r.meta && r.meta.regularMarketPrice || 0;
       if (rate <= 0) return null;
-      const closes = (r.indicators?.quote?.[0]?.close || []).filter(v => v != null && v > 0);
-      const prev   = closes.length >= 2 ? closes[closes.length - 2] : (r.meta?.previousClose || rate);
-      return { ...p, rate: +rate.toFixed(4), changePct: +((rate-prev)/prev*100).toFixed(2) };
-    } catch (e) { return null; }
+      var closes = (r.indicators && r.indicators.quote && r.indicators.quote[0] && r.indicators.quote[0].close || []).filter(function(v){ return v != null && v > 0; });
+      var prev   = closes.length >= 2 ? closes[closes.length - 2] : (r.meta && r.meta.previousClose || rate);
+      return Object.assign({}, p, { rate: +rate.toFixed(4), changePct: +((rate-prev)/prev*100).toFixed(2) });
+    } catch(e) { return null; }
   }));
-  const forex = results.filter(Boolean);
-  console.log(`Forex: ${forex.length}/8`);
-  return { forex, live: forex.length > 0 };
+  var forex = results.filter(Boolean);
+  console.log('Forex: ' + forex.length + '/8');
+  return { forex: forex, live: forex.length > 0 };
 }
 
 // ── NEWS ──────────────────────────────────────────────────────────
 async function getNews(q) {
   try {
-    const baseQuery   = q || 'India stock market NSE Nifty Sensex economy RBI';
-    const globalExtra = q ? '' : ' OR "global markets" OR "Fed rate" OR "crude oil" OR war geopolitical';
-    const query       = encodeURIComponent(baseQuery + globalExtra);
-    const res         = await fetch(`https://news.google.com/rss/search?q=${query}+when:3d&hl=en-IN&gl=IN&ceid=IN:en`, {
+    var baseQuery   = q || 'India stock market NSE Nifty Sensex economy RBI';
+    var globalExtra = q ? '' : ' OR "global markets" OR "Fed rate" OR "crude oil" OR war geopolitical';
+    var query       = encodeURIComponent(baseQuery + globalExtra);
+    var res = await fetch('https://news.google.com/rss/search?q=' + query + '+when:3d&hl=en-IN&gl=IN&ceid=IN:en', {
       headers: { 'Accept': 'application/rss+xml, text/xml' },
       signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) return { news: [], live: false };
-    const body  = await res.text();
-    const items = [];
-    const re    = /<item>([\s\S]*?)<\/item>/g;
-    let m;
+    var body  = await res.text();
+    var items = [];
+    var re    = /<item>([\s\S]*?)<\/item>/g;
+    var m;
     while ((m = re.exec(body)) !== null && items.length < 25) {
-      const c     = m[1];
-      const title = (c.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>/) || c.match(/<title>(.*?)<\/title>/))?.[1] || '';
-      const src   = c.match(/<source[^>]*>(.*?)<\/source>/)?.[1] || 'News';
-      const pub   = c.match(/<pubDate>(.*?)<\/pubDate>/)?.[1] || '';
+      var c     = m[1];
+      var tm    = c.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>/) || c.match(/<title>(.*?)<\/title>/);
+      var title = tm ? tm[1] : '';
+      var sm    = c.match(/<source[^>]*>(.*?)<\/source>/);
+      var src   = sm ? sm[1] : 'News';
+      var pm    = c.match(/<pubDate>(.*?)<\/pubDate>/);
+      var pub   = pm ? pm[1] : '';
       if (title) {
-        const tl  = title.toLowerCase();
-        const sentiment = tl.match(/fall|drop|crash|loss|decline|plunge|slump/) ? 'negative'
-          : tl.match(/rise|gain|surge|rally|profit|jump|soar/) ? 'positive' : 'neutral';
-        const hrs = Math.round((Date.now() - new Date(pub)) / 3600000);
-        items.push({
-          title: title.replace(/ - [^-]+$/, '').replace(/&amp;/g, '&').trim().slice(0, 130),
-          source: src, sentiment,
-          timeAgo: isNaN(hrs) ? 'Recently' : hrs < 1 ? 'Just now' : hrs < 24 ? `${hrs}h ago` : `${Math.round(hrs / 24)}d ago`,
-        });
+        var tl        = title.toLowerCase();
+        var sentiment = tl.match(/fall|drop|crash|loss|decline|plunge|slump/) ? 'negative' : tl.match(/rise|gain|surge|rally|profit|jump|soar/) ? 'positive' : 'neutral';
+        var hrs       = Math.round((Date.now() - new Date(pub)) / 3600000);
+        items.push({ title: title.replace(/ - [^-]+$/, '').replace(/&amp;/g, '&').trim().slice(0, 130), source: src, sentiment: sentiment, timeAgo: isNaN(hrs) ? 'Recently' : hrs < 1 ? 'Just now' : hrs < 24 ? hrs + 'h ago' : Math.round(hrs/24) + 'd ago' });
       }
     }
-    console.log(`News: ${items.length} items`);
+    console.log('News: ' + items.length + ' items');
     return { news: items, live: items.length > 0 };
-  } catch (e) { return { news: [], live: false, error: e.message }; }
+  } catch(e) { return { news: [], live: false, error: e.message }; }
 }
 
-// ── FUNDAMENTALS — Yahoo Finance quoteSummary ─────────────────────
+// ── FUNDAMENTALS ──────────────────────────────────────────────────
 async function getFundamentals(symbol, session) {
-  const modules = 'financialData,defaultKeyStatistics,incomeStatementHistory,balanceSheetHistory,cashflowStatementHistory';
-  for (const sym of [`${symbol}.NS`, `${symbol}.BO`, symbol]) {
+  var modules = 'financialData,defaultKeyStatistics,incomeStatementHistory,balanceSheetHistory';
+  var syms    = [symbol + '.NS', symbol + '.BO', symbol];
+  for (var i = 0; i < syms.length; i++) {
+    var sym = syms[i];
     try {
-      const crumbParam = session?.crumb ? `&crumb=${encodeURIComponent(session.crumb)}` : '';
-      const url = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(sym)}?modules=${modules}${crumbParam}`;
-      const res = await fetch(url, {
-        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Accept': 'application/json', 'Cookie': session?.cookie || '' },
+      var crumbParam = session && session.crumb ? '&crumb=' + encodeURIComponent(session.crumb) : '';
+      var url = 'https://query1.finance.yahoo.com/v10/finance/quoteSummary/' + encodeURIComponent(sym) + '?modules=' + modules + crumbParam;
+      var res = await fetch(url, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Accept': 'application/json', 'Cookie': session && session.cookie ? session.cookie : '' },
         signal: AbortSignal.timeout(10000),
       });
       if (!res.ok) continue;
-      const json = await res.json();
-      if (json?.quoteSummary?.error) continue;
-      const r = json?.quoteSummary?.result?.[0];
+      var json = await res.json();
+      if (json && json.quoteSummary && json.quoteSummary.error) continue;
+      var r = json && json.quoteSummary && json.quoteSummary.result && json.quoteSummary.result[0];
       if (!r) continue;
-      const isList = r.incomeStatementHistory?.incomeStatementHistory || [];
-      const income = isList.slice(0, 4).map(q => ({ date: q.endDate?.fmt || '—', revenue: q.totalRevenue?.raw || 0, profit: q.netIncome?.raw || 0, ebitda: q.ebitda?.raw || 0, eps: q.basicEPS?.raw || 0 }));
-      const ks = r.defaultKeyStatistics || {};
-      const fd = r.financialData || {};
-      console.log(`Fundamentals ${sym}: ${income.length} years`);
-      return {
-        symbol, source: sym, live: true, income,
-        roe:           fd.returnOnEquity?.raw  ? +(fd.returnOnEquity.raw * 100).toFixed(1)  : null,
-        profitMargin:  fd.profitMargins?.raw   ? +(fd.profitMargins.raw * 100).toFixed(1)   : null,
-        revenueGrowth: fd.revenueGrowth?.raw   ? +(fd.revenueGrowth.raw * 100).toFixed(1)   : null,
-        earningsGrowth:fd.earningsGrowth?.raw  ? +(fd.earningsGrowth.raw * 100).toFixed(1)  : null,
-        debtToEquity:  fd.debtToEquity?.raw    ? +fd.debtToEquity.raw.toFixed(2)            : null,
-        currentRatio:  fd.currentRatio?.raw    ? +fd.currentRatio.raw.toFixed(2)            : null,
-        freeCashFlow:  fd.freeCashflow?.raw    || null,
-        priceToBook:   ks.priceToBook?.raw     ? +ks.priceToBook.raw.toFixed(2)             : null,
-        beta:          ks.beta?.raw            ? +ks.beta.raw.toFixed(2)                    : null,
-        forwardPE:     ks.forwardPE?.raw       ? +ks.forwardPE.raw.toFixed(1)               : null,
+      var isList = r.incomeStatementHistory && r.incomeStatementHistory.incomeStatementHistory || [];
+      var income = isList.slice(0, 4).map(function(q) { return { date: q.endDate && q.endDate.fmt || '-', revenue: q.totalRevenue && q.totalRevenue.raw || 0, profit: q.netIncome && q.netIncome.raw || 0, ebitda: q.ebitda && q.ebitda.raw || 0, eps: q.basicEPS && q.basicEPS.raw || 0 }; });
+      var ks = r.defaultKeyStatistics || {};
+      var fd = r.financialData        || {};
+      console.log('Fundamentals ' + sym + ': ' + income.length + ' years');
+      return { symbol: symbol, source: sym, live: true, income: income,
+        roe:           fd.returnOnEquity  && fd.returnOnEquity.raw   ? +(fd.returnOnEquity.raw * 100).toFixed(1)  : null,
+        profitMargin:  fd.profitMargins   && fd.profitMargins.raw    ? +(fd.profitMargins.raw * 100).toFixed(1)   : null,
+        revenueGrowth: fd.revenueGrowth   && fd.revenueGrowth.raw   ? +(fd.revenueGrowth.raw * 100).toFixed(1)   : null,
+        earningsGrowth:fd.earningsGrowth  && fd.earningsGrowth.raw  ? +(fd.earningsGrowth.raw * 100).toFixed(1)  : null,
+        debtToEquity:  fd.debtToEquity    && fd.debtToEquity.raw    ? +fd.debtToEquity.raw.toFixed(2)            : null,
+        currentRatio:  fd.currentRatio    && fd.currentRatio.raw    ? +fd.currentRatio.raw.toFixed(2)            : null,
+        freeCashFlow:  fd.freeCashflow    && fd.freeCashflow.raw    || null,
+        priceToBook:   ks.priceToBook     && ks.priceToBook.raw     ? +ks.priceToBook.raw.toFixed(2)             : null,
+        beta:          ks.beta            && ks.beta.raw            ? +ks.beta.raw.toFixed(2)                    : null,
+        forwardPE:     ks.forwardPE       && ks.forwardPE.raw       ? +ks.forwardPE.raw.toFixed(1)               : null,
       };
-    } catch (e) { console.error(`Fundamentals ${sym}:`, e.message); }
+    } catch(e) { console.error('Fundamentals ' + sym + ':', e.message); }
   }
   return null;
 }
 
-// ── VERCEL HANDLER ────────────────────────────────────────────────
+// ── HANDLER ───────────────────────────────────────────────────────
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin',  '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -322,16 +371,16 @@ export default async function handler(req, res) {
   res.setHeader('Cache-Control',  'no-cache, no-store');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const p      = req.query || {};
-  const action = p.action || 'quote';
+  var p      = req.query || {};
+  var action = p.action  || 'quote';
 
   try {
-    const session = (action !== 'news') ? await getSession() : null;
+    var session = (action !== 'news') ? await getSession() : null;
     if (action !== 'news' && !session) {
-      return res.status(200).json({ live: false, error: 'Could not connect to data source' });
+      return res.status(200).json({ live: false, error: 'Session failed' });
     }
-    let result;
-    if      (action === 'quote')        result = (await getQuote(p.symbol || 'TCS', session)) || { live: false, error: 'No data', symbol: p.symbol };
+    var result;
+    if      (action === 'quote')        result = (await getQuote(p.symbol || 'TCS', session))        || { live: false, error: 'No data' };
     else if (action === 'batch')        result = await getBatchQuotes(p.symbols || 'TCS', session);
     else if (action === 'marketscan')   result = await getMarketScan(session);
     else if (action === 'history')      result = await getHistory(p.symbol || 'TCS', p.range || '1y', p.interval || '1wk', session);
@@ -342,8 +391,8 @@ export default async function handler(req, res) {
     else if (action === 'news')         result = await getNews(p.q);
     else                                result = { error: 'Unknown action' };
     return res.status(200).json(result);
-  } catch (e) {
-    console.error('Handler:', e.message);
+  } catch(e) {
+    console.error('Handler error:', e.message);
     return res.status(200).json({ live: false, error: e.message });
   }
 }
