@@ -1,52 +1,147 @@
-async function loadStock(sym) {
-    if(!sym) return;
-    showPage('research'); // Switch to your original research tab
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StockSense India — Smart Market Learning</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* RESTORING YOUR ORIGINAL CSS VARIABLES */
+:root{ --g:#1a7c4a;--gm:#2ea366;--r:#c0392b;--bg:#f7f6f2;--card:#fff;--text:#1a1a18;--muted:#6b6b65;--border:#e4e2db;--shadow:0 2px 16px rgba(0,0,0,0.07); }
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);}
+
+/* HEADER & NAVIGATION */
+.hdr{background:var(--text);padding:15px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;color:#fff;}
+.logo-box{display:flex;align-items:center;gap:12px;}
+.logo-icon{width:32px;height:32px;background:var(--gm);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:"DM Serif Display";font-size:20px;}
+
+/* SEARCH AREA */
+.srch-wrap{background:var(--text);padding:10px 20px 25px;}
+.srch-bar{display:flex;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:12px;padding:4px 8px;}
+.srch-bar input{flex:1;background:transparent;border:none;padding:12px;color:#fff;outline:none;font-size:15px;}
+.srch-bar button{background:var(--gm);color:#fff;border:none;border-radius:10px;padding:0 20px;font-weight:600;cursor:pointer;}
+
+/* PAGES */
+.pg{display:none;padding:20px;max-width:600px;margin:0 auto;}
+.pg.active{display:block;}
+
+/* CARDS */
+.card{background:var(--card);border-radius:20px;padding:20px;margin-bottom:15px;box-shadow:var(--shadow);border:1px solid var(--border);}
+.res-sym{font-family:"DM Serif Display";font-size:32px;margin-bottom:4px;}
+.res-price{font-size:36px;font-weight:700;margin:10px 0;}
+
+/* TABS */
+.tabs{display:flex;gap:20px;border-bottom:1px solid var(--border);margin-bottom:15px;}
+.tab{padding:10px 0;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;position:relative;}
+.tab.active{color:var(--text);}
+.tab.active::after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:2px;background:var(--text);}
+
+table{width:100%;border-collapse:collapse;}
+td{padding:12px 0;border-bottom:1px solid var(--border);font-size:13px;}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+    <div class="logo-box">
+        <div class="logo-icon">S</div>
+        <div style="font-family:'DM Serif Display';font-size:20px;">StockSense India</div>
+    </div>
+</div>
+
+<div class="srch-wrap">
+    <div class="srch-bar">
+        <input type="text" id="mainSearch" placeholder="Search Reliance, Infosys...">
+        <button onclick="handleSearch()">Audit</button>
+    </div>
+</div>
+
+<div id="pg-research" class="pg active">
+    <div class="card">
+        <div class="res-sym" id="resSym">SELECT STOCK</div>
+        <div id="resName" style="color:var(--muted);font-size:14px;">Use the search bar above</div>
+        <div class="res-price" id="resPrice">₹0.00</div>
+        <div id="resChg" style="font-weight:600;">0.00%</div>
+    </div>
+
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('ledger')">Ledger</div>
+        <div class="tab" onclick="switchTab('analysis')">Analysis</div>
+        <div class="tab" onclick="switchTab('news')">News</div>
+    </div>
+
+    <div id="tab-ledger" class="tab-content">
+        <div id="ledgerData">Search to view board meetings...</div>
+    </div>
+
+    <div id="tab-analysis" class="tab-content" style="display:none;">
+        <div id="analysisData">Financial metrics will appear here...</div>
+    </div>
+</div>
+
+<script>
+let currentSymbol = "";
+
+async function handleSearch() {
+    const q = document.getElementById('mainSearch').value;
+    if(!q) return;
     
-    // UI Loading State (Your CSS classes)
-    const priceEl = document.querySelector('.res-price');
-    if(priceEl) priceEl.innerText = "Syncing...";
-
-    try {
-        // 1. Get Live Price & Analysis Data
-        const pRes = await fetch(`/api/market?action=quote&symbol=${sym}`);
-        const p = await pRes.json();
-
-        // Populate your original UI fields
-        document.getElementById('resSym').innerText = sym;
-        document.getElementById('resName').innerText = p.name || sym;
-        document.getElementById('resPrice').innerText = `₹${p.price || 'N/A'}`;
-        
-        // Update Portfolio Logic (If item is in portfolio)
-        updatePortfolioPrice(sym, p.price);
-
-        // Populate Analysis Tab (Key Statistics)
-        const analysisHtml = `
-            <div class="stat-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:15px;">
-                <div><small>P/E Ratio</small><br><b>${p.pe}</b></div>
-                <div><small>Div. Yield</small><br><b>${p.yield}</b></div>
-                <div><small>Market Cap</small><br><b>${p.marketCap}</b></div>
-                <div><small>Revenue</small><br><b>${p.revenue}</b></div>
-            </div>
-        `;
-        const analysisTab = document.getElementById('analysisTab'); // Match your tab ID
-        if(analysisTab) analysisTab.innerHTML = analysisHtml;
-
-        // 2. Get Corporate Ledger (The Board Meetings you need)
-        const cRes = await fetch(`/api/market?action=corporate&symbol=${sym}`);
-        const c = await cRes.json();
-        
-        let corpTable = '<table style="width:100%; font-size:12px;">';
-        const meetings = c.board_meetings?.data || [];
-        meetings.slice(0, 10).forEach(m => {
-            corpTable += `<tr style="border-bottom:1px solid #eee;">
-                            <td style="padding:10px; font-weight:700;">${m[0]}</td>
-                            <td style="padding:10px;">${m[1]}</td>
-                          </tr>`;
-        });
-        const corporateTab = document.getElementById('corporateTab'); // Match your tab ID
-        if(corporateTab) corporateTab.innerHTML = corpTable + '</table>';
-
-    } catch (e) {
-        console.error("Audit Failed", e);
-    }
+    // 1. Find Symbol
+    const res = await fetch(`/api/market?action=search&q=${q}`);
+    const data = await res.json();
+    if(data[0]) loadStock(data[0].symbol, data[0].name);
 }
+
+async function loadStock(sym, name) {
+    currentSymbol = sym;
+    document.getElementById('resSym').innerText = sym;
+    document.getElementById('resName').innerText = name || sym;
+    
+    // 2. Load Price & Analysis
+    const pRes = await fetch(`/api/market?action=quote&symbol=${sym}`);
+    const p = await pRes.json();
+    
+    document.getElementById('resPrice').innerText = `₹${p.price}`;
+    const chgEl = document.getElementById('resChg');
+    chgEl.innerText = `${p.change.toFixed(2)}%`;
+    chgEl.style.color = p.change >= 0 ? 'var(--g)' : 'var(--r)';
+
+    // Analysis View
+    document.getElementById('analysisData').innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-top:10px;">
+            <div class="card" style="margin:0;padding:15px;">
+                <small style="color:var(--muted)">P/E Ratio</small><br><b>${p.pe}</b>
+            </div>
+            <div class="card" style="margin:0;padding:15px;">
+                <small style="color:var(--muted)">Div Yield</small><br><b>${p.divYield}</b>
+            </div>
+            <div class="card" style="margin:0;padding:15px;">
+                <small style="color:var(--muted)">Market Cap</small><br><b>${p.marketCap}</b>
+            </div>
+            <div class="card" style="margin:0;padding:15px;">
+                <small style="color:var(--muted)">Revenue</small><br><b>${p.revenue}</b>
+            </div>
+        </div>
+    `;
+
+    // 3. Load Corporate Ledger (Board Meetings)
+    const cRes = await fetch(`/api/market?action=corporate&symbol=${sym}`);
+    const c = await cRes.json();
+    let rows = '<table>';
+    const items = c.board_meetings?.data || [];
+    items.forEach(m => {
+        rows += `<tr><td style="width:80px;font-weight:700;">${m[0]}</td><td>${m[1]}</td></tr>`;
+    });
+    document.getElementById('ledgerData').innerHTML = rows + '</table>';
+}
+
+function switchTab(t) {
+    document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+    event.target.classList.add('active');
+    document.getElementById(`tab-${t}`).style.display = 'block';
+}
+</script>
+</body>
+</html>
