@@ -17,7 +17,8 @@
         th { background: #edf2f7; text-align: left; padding: 12px; border-bottom: 2px solid #cbd5e0; }
         td { padding: 12px; border-bottom: 1px solid #edf2f7; font-size: 14px; line-height: 1.5; }
         .highlight-green { background: #f0fff4; color: #2f855a; font-weight: bold; }
-        .price-large { font-size: 2em; font-weight: bold; margin: 10px 0; }
+        .price-large { font-size: 2.5em; font-weight: bold; margin: 10px 0; color: var(--primary); }
+        .meta-text { font-size: 1.1em; color: #4a5568; margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -31,13 +32,13 @@
         </div>
     </div>
 
-    <div id="status" style="display:none; padding: 10px; color: var(--accent);">🔍 Verifying Ledger...</div>
+    <div id="status" style="display:none; padding: 10px; color: var(--accent); font-weight: bold;">🔍 Reconciling Data Fields...</div>
 
     <div id="dashboard" style="display:none;">
         <div class="card">
-            <h2 id="compName">Company Name</h2>
+            <h2 id="compName" style="margin:0; text-transform: uppercase;">Company</h2>
             <div id="priceDisplay" class="price-large">₹0.00</div>
-            <div id="metaDisplay">52W High: -- | 52W Low: --</div>
+            <div id="metaDisplay" class="meta-text">52W High: -- | 52W Low: --</div>
         </div>
 
         <div class="card">
@@ -58,49 +59,25 @@
         dash.style.display = 'none';
 
         try {
-            // 1. Search for Symbol
-            const sRes = await fetch(`/api/market?action=search&q=${query}`);
+            // 1. Search for the proper Symbol
+            const sRes = await fetch(`/api/market?action=search&q=${encodeURIComponent(query)}`);
             const sData = await sRes.json();
-            const symbol = sData[0]?.symbol || query; 
-
-            // 2. Get Price Details
-            const pRes = await fetch(`/api/market?action=details&symbol=${symbol}`);
-            const pData = await pRes.json();
             
-            // 3. Get Corporate Actions (Meetings)
-            const cRes = await fetch(`/api/market?action=corporate&symbol=${symbol}`);
+            // Handle different search result formats
+            const symbol = sData[0]?.symbol || sData.symbol || query; 
+
+            // 2. Fetch Price and Corporate Data in parallel for speed
+            const [pRes, cRes] = await Promise.all([
+                fetch(`/api/market?action=details&symbol=${symbol}`),
+                fetch(`/api/market?action=corporate&symbol=${symbol}`)
+            ]);
+
+            const pData = await pRes.json();
             const cData = await cRes.json();
 
+            // 3. Update the UI with the corrected mapping
             updateUI(pData, cData, symbol);
+
         } catch (e) {
-            alert("Audit Failed: " + e.message);
-        } finally {
-            status.style.display = 'none';
-        }
-    }
-
-    function updateUI(price, corp, symbol) {
-        document.getElementById('dashboard').style.display = 'block';
-        document.getElementById('compName').innerText = symbol.toUpperCase();
-        document.getElementById('priceDisplay').innerText = `₹${price.lastPrice || 'N/A'}`;
-        document.getElementById('metaDisplay').innerText = `52W High: ₹${price.dayHigh || '--'} | 52W Low: ₹${price.dayLow || '--'}`;
-
-        let table = `<table><tr><th>Date</th><th>Agenda</th></tr>`;
-        
-        if(corp.board_meetings && corp.board_meetings.data) {
-            corp.board_meetings.data.forEach(row => {
-                const isDiv = row[1].toLowerCase().includes("dividend");
-                table += `<tr class="${isDiv ? 'highlight-green' : ''}">
-                            <td style="white-space:nowrap"><strong>${row[0]}</strong></td>
-                            <td>${row[1]}</td>
-                          </tr>`;
-            });
-        } else {
-            table += `<tr><td colspan="2">No records found in the official ledger.</td></tr>`;
-        }
-        table += `</table>`;
-        document.getElementById('corporateTable').innerHTML = table;
-    }
-</script>
-</body>
-</html>
+            console.error("Audit Error:", e);
+            alert("
