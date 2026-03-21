@@ -1,7 +1,7 @@
 // StockSense India — Market Proxy v5.0
 // Yahoo Finance v10 — complete financials for ANY stock, free, no key
 
-const https = require('https');
+import https from 'https';
 
 function httpsGet(url, headers = {}) {
   return new Promise((resolve, reject) => {
@@ -346,14 +346,19 @@ async function getNews(q) {
   return { news: [], live: false };
 }
 
-// ── MAIN HANDLER ──────────────────────────────────────────────────
-exports.handler = async (event) => {
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Content-Type': 'application/json',
-    'Cache-Control': 'no-cache'
-  };
-  const p = event.queryStringParameters || {};
+// ── MAIN HANDLER (Vercel format) ─────────────────────────────────
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Cache-Control', 'no-cache');
+
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
+  const p = req.query || {};
   const action = p.action || 'quote';
 
   try {
@@ -375,8 +380,8 @@ exports.handler = async (event) => {
     } else {
       result = { error: 'Unknown action' };
     }
-    return { statusCode: 200, headers, body: JSON.stringify(result) };
+    res.status(200).json(result);
   } catch (e) {
-    return { statusCode: 200, headers, body: JSON.stringify({ live: false, error: e.message }) };
+    res.status(200).json({ live: false, error: e.message });
   }
-};
+}
