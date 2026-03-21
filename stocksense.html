@@ -440,8 +440,8 @@ body:not(.novice-mode) .novice-only{display:none!important}
       <!-- DARK HORSE -->
       <div class="sec-title" id="dhLabel">🐎 Dark Horse</div>
       <div class="dh-card" id="dhCard">
-        <div class="dh-badge">◆ DARK HORSE — Live calculation from <span id="dhCandCount">15</span> stocks</div>
-        <div class="dh-loading" id="dhLoading">Scanning live market data…</div>
+        <div class="dh-badge">◆ DARK HORSE — Scanned from Nifty 50 live</div>
+        <div class="dh-loading" id="dhLoading">Scanning Nifty 50 stocks live…</div>
         <div id="dhContent" style="display:none">
           <div class="dh-sym" id="dhSym"></div>
           <div class="dh-name" id="dhName"></div>
@@ -2061,13 +2061,10 @@ async function loadDarkHorse() {
   if (dhLoad) dhLoad.textContent = 'Scanning Nifty 100 stocks live…';
 
   const data = await api('marketscan');
-  const countEl = document.getElementById('dhCandCount');
-
   if (!data?.quotes || data.loaded === 0) {
     if (dhLoad) dhLoad.textContent = 'Could not load market data — refresh to retry';
     return;
   }
-  if (countEl) countEl.textContent = data.scanned || data.total || data.loaded;
 
   const results = [];
   Object.entries(data.quotes).forEach(([sym, live]) => {
@@ -2107,7 +2104,7 @@ async function loadDarkHorse() {
   if (calcEl) {
     const top5 = results.slice(0, 5);
     calcEl.innerHTML = `<b>DH Score formula:</b> 52W Position×6 + |%Change|×0.4 + Volume(0–3) + Mid-zone bonus(2.5)<br><br>
-<b>Top 5 from ${results.length} stocks scanned:</b><br>
+<b>Top 5 from ${results.length} Nifty50 stocks scanned:</b><br>
 ${top5.map((r, i) => `${i+1}. ${r.sym}: ${r.dhScore.toFixed(1)} pts — pos:${r.posScore} mom:${r.momScore} vol:${r.volScore} radar:${r.radScore} (52W:${Math.round(r.w52pct*100)}%)`).join('<br>')}`;
   }
 
