@@ -143,9 +143,14 @@ async function getHistory(symbol, range, interval, session) {
       const r    = data?.chart?.result?.[0];
       if (!r) continue;
       const ts  = r.timestamp || [];
-      const cl  = r.indicators?.quote?.[0]?.close || [];
+      const cl  = r.indicators?.quote?.[0]?.close  || [];
+      const vol = r.indicators?.quote?.[0]?.volume || [];
       const prices = ts
-        .map((t, i) => ({ date: new Date(t * 1000).toISOString().split('T')[0], close: cl[i] ? +cl[i].toFixed(2) : null }))
+        .map((t, i) => ({
+          date:   new Date(t * 1000).toISOString().split('T')[0],
+          close:  cl[i]  ? +cl[i].toFixed(2)  : null,
+          volume: vol[i] || 0,
+        }))
         .filter(p => p.close !== null);
       if (prices.length) return { prices, live: true, symbol: sym };
     } catch (e) { console.error(`History ${sym}:`, e.message); }
