@@ -828,7 +828,15 @@ function applyLang() {
 }
 
 // ── API LAYER ─────────────────────────────────────────────────────
+// Sanitize symbols for Yahoo Finance API (M&M -> MM, etc.)
+function sanitizeSym(sym) {
+  return sym.replace(/&/g, '').replace(/--/g, '-').replace(/-$/, '');
+}
+
 async function api(action, params = {}) {
+  // Sanitize any symbols param before sending
+  if (params.symbol) params.symbol = sanitizeSym(params.symbol);
+  if (params.symbols) params.symbols = params.symbols.split(',').map(s => sanitizeSym(s.trim())).join(',');
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 20000);
   try {
@@ -975,7 +983,7 @@ const SECTORS = [
 
 const THEMES = [
   {name:'🤖 Artificial Intelligence', reps:['INFY','PERSISTENT','HCLTECH','TATAELXSI'], news:'AI India stock market'},
-  {name:'⚡ Electric Vehicles',       reps:['TATAMOTORS','M&M','EXIDEIND'],              news:'electric vehicle EV India'},
+  {name:'⚡ Electric Vehicles',       reps:['TATAMOTORS','MM','EXIDEIND'],              news:'electric vehicle EV India'},
   {name:'🛡️ Defence & Aerospace',    reps:['HAL','BEL','MAZDOCK','BHARATFORG'],         news:'India defence sector'},
   {name:'☀️ Renewable Energy',       reps:['ADANIGREEN','NTPC','TATAPOWER'],             news:'renewable energy India'},
   {name:'💊 Generic Pharma',         reps:['SUNPHARMA','CIPLA','DRREDDY'],              news:'India pharma USFDA'},
@@ -1054,7 +1062,7 @@ const SEARCH_INDEX = [
   ['KOTAKBANK','Kotak Bank','Bank'],['AXISBANK','Axis Bank','Bank'],['SBIN','State Bank of India','Bank'],
   ['RELIANCE','Reliance Industries','Energy'],['ONGC','ONGC','Energy'],['BPCL','BPCL','Energy'],
   ['NTPC','NTPC','Power'],['POWERGRID','Power Grid','Power'],['ADANIGREEN','Adani Green','Renewable'],
-  ['MARUTI','Maruti Suzuki','Auto'],['TATAMOTORS','Tata Motors','Auto'],['M&M','Mahindra & Mahindra','Auto'],
+  ['MARUTI','Maruti Suzuki','Auto'],['TATAMOTORS','Tata Motors','Auto'],['MM','Mahindra & Mahindra','Auto'],
   ['BAJAJ-AUTO','Bajaj Auto','Auto'],['HEROMOTOCO','Hero MotoCorp','Auto'],
   ['SUNPHARMA','Sun Pharma','Pharma'],['DRREDDY','Dr Reddys','Pharma'],['CIPLA','Cipla','Pharma'],
   ['DIVISLAB','Divis Labs','Pharma'],['AUROPHARMA','Aurobindo Pharma','Pharma'],
@@ -2378,7 +2386,7 @@ const SECTOR_STOCKS = {
   'IT':       ['TCS','INFY','WIPRO','HCLTECH','LTIM','PERSISTENT','MPHASIS','COFORGE','TATAELXSI'],
   'Banking':  ['HDFCBANK','ICICIBANK','KOTAKBANK','AXISBANK','SBIN','INDUSINDBK','BANDHANBNK','IDFCFIRSTB'],
   'Pharma':   ['SUNPHARMA','DRREDDY','CIPLA','DIVISLAB','AUROPHARMA','LUPIN','BIOCON','ALKEM'],
-  'Auto':     ['MARUTI','TATAMOTORS','M&M','BAJAJ-AUTO','HEROMOTOCO','EICHERMOT','TVSMOTORS','ASHOKLEY'],
+  'Auto':     ['MARUTI','TATAMOTORS','MM','BAJAJ-AUTO','HEROMOTOCO','EICHERMOT','TVSMOTORS','ASHOKLEY'],
   'FMCG':     ['ITC','HINDUNILVR','NESTLEIND','DABUR','MARICO','COLPAL','EMAMILTD','GODREJCP'],
   'Energy':   ['RELIANCE','ONGC','BPCL','IOC','GAIL','OIL','HINDPETRO','MRPL'],
   'Infra':    ['LT','ADANIPORTS','IRFC','RVNL','KEC','KALPATPOWR','PNCINFRA','GPPL'],
