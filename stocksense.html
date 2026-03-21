@@ -567,10 +567,11 @@ body:not(.novice-mode) .novice-only{display:none!important}
   </div>
 
   <div id="resOverlay" class="res-overlay">
-    <div class="sec-title" id="qpLabel">Quick picks</div>
-    <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px" id="quickPicks"></div>
-    <div class="sec-title" id="sectLabel">Browse sectors</div>
-    <div style="display:flex;gap:7px;flex-wrap:wrap" id="sectorChips"></div>
+    <div class="sec-title">Browse by Sector</div>
+    <div id="sectorChips" style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px"></div>
+    <div class="sec-title">Thematic Sectors</div>
+    <div id="themeChips" style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px"></div>
+    <div class="disc" style="margin-top:4px">💡 Tap a sector to explore its representative stocks. Use the search bar to look up any specific NSE or BSE stock symbol.</div>
   </div>
 </div>
 
@@ -671,7 +672,6 @@ const STRINGS = {
     nfTitle:'Stock not found',
     nfSub:'Try: TCS · INFY · HDFCBANK · RELIANCE · ZOMATO · IRCTC',
     lPrice:'Price',lToday:'Today',
-    qpLabel:'Quick picks',sectLabel:'Browse sectors',
     wlTitle:'My Watchlist',wlDisc:'Tap any stock to see full analysis. Tap ☆ to add to watchlist.',
     portAddTitle:'Add a holding',portAddBtn:'Add to portfolio',
     stressBtnTxt:'Portfolio stress test — what if interest rates rise?',
@@ -715,7 +715,6 @@ const STRINGS = {
     back:'वापस',loadTxt:'लाइव डेटा लोड हो रहा है…',
     nfTitle:'शेयर नहीं मिला',nfSub:'कोशिश करें: TCS · INFY · HDFCBANK · RELIANCE',
     lPrice:'कीमत',lToday:'आज',
-    qpLabel:'त्वरित चयन',sectLabel:'सेक्टर से ब्राउज़ करें',
     wlTitle:'मेरी वॉचलिस्ट',wlDisc:'पूरा विश्लेषण देखने के लिए किसी भी शेयर पर टैप करें।',
     portAddTitle:'होल्डिंग जोड़ें',portAddBtn:'पोर्टफोलियो में जोड़ें',
     stressBtnTxt:'पोर्टफोलियो स्ट्रेस टेस्ट — अगर ब्याज दरें बढ़ें?',
@@ -758,7 +757,6 @@ const STRINGS = {
     back:'પાછળ',loadTxt:'લાઇવ ડેટા લોડ થઈ રહ્યો છે…',
     nfTitle:'શેર મળ્યો નહીં',nfSub:'અજમાવો: TCS · INFY · HDFCBANK · RELIANCE',
     lPrice:'ભાવ',lToday:'આજે',
-    qpLabel:'ઝડપી પસંદ',sectLabel:'સેક્ટર બ્રાઉઝ',
     wlTitle:'મારી વૉચલિસ્ટ',wlDisc:'પૂર્ણ વિશ્લેષણ માટે કોઈ પણ શેર પર ટેપ કરો।',
     portAddTitle:'હોલ્ડિંગ ઉમેરો',portAddBtn:'પોર્ટફોલિઓમાં ઉમેરો',
     stressBtnTxt:'પોર્ટફોલિઓ સ્ટ્રેસ ટેસ્ટ — જો વ્યાજ દર વધે?',
@@ -804,7 +802,7 @@ function setLang(l) {
 
 function applyLang() {
   const ids = ['appName','appTag','moodLbl','dhLabel','moversLabel','heatLabel','ipoLabel',
-    'back','loadTxt','nfTitle','nfSub','lPrice','lToday','qpLabel','sectLabel',
+    'back','loadTxt','nfTitle','nfSub','lPrice','lToday',
     'wlTitle','wlDisc','portAddTitle','portAddBtn','stressBtnTxt','portDisc',
     'mfTitle','mfDisc','mfHint','nlHome','nlResearch','nlWatchlist','nlPortfolio','nlMF','nlLearn'];
   ids.forEach(id => {
@@ -951,8 +949,36 @@ const STOCKS = {
 };
 
 // Quick access sectors and picks
-const SECTORS = ['IT Services','Banking & Finance','Pharma','Automobile','FMCG','Telecom','Infrastructure','Defence','Electronics Manufacturing','Automotive Tech'];
-const QUICK_PICKS = ['TCS','INFY','HDFCBANK','RELIANCE','MARUTI','SUNPHARMA','ITC','HAL','DIXON','TATAMOTORS'];
+const SECTORS = [
+  {name:'IT Services',       rep:'TCS',         icon:'💻'},
+  {name:'Banking',           rep:'HDFCBANK',     icon:'🏦'},
+  {name:'Pharma',            rep:'SUNPHARMA',    icon:'💊'},
+  {name:'Automobile',        rep:'MARUTI',       icon:'🚗'},
+  {name:'FMCG',              rep:'ITC',          icon:'🛒'},
+  {name:'Telecom',           rep:'BHARTIARTL',   icon:'📡'},
+  {name:'Infrastructure',    rep:'LT',           icon:'🏗️'},
+  {name:'Defence',           rep:'HAL',          icon:'🛡️'},
+  {name:'EMS / Electronics', rep:'DIXON',        icon:'🔌'},
+  {name:'Energy / Oil',      rep:'RELIANCE',     icon:'⚡'},
+  {name:'Metals & Mining',   rep:'TATASTEEL',    icon:'⛏️'},
+  {name:'Cement',            rep:'ULTRACEMCO',   icon:'🏭'},
+  {name:'Insurance',         rep:'HDFCLIFE',     icon:'🛡️'},
+  {name:'NBFC',              rep:'BAJFINANCE',   icon:'💳'},
+  {name:'Retail',            rep:'DMART',        icon:'🏪'},
+  {name:'Aviation',          rep:'INDIGO',       icon:'✈️'},
+  {name:'Power',             rep:'NTPC',         icon:'🔋'},
+];
+
+const THEMES = [
+  {name:'🤖 Artificial Intelligence', reps:['INFY','PERSISTENT','HCLTECH','TATAELXSI'], news:'AI India stock market'},
+  {name:'⚡ Electric Vehicles',       reps:['TATAMOTORS','M&M','EXIDEIND'],              news:'electric vehicle EV India'},
+  {name:'🛡️ Defence & Aerospace',    reps:['HAL','BEL','MAZDOCK','BHARATFORG'],         news:'India defence sector'},
+  {name:'☀️ Renewable Energy',       reps:['ADANIGREEN','NTPC','TATAPOWER'],             news:'renewable energy India'},
+  {name:'💊 Generic Pharma',         reps:['SUNPHARMA','CIPLA','DRREDDY'],              news:'India pharma USFDA'},
+  {name:'🏠 Real Estate',            reps:['DLF','GODREJPROP','OBEROIRLTY'],            news:'India real estate'},
+  {name:'🌾 Agri / Fertiliser',      reps:['CHAMBLFERT','PIIND','UPL'],                news:'India agriculture fertiliser'},
+  {name:'📱 Fintech / Digital',       reps:['PAYTM','ZOMATO','NYKAA'],                  news:'India fintech digital payments'},
+];
 
 // Sector benchmarks
 const BENCH = {
@@ -1667,68 +1693,71 @@ function updateTicker(indices) {
 }
 
 function updateMoodCard(nifty, sensex, vix) {
-  const up = nifty.changePct >= 0;
-  const card = document.getElementById('moodCardWrap');
+  const up  = nifty.changePct >= 0;
+  const pct = Math.abs(nifty.changePct);
+  const card  = document.getElementById('moodCardWrap');
   const title = document.getElementById('moodTitle');
-  const reason = document.getElementById('moodReason');
+  const reason= document.getElementById('moodReason');
   const moodIdx = document.getElementById('moodIdx');
-  if(card) card.style.background = up?'var(--gl)':'var(--rl)';
+  if (card) card.style.background = up ? 'var(--gl)' : 'var(--rl)';
 
   // Market open/closed check (IST = UTC+5:30)
   const now = new Date();
   const ist = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
-  const h = ist.getUTCHours(), m = ist.getUTCMinutes(), day = ist.getUTCDay();
-  const istMins = h * 60 + m;
+  const h = ist.getUTCHours(), mi = ist.getUTCMinutes(), day = ist.getUTCDay();
+  const istMins = h * 60 + mi;
   const isWeekend = day === 0 || day === 6;
-  const isMarketHours = !isWeekend && istMins >= 555 && istMins <= 930; // 9:15 AM to 3:30 PM IST
-  const marketStatus = isWeekend ? '🔴 Weekend — Market Closed' : isMarketHours ? '🟢 Market Open' : '🔴 Market Closed';
+  const isOpen    = !isWeekend && istMins >= 555 && istMins <= 930;
+  const statusIcon= isWeekend ? '🔴' : isOpen ? '🟢' : '🟡';
+  const statusTxt = isWeekend ? 'Weekend · Showing last session' : isOpen ? 'Market Open' : 'Market Closed · Showing last session';
 
-  if(title) {
-    title.style.color = up ? 'var(--g)' : 'var(--r)';
-    title.textContent = up ? '📈 Bullish — Markets rising' : '📉 Bearish — Markets falling';
-  }
-  if(reason) {
+  // Explain the move in plain English
+  const moveSize = pct < 0.3 ? 'barely moved' : pct < 0.7 ? 'moved slightly' : pct < 1.5 ? 'moved notably' : pct < 3 ? 'moved sharply' : 'moved very sharply';
+  const vixTxt   = vix ? (vix.value > 20 ? `Volatility (VIX ${vix.value.toFixed(1)}) is elevated — markets are nervous.` : `Volatility (VIX ${vix.value.toFixed(1)}) is calm — steady market conditions.`) : '';
+
+  // What Nifty 50 IS (educational)
+  const explainer = `Nifty 50 tracks India's 50 largest companies on NSE. When it ${up ? 'rises' : 'falls'}, it means most of these big companies' shares are being ${up ? 'bought' : 'sold'} more today. ${vixTxt}`;
+
+  if (title) { title.style.color = up ? 'var(--g)' : 'var(--r)'; title.textContent = up ? '📈 Bullish — Markets rising' : '📉 Bearish — Markets falling'; }
+  if (reason) {
     reason.style.color = up ? 'var(--g)' : 'var(--r)';
-    reason.textContent = `${marketStatus} · Nifty 50 ${up?'up':'down'} ${Math.abs(nifty.changePct).toFixed(2)}% at ${nifty.value?.toLocaleString('en-IN',{maximumFractionDigits:0})}.${sensex?` Sensex ${sensex.value?.toLocaleString('en-IN',{maximumFractionDigits:0})}.`:''} ${vix?`VIX ${vix.value?.toFixed(2)} — ${vix.value>20?'elevated volatility':'calm market'}.`:''}`;
+    reason.innerHTML = `<b>${statusIcon} ${statusTxt}</b><br>Nifty 50 ${up ? 'up' : 'down'} ${pct.toFixed(2)}% at ${nifty.value?.toLocaleString('en-IN', {maximumFractionDigits:0})}${sensex ? ` · Sensex ${sensex.value?.toLocaleString('en-IN', {maximumFractionDigits:0})}` : ''}. Has ${moveSize}.<br><span style="font-size:10px;opacity:0.8">${explainer}</span>`;
   }
-  if(moodIdx) {
-    moodIdx.innerHTML = [nifty,sensex].filter(Boolean).map(i=>{
-      const u=i.changePct>=0;
+  if (moodIdx) {
+    moodIdx.innerHTML = [nifty, sensex].filter(Boolean).map(i => {
+      const u = i.changePct >= 0;
       return `<div class="midx"><div class="midx-n">${i.name.replace('NIFTY ','').replace('SENSEX','Sensex')}</div><div class="midx-v" style="color:${u?'var(--g)':'var(--r)'}">${u?'+':''}${i.changePct.toFixed(2)}%</div></div>`;
     }).join('');
   }
 }
 
 // ── HOME — DARK HORSE (auto-calculated) ─────────────────────────
-const DH_CANDIDATES = ['SUNPHARMA','HAL','DIXON','PERSISTENT','TCS','HDFCBANK','MARUTI','BHARTIARTL','LT','RELIANCE','INFY','SBIN'];
+const DH_CANDIDATES = ['SUNPHARMA','HAL','DIXON','PERSISTENT','TCS','HDFCBANK','MARUTI','BHARTIARTL','LT','RELIANCE','INFY','SBIN','TATASTEEL','NTPC','WIPRO'];
 
 async function loadDarkHorse() {
-  const results = [];
-  // Fetch one at a time to avoid rate limiting (DH is not time-critical)
-  for (const sym of DH_CANDIDATES) {
-    try {
-      const live = await api('quote', { symbol: sym });
-      if (!live?.price || !live?.live) continue;
-      const stored = STOCKS[sym];
-      const w52pct = live.w52High > live.w52Low
-        ? (live.price - live.w52Low) / (live.w52High - live.w52Low)
-        : 0.5;
-      const underRadar = w52pct < 0.75 && w52pct > 0.3;
-      const volScore   = live.volume > 500000 ? 2 : live.volume > 100000 ? 1 : 0;
-      const dhScore    = (w52pct * 5) + (Math.abs(live.changePct) * 0.8) + volScore + (underRadar ? 2 : 0);
-      // Build live pillars score (no stored pillars needed)
-      const pillars = buildLivePillars(live);
-      const score   = calcScore(pillars);
-      results.push({ sym, live, stored, dhScore, w52pct, underRadar, score });
-    } catch (e) { console.warn('DH fetch', sym, e.message); }
-  }
+  // Use batch — ONE server call, ONE session fetch for all candidates
+  const data = await api('batch', { symbols: DH_CANDIDATES.join(',') });
 
-  if (!results.length) {
+  if (!data?.quotes || data.loaded === 0) {
     const dhLoad = document.getElementById('dhLoading');
     if (dhLoad) dhLoad.textContent = 'Live data unavailable — refresh to retry';
     return;
   }
 
+  const results = [];
+  DH_CANDIDATES.forEach(sym => {
+    const live = data.quotes[sym];
+    if (!live?.price) return;
+    const stored  = STOCKS[sym];
+    const w52pct  = live.w52High > live.w52Low ? (live.price - live.w52Low) / (live.w52High - live.w52Low) : 0.5;
+    const underRadar = w52pct < 0.75 && w52pct > 0.3;
+    const volScore   = live.volume > 500000 ? 2 : live.volume > 100000 ? 1 : 0;
+    const dhScore    = (w52pct * 6) + (Math.abs(live.changePct) * 0.4) + volScore + (underRadar ? 2.5 : 0);
+    const score      = calcScore(buildLivePillars(live));
+    results.push({ sym, live, stored, dhScore, w52pct, underRadar, score });
+  });
+
+  if (!results.length) return;
   results.sort((a, b) => b.dhScore - a.dhScore);
   const dh = results[0];
   const up = dh.live.changePct >= 0;
@@ -1739,56 +1768,47 @@ async function loadDarkHorse() {
   if (dhCard) dhCard.onclick = () => loadStock(dh.sym);
 
   const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
-  const name = dh.live.longName || dh.stored?.name || dh.sym;
-  set('dhSym',  name);
-  set('dhName', `${dh.sym} · NSE · ${dh.stored?.sector || 'Listed'}`);
-  set('dhWhy',  `${up ? 'Up' : 'Down'} ${Math.abs(dh.live.changePct).toFixed(1)}% · ₹${dh.live.price.toLocaleString('en-IN')}. At ${Math.round(dh.w52pct * 100)}% of yearly range — ${dh.underRadar ? 'not at extremes, worth watching' : 'near yearly high — strong momentum'}.`);
+  set('dhSym',  dh.live.longName || dh.stored?.name || dh.sym);
+  set('dhName', `${dh.sym} · ${dh.stored?.sector || 'NSE Listed'}`);
+  set('dhWhy',  `At ${Math.round(dh.w52pct * 100)}% of its 52-week range (₹${dh.live.w52Low.toLocaleString('en-IN')} – ₹${dh.live.w52High.toLocaleString('en-IN')}). ${dh.underRadar ? 'In the mid-zone — not overextended, under the radar.' : 'Near yearly high — strong momentum.'} Current price ₹${dh.live.price.toLocaleString('en-IN')}.`);
   set('dhMove',  (up ? '+' : '') + dh.live.changePct.toFixed(2) + '%');
   set('dhScore', dh.score.toFixed(1) + '/10');
   set('dhVol',   fmtVol(dh.live.volume));
   set('dhRadar', dh.underRadar ? '✓ Yes' : '~ Extreme');
 
-  const mv0 = document.querySelector('#dhCard .dh-mv');
-  if (mv0) mv0.style.color = up ? '#4ade80' : '#f87171';
+  const firstMv = document.querySelector('#dhCard .dh-mv');
+  if (firstMv) firstMv.style.color = up ? '#4ade80' : '#f87171';
 }
 
 // ── HOME — TOP MOVERS (live) ──────────────────────────────────────
-// Must include all HEATMAP_SYMS so heatmap gets populated from movers data
+// Must include ALL HEATMAP_SYMS so heatmap always gets populated
 const MOVER_SYMS = [
-  // Heatmap representatives (must stay)
-  'INFY','HDFCBANK','SUNPHARMA','MARUTI','ITC','RELIANCE','LT','HAL','DIXON',
+  // All 12 heatmap stocks (required)
+  'INFY','HDFCBANK','SUNPHARMA','MARUTI','ITC','RELIANCE','LT','HAL','DIXON','TATASTEEL','NTPC','BHARTIARTL',
   // Additional movers
-  'TCS','BHARTIARTL','PERSISTENT','HCLTECH','KOTAKBANK','AXISBANK','BAJFINANCE','TITAN','TATAMOTORS','SBIN','ICICIBANK'
+  'TCS','PERSISTENT','HCLTECH','KOTAKBANK','AXISBANK','BAJFINANCE','TITAN','TATAMOTORS','SBIN','ICICIBANK','WIPRO'
 ];
 
 async function loadMovers() {
   const moverEl = document.getElementById('moversList');
-  if (moverEl) moverEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">⏳ Loading live data for 20 stocks…</div>';
+  if (moverEl) moverEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">⏳ Loading live data…</div>';
 
-  const results = [];
-  const BATCH   = 5;
-  for (let i = 0; i < MOVER_SYMS.length; i += BATCH) {
-    const batch  = MOVER_SYMS.slice(i, i + BATCH);
-    const quotes = await Promise.allSettled(batch.map(s => api('quote', { symbol: s })));
-    quotes.forEach((res, j) => {
-      const live = res.status === 'fulfilled' ? res.value : null;
-      if (!live?.price) return;
-      const sym = MOVER_SYMS[i + j];
-      results.push({ sym, live, name: live.longName || STOCKS[sym]?.name || sym });
-    });
-    // Show partial results after each batch
-    if (results.length > 0) {
-      const partial = [...results].sort((a, b) => b.live.changePct - a.live.changePct);
-      renderMovers('gainers', partial);
-      updateHeatmapFromMovers(results);
-    }
-    if (i + BATCH < MOVER_SYMS.length) await new Promise(r => setTimeout(r, 400));
-  }
+  // ONE batch API call for all 20 symbols — single session fetch on the server
+  const data = await api('batch', { symbols: MOVER_SYMS.join(',') });
 
-  if (!results.length) {
+  if (!data?.quotes || data.loaded === 0) {
     if (moverEl) moverEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">⚠️ Could not load market data. <span onclick="loadMovers()" style="color:var(--b);cursor:pointer;font-weight:600">Tap to retry</span></div>';
     return;
   }
+
+  // Convert batch response {quotes: {TCS: {...}, INFY: {...}}} into results array
+  const results = MOVER_SYMS
+    .filter(sym => data.quotes[sym])
+    .map(sym => ({
+      sym,
+      live: data.quotes[sym],
+      name: data.quotes[sym].longName || STOCKS[sym]?.name || sym,
+    }));
 
   moversCache.gainers = [...results].sort((a, b) => b.live.changePct - a.live.changePct);
   moversCache.losers  = [...results].sort((a, b) => a.live.changePct - b.live.changePct);
@@ -1809,10 +1829,16 @@ function renderMovers(type, overrideList) {
   const el   = document.getElementById('moversList'); if (!el) return;
   const list = overrideList || moversCache[type] || [];
   if (!list.length) return;
+
+  // Detect weekend / all-zero scenario
+  const allZero = list.every(r => Math.abs(r.live.changePct) < 0.01);
+  const weekendNote = allZero ? '<div style="background:var(--al);border-radius:8px;padding:8px 11px;font-size:10px;color:var(--a);margin-bottom:8px">📅 Markets closed — showing last session\'s closing prices. % change reflects Friday vs Thursday move.</div>' : '';
+
   const display = type === 'volume'
     ? r => fmtVol(r.live.volume)
     : r => (r.live.changePct >= 0 ? '+' : '') + r.live.changePct.toFixed(2) + '%';
-  el.innerHTML = list.slice(0, 8).map((r, i) => {
+
+  el.innerHTML = weekendNote + list.slice(0, 8).map((r, i) => {
     const up      = r.live.changePct >= 0;
     const nameStr = (r.name || r.sym).substring(0, 28);
     return `<div class="mrow" onclick="loadStock('${r.sym}')">
@@ -1825,46 +1851,86 @@ function renderMovers(type, overrideList) {
     </div>`;
   }).join('')
   + `<div style="padding:8px 0 2px;text-align:center;font-size:10px;color:var(--muted)">
-      ${list.length} stocks loaded ·
-      <span onclick="loadMovers()" style="color:var(--b);cursor:pointer;font-weight:600">↻ Refresh</span>
+      ${list.length} stocks · <span onclick="loadMovers()" style="color:var(--b);cursor:pointer;font-weight:600">↻ Refresh</span>
     </div>`;
 }
 
 // ── HOME — COMMODITIES ────────────────────────────────────────────
+let usdInrRate = 84.0; // will be updated from forex data
+let commExpanded = {};
+
 async function loadCommodities() {
-  const grid = document.getElementById('commGrid');
+  const grid  = document.getElementById('commGrid');
   const badge = document.getElementById('commBadge');
-  if(!grid) return;
-  grid.innerHTML = Array(4).fill('<div class="comm-card"><div class="shimmer" style="height:80px"></div></div>').join('');
+  if (!grid) return;
+  grid.innerHTML = Array(4).fill('<div class="comm-card"><div class="shimmer" style="height:120px"></div></div>').join('');
+
+  // Fetch forex first to get live USD/INR rate
+  const forexData = await api('forex');
+  if (forexData?.forex) {
+    const usd = forexData.forex.find(f => f.label === 'USD/INR');
+    if (usd?.rate) usdInrRate = usd.rate;
+  }
+
   const data = await api('commodities');
   if (!data?.commodities?.length) {
-    if(badge) { badge.className='sample-badge'; badge.textContent='Unavailable'; }
-    grid.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:12px">Could not load commodity data. Please try again.</div>';
+    if (badge) { badge.className = 'sample-badge'; badge.textContent = 'Unavailable'; }
+    grid.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:12px">Could not load commodity data.</div>';
     return;
   }
-  if(badge) { badge.className='live-dot'; badge.textContent=t('idxLiveTxt'); }
-  grid.innerHTML = data.commodities.map(c => {
-    const up = (c.changePct||0) >= 0;
-    const prefix = c.unit?.includes('USD') || c.unit?.includes('USc') ? '$' : '₹';
-    const pDisplay = c.price > 0 ? prefix + c.price.toLocaleString('en-IN', {maximumFractionDigits:2}) : '—';
-    return `<div class="comm-card" style="cursor:default">
-      <div class="comm-ico">${c.icon||'📊'}</div>
-      <div class="comm-name">${c.label}</div>
-      <div class="comm-price" style="color:${up?'var(--g)':'var(--r)'}">${pDisplay}</div>
-      <div class="comm-chg ${up?'up':'dn'}">${up?'▲':'▼'} ${Math.abs(c.changePct||0).toFixed(2)}%</div>
-      <div class="comm-unit">${c.unit||''}</div>
-      <div class="comm-impact">${c.impact||''}</div>
+  if (badge) { badge.className = 'live-dot'; badge.textContent = 'LIVE'; }
+
+  // Insights per commodity for Indian investors
+  const INSIGHTS = {
+    'Gold':      { inr: true,  who:'Safe haven. RBI holds gold reserves. Indian households are world\'s largest gold consumers. Rising gold often means global uncertainty or falling USD.', sectors:'Jewellery (Titan, PC Jeweller), Gold ETFs', emoji:'🥇' },
+    'Silver':    { inr: true,  who:'Industrial metal + store of value. Used in solar panels and electronics.', sectors:'Solar energy companies, electronics manufacturers', emoji:'🥈' },
+    'Crude Oil': { inr: true,  who:'India imports ~85% of its crude oil. Rising crude = higher petrol/diesel prices = inflation.', sectors:'Aviation (IndiGo), Paints (Asian Paints), Tyres (MRF), OMCs (BPCL, IOC)', emoji:'🛢️' },
+    'Nat Gas':   { inr: true,  who:'Used in power generation and fertiliser production. India is increasing LNG imports.', sectors:'Fertiliser companies (Chambal), Power sector, Piped gas (IGL, MGL)', emoji:'🔥' },
+    'Copper':    { inr: true,  who:'Called "Dr Copper" — rises when global economy grows. India is a major importer.', sectors:'Electrical cables (Polycab, KEI), Autos, Real estate', emoji:'🔶' },
+    'Aluminium': { inr: true,  who:'Key input for auto, aerospace, and packaging. India has large bauxite reserves.', sectors:'Hindalco, NALCO, Auto companies, FMCG packaging', emoji:'🔩' },
+    'Corn':      { inr: false, who:'Used for animal feed, ethanol, and food processing. Affects poultry and FMCG costs.', sectors:'Poultry companies, FMCG (ITC, HUL), Ethanol producers', emoji:'🌽' },
+    'Wheat':     { inr: false, who:'Global food price indicator. India is world\'s 2nd largest wheat producer. Rising wheat = food inflation.', sectors:'Flour mills, FMCG food companies, ITC Agri', emoji:'🌾' },
+    'Soybean':   { inr: false, who:'Used for edible oil and animal feed. India imports large quantities of soya oil.', sectors:'Edible oil companies (Adani Wilmar), FMCG, Poultry', emoji:'🫘' },
+    'Cotton':    { inr: false, who:'India is world\'s largest cotton producer. Falling cotton = lower costs for textile companies.', sectors:'Textile companies (Welspun, Trident, Page Industries)', emoji:'☁️' },
+  };
+
+  grid.style.gridTemplateColumns = '1fr';
+  grid.innerHTML = data.commodities.map((c, idx) => {
+    const up       = (c.changePct || 0) >= 0;
+    const info     = INSIGHTS[c.label] || {};
+    const usdPrice = `$${c.price.toLocaleString('en-IN', {maximumFractionDigits:2})} ${c.unit}`;
+    const inrPrice = info.inr ? `₹${(c.price * usdInrRate).toLocaleString('en-IN', {maximumFractionDigits:0})}` : '';
+    const chgColor = up ? 'var(--g)' : 'var(--r)';
+    return `
+    <div class="comm-card" style="cursor:pointer;padding:12px 14px" onclick="toggleComm(${idx})">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="font-size:24px">${info.emoji||c.icon||'📊'}</div>
+          <div>
+            <div style="font-size:13px;font-weight:700">${c.label}</div>
+            <div style="font-size:10px;color:var(--muted)">${c.unit}</div>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:15px;font-weight:700;color:${chgColor}">${usdPrice}</div>
+          ${inrPrice ? `<div style="font-size:11px;color:var(--muted)">≈ ${inrPrice} / unit</div>` : ''}
+          <div style="font-size:11px;font-weight:600;color:${chgColor}">${up?'▲':'▼'} ${Math.abs(c.changePct||0).toFixed(2)}%</div>
+        </div>
+      </div>
+      <div id="comm-detail-${idx}" style="display:none;margin-top:10px;padding-top:10px;border-top:0.5px solid var(--border)">
+        <div style="font-size:11px;color:var(--text);line-height:1.6;margin-bottom:6px">${info.who||c.impact||''}</div>
+        ${info.sectors ? `<div style="font-size:10px;background:var(--bl);border-radius:6px;padding:6px 9px;color:var(--b)">📌 <b>Indian stocks affected:</b> ${info.sectors}</div>` : ''}
+        <div style="font-size:10px;color:var(--muted);margin-top:6px">
+          ${up ? `⚠️ Rising ${c.label.toLowerCase()} may increase input costs for affected companies.` : `✅ Falling ${c.label.toLowerCase()} may reduce input costs — positive for affected companies.`}
+        </div>
+      </div>
     </div>`;
   }).join('');
-  // Append education note
-  const wrap = document.getElementById('ht-commodities')?.querySelector('.pw');
-  if (wrap && !wrap.querySelector('.comm-edu')) {
-    const edu = document.createElement('div');
-    edu.className = 'comm-edu disc';
-    edu.style.marginTop = '4px';
-    edu.innerHTML = `📚 <b>What does this mean for Indian stocks?</b> Rising crude oil hurts aviation (IndiGo) and paints (Asian Paints) companies because their input costs go up. Rising gold often signals global uncertainty. Rising copper means factories worldwide are ordering more — a sign of economic growth. These are indicators to <i>observe</i>, not to trade on directly.`;
-    wrap.appendChild(edu);
-  }
+}
+
+function toggleComm(idx) {
+  const el = document.getElementById(`comm-detail-${idx}`);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
 }
 
 // ── HOME — FOREX ──────────────────────────────────────────────────
@@ -1893,35 +1959,45 @@ async function loadForex() {
   }).join('');
 }
 
-// ── F&O PANEL — Educational, no fake random data ─────────────────
+// ── F&O PANEL — Honest education with links to real data ─────────
 function loadFnO() {
-  const panel = document.getElementById('fnoPanel'); if(!panel) return;
+  const panel = document.getElementById('fnoPanel'); if (!panel) return;
+  const concepts = [
+    ['📊 Put Call Ratio (PCR)', 'Ratio of Put options (bearish) to Call options (bullish). PCR > 1.2 = more bearish bets. PCR < 0.8 = more bullish bets. NSE publishes this daily at nseindia.com.'],
+    ['📈 Open Interest (OI)', 'Total active F&O contracts at a strike price. High OI creates support or resistance because many traders have committed positions there.'],
+    ['⏰ Theta (Time Decay)', 'Options lose value every day even if the stock does not move. Sellers benefit. Buyers fight against it. This is why most option buyers lose money.'],
+    ['🌡️ India VIX', "India Fear Index — measures expected volatility. Below 15 = calm. 15-20 = moderate concern. Above 20 = fear. High VIX = expensive options."],
+  ];
+  const links = [
+    ['NSE Option Chain (official)', 'nseindia.com/option-chain'],
+    ['Sensibull Option Analytics', 'sensibull.com'],
+    ['Zerodha Varsity F&O Guide', 'varsity.zerodha.com'],
+  ];
   panel.innerHTML = `
-    <div style="background:var(--al);border-radius:10px;padding:12px;margin-bottom:10px">
-      <div style="font-size:11px;font-weight:600;color:var(--a);margin-bottom:6px">⚠️ 89% of F&O traders lose money. This is for education only.</div>
-      <div style="font-size:11px;color:var(--text);line-height:1.6">F&O (Futures & Options) are derivative contracts — you are not buying a stock, but a contract whose value is <i>derived</i> from a stock's price. They expire on a fixed date (monthly) and require significant market knowledge.</div>
+    <div style="background:var(--rl);border-radius:10px;padding:12px;margin-bottom:12px">
+      <div style="font-size:12px;font-weight:700;color:var(--r);margin-bottom:4px">⚠️ SEBI Data: 9 out of 10 F&O traders lose money</div>
+      <div style="font-size:11px;color:var(--text);line-height:1.6">F&O contracts derive value from stocks or indices and expire monthly. They require significant knowledge and capital.</div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:10px">
-      ${[
-        ['Put Call Ratio (PCR)','Measures sentiment. PCR > 1.2 = more puts (bearish bets) than calls. PCR < 0.8 = more calls (bullish bets). Extreme readings often precede reversals.'],
-        ['Open Interest (OI)','Total open contracts at a strike price. Very high OI at a price level often acts as support or resistance because many traders have commitments there.'],
-        ['VIX (India)','India Volatility Index. Below 15 = calm market. 15–25 = moderate nervousness. Above 25 = fear in the market. High VIX = options become more expensive.'],
-        ['Theta Decay','Options lose value every day even if the stock does not move. This is called time decay (theta). Buyers of options fight time decay. Sellers benefit from it.'],
-      ].map(([t,d])=>`
-        <div style="background:var(--bg);border-radius:9px;padding:10px;border:0.5px solid var(--border)">
-          <div style="font-size:10px;font-weight:700;color:var(--b);margin-bottom:4px">${t}</div>
-          <div style="font-size:10px;color:var(--muted);line-height:1.5">${d}</div>
-        </div>`).join('')}
+    <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Key concepts</div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">
+      ${concepts.map(([title, desc]) =>
+        '<div style="background:var(--bg);border-radius:9px;padding:10px 12px;border:0.5px solid var(--border)">' +
+        '<div style="font-size:11px;font-weight:700;margin-bottom:4px">' + title + '</div>' +
+        '<div style="font-size:10px;color:var(--muted);line-height:1.55">' + desc + '</div></div>'
+      ).join('')}
     </div>
-    <div style="background:var(--bl);border-radius:9px;padding:10px;border:0.5px solid rgba(26,95,168,0.2)">
-      <div style="font-size:10px;font-weight:600;color:var(--b);margin-bottom:4px">📚 Where to learn F&O properly</div>
-      <div style="font-size:10px;color:var(--b);line-height:1.6">NSE India offers free F&O certification courses. Varsity by Zerodha (varsity.zerodha.com) has excellent free modules on derivatives. Always paper-trade first before real capital.</div>
+    <div style="background:var(--bl);border-radius:9px;padding:11px 12px;margin-bottom:8px">
+      <div style="font-size:11px;font-weight:600;color:var(--b);margin-bottom:7px">📚 Get real F&O data (all free)</div>
+      ${links.map(([n, u]) =>
+        '<a href="https://' + u + '" target="_blank" style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:0.5px solid rgba(26,95,168,0.15);font-size:11px;color:var(--b);text-decoration:none">' +
+        '<span>' + n + '</span><span style="opacity:0.6;font-size:10px">' + u + ' ↗</span></a>'
+      ).join('')}
     </div>
-    <div class="disc">⚠️ Educational content only. F&O trading is high risk. SEBI data shows most retail participants lose money in derivatives. This app does not recommend F&O trading.</div>`;
+    <div class="disc">⚠️ StockSense does not provide F&O signals. Please complete proper study before considering F&O trading.</div>`;
 }
 
 // ── HOME — NEWS ───────────────────────────────────────────────────
-const NEWS_CATS = ['All','Markets','Results','Economy','Banking','IT','Pharma','IPO'];
+const NEWS_CATS = ['All','Markets','Global','Economy','Results','Banking','IT','Pharma','IPO'];
 let allNews = [], activeNewsCat = 'All';
 
 async function loadNews() {
@@ -1947,13 +2023,14 @@ function renderNews(cat, el) {
   const nc = document.getElementById('newsContent'); if(!nc) return;
   const filtered = cat === 'All' ? allNews : allNews.filter(n => {
     const t2 = (n.title||'').toLowerCase();
-    return cat === 'Markets' ? t2.includes('nifty')||t2.includes('sensex')||t2.includes('market')
-      : cat === 'Results' ? t2.includes('result')||t2.includes('profit')||t2.includes('quarter')
-      : cat === 'Economy' ? t2.includes('gdp')||t2.includes('rbi')||t2.includes('inflation')
-      : cat === 'Banking' ? t2.includes('bank')||t2.includes('nbfc')
-      : cat === 'IT' ? t2.includes(' it ')||t2.includes('tech')||t2.includes('software')
-      : cat === 'Pharma' ? t2.includes('pharma')||t2.includes('drug')
-      : cat === 'IPO' ? t2.includes('ipo')||t2.includes('listing')
+    return cat === 'Markets' ? t2.includes('nifty')||t2.includes('sensex')||t2.includes('market')||t2.includes('bse')||t2.includes('nse')
+      : cat === 'Global'  ? t2.includes('war')||t2.includes('trump')||t2.includes('fed')||t2.includes('dollar')||t2.includes('china')||t2.includes('oil')||t2.includes('geopolit')||t2.includes('sanction')||t2.includes('ukraine')||t2.includes('middle east')||t2.includes('crude')||t2.includes('global')
+      : cat === 'Results' ? t2.includes('result')||t2.includes('profit')||t2.includes('quarter')||t2.includes('earnings')||t2.includes('revenue')
+      : cat === 'Economy' ? t2.includes('gdp')||t2.includes('rbi')||t2.includes('inflation')||t2.includes('rate')||t2.includes('rupee')||t2.includes('budget')
+      : cat === 'Banking' ? t2.includes('bank')||t2.includes('nbfc')||t2.includes('loan')||t2.includes('npa')
+      : cat === 'IT'      ? t2.includes(' it ')||t2.includes('tech')||t2.includes('software')||t2.includes('ai')||t2.includes('infosys')||t2.includes('tcs')||t2.includes('wipro')
+      : cat === 'Pharma'  ? t2.includes('pharma')||t2.includes('drug')||t2.includes('fda')||t2.includes('medicine')
+      : cat === 'IPO'     ? t2.includes('ipo')||t2.includes('listing')||t2.includes('subscription')
       : true;
   });
   const SC = {positive:{bg:'var(--gl)',col:'var(--g)',ico:'↑'},neutral:{bg:'var(--al)',col:'var(--a)',ico:'→'},negative:{bg:'var(--rl)',col:'var(--r)',ico:'↓'}};
@@ -1963,7 +2040,7 @@ function renderNews(cat, el) {
   }).join('') : '<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">No news in this category yet</div>';
 }
 
-// ── HEATMAP — populated from movers data (no extra API calls) ─────
+// ── HEATMAP — Live sector data, populated from movers ────────────
 const HEATMAP_SYMS = [
   { name:'IT',       sym:'INFY'      },
   { name:'Banking',  sym:'HDFCBANK'  },
@@ -1974,6 +2051,9 @@ const HEATMAP_SYMS = [
   { name:'Infra',    sym:'LT'        },
   { name:'Defence',  sym:'HAL'       },
   { name:'EMS',      sym:'DIXON'     },
+  { name:'Metals',   sym:'TATASTEEL' },
+  { name:'Power',    sym:'NTPC'      },
+  { name:'Telecom',  sym:'BHARTIARTL'},
 ];
 
 function buildHeatmap() {
@@ -2380,45 +2460,59 @@ function toggleLearn(ci, ii) {
 }
 
 // ── RESEARCH OVERLAY ──────────────────────────────────────────────
-function buildQuickPicks() {
-  const el = document.getElementById('quickPicks'); if(!el) return;
-  el.innerHTML = QUICK_PICKS.map(sym =>
-    `<div onclick="loadStock('${sym}')" style="background:var(--card);border:0.5px solid var(--border);border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px">
-      <span>${sym}</span><span style="font-size:9px;color:var(--muted)">${STOCKS[sym]?.sector?.split(' ')[0]||'NSE'}</span>
-    </div>`).join('');
+function buildSectorChips() {
+  const el = document.getElementById('sectorChips'); if (!el) return;
+  el.innerHTML = SECTORS.map(s =>
+    `<div onclick="loadStock('${s.rep}')" style="background:var(--card);border:0.5px solid var(--border);border-radius:8px;padding:6px 11px;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:5px">
+      <span>${s.icon}</span><span>${s.name}</span>
+    </div>`
+  ).join('');
 }
 
-function buildSectorChips() {
-  const el = document.getElementById('sectorChips'); if(!el) return;
-  el.innerHTML = SECTORS.map(s => {
-    const rep = Object.entries(STOCKS).find(([k,v]) => v.sector === s)?.[0] || '';
-    return rep ? `<div onclick="loadStock('${rep}')" style="background:var(--card);border:0.5px solid var(--border);border-radius:8px;padding:6px 11px;font-size:11px;cursor:pointer;color:var(--b)">📌 ${s}</div>` : '';
-  }).join('');
+function buildThemeChips() {
+  const el = document.getElementById('themeChips'); if (!el) return;
+  el.innerHTML = THEMES.map(th =>
+    `<div onclick="showTheme('${encodeURIComponent(th.name)}','${th.reps.join(',')}','${encodeURIComponent(th.news)}')"
+      style="background:linear-gradient(135deg,var(--bl),var(--card));border:0.5px solid var(--b);border-radius:8px;padding:7px 12px;font-size:11px;cursor:pointer;color:var(--b);font-weight:500">
+      ${th.name}
+    </div>`
+  ).join('');
+}
+
+function showTheme(nameEnc, repsStr, newsEnc) {
+  const name = decodeURIComponent(nameEnc);
+  const reps = repsStr.split(',');
+  const news = decodeURIComponent(newsEnc);
+  // Show first rep stock and load theme news
+  loadStock(reps[0]);
+  // Load theme-specific news in background
+  api('news', { q: news }).then(data => {
+    if (data?.news?.length) {
+      allNews = [...data.news, ...allNews].slice(0, 30);
+    }
+  });
 }
 
 // ── INIT ──────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  // Setup search boxes
   setupSearch('homeSearch', 'homeDrop', sym => { showPage('research'); loadStock(sym); });
   setupSearch('resSearch', 'resDrop', sym => loadStock(sym));
 
-  // Build static UI
   buildHeatmap();
-  buildIPOs();   // now async — fetches live IPO news
-  buildQuickPicks();
+  buildIPOs();
   buildSectorChips();
+  buildThemeChips();
   buildLearn();
   buildNewsCats();
 
-  // Set initial mode
   document.body.classList.add('novice-mode');
   applyLang();
 
-  // Load live data — staggered to avoid hammering the API simultaneously
+  // Staggered live data loads
   setTimeout(loadIndices,   800);
-  setTimeout(loadDarkHorse, 3000);
-  setTimeout(loadMovers,    5000);
-  setTimeout(() => { if (document.getElementById('ht-today')?.classList.contains('on')) loadNews(); }, 7000);
+  setTimeout(loadMovers,    2000);
+  setTimeout(loadDarkHorse, 2400);
+  setTimeout(() => { if (document.getElementById('ht-today')?.classList.contains('on')) loadNews(); }, 4000);
 });
 
 </script>
