@@ -678,9 +678,9 @@ const STRINGS = {
     portDisc:'⚠️ Educational portfolio analysis. Not investment advice.',
     mfTitle:'Mutual Funds',mfDisc:'⚠️ NAV data from AMFI India. Historical returns only.',
     mfHint:'Mutual funds pool money from many investors to buy a diversified mix of stocks or bonds. You pay a small annual fee called the expense ratio.',
-    tabs:['Price','Score','Outlook','Financials','Peers','Company','SWOT'],
-    verdicts:{h:'Strong Research Candidate',m:'Moderate Interest',l:'Approach with Caution'},
-    vsubs:{h:'Fundamentals look healthy — worth researching further',m:'Mixed signals — monitor closely before deciding',l:'Weak signals — research risks carefully before considering'},
+    tabs:['Price','Score','Outlook','Financials','Peers','Company','Research'],
+    verdicts:{h:'Live Score: Strong',m:'Live Score: Moderate',l:'Live Score: Weak'},
+    vsubs:{h:'Based on live price signals only. Not a buy recommendation. Always verify with full fundamental research.',m:'Based on live price signals only. Not a buy recommendation. Always verify with full fundamental research.',l:'Based on live price signals only. Not a sell recommendation. Always verify with full fundamental research.'},
     modeNovice:'Novice',modePro:'Pro Mode',
     whyBtn:'🤔 Why did this stock move today?',
     swotS:'STRENGTHS',swotW:'WEAKNESSES',swotO:'OPPORTUNITIES',swotT:'THREATS',
@@ -721,8 +721,8 @@ const STRINGS = {
     portDisc:'⚠️ शैक्षिक पोर्टफोलियो विश्लेषण। निवेश सलाह नहीं।',
     mfTitle:'म्यूचुअल फंड',mfDisc:'⚠️ AMFI इंडिया से NAV डेटा। केवल ऐतिहासिक रिटर्न।',
     mfHint:'म्यूचुअल फंड कई निवेशकों का पैसा एक साथ शेयरों में लगाते हैं। आप एक छोटा वार्षिक शुल्क देते हैं जिसे एक्सपेंस रेशियो कहते हैं।',
-    tabs:['कीमत','स्कोर','आउटलुक','वित्तीय','पीयर्स','कंपनी','SWOT'],
-    verdicts:{h:'मजबूत शोध उम्मीदवार',m:'मध्यम रुचि',l:'सावधानी से देखें'},
+    tabs:['कीमत','स्कोर','आउटलुक','वित्तीय','पीयर्स','कंपनी','रिसर्च'],
+    verdicts:{h:'लाइव स्कोर: मजबूत',m:'लाइव स्कोर: मध्यम',l:'लाइव स्कोर: कमजोर'},
     vsubs:{h:'फंडामेंटल्स मजबूत — गहराई से शोध करें',m:'मिले-जुले संकेत — ध्यान से देखें',l:'कमजोर संकेत — जोखिम का ध्यान रखें'},
     modeNovice:'नौसिखिया',modePro:'प्रो मोड',
     whyBtn:'🤔 यह शेयर आज क्यों हिला?',
@@ -763,7 +763,7 @@ const STRINGS = {
     portDisc:'⚠️ શૈક્ષણિક પોર્ટફોલિઓ વિશ્લેષણ. રોકાણ સલાહ નથી.',
     mfTitle:'મ્યૂચ્યુઅલ ફંડ',mfDisc:'⚠️ AMFI ઇન્ડિયાથી NAV ડેટા. ઐતિહાસિક વળતર માત્ર.',
     mfHint:'મ્યૂચ્યુઅલ ફંડ ઘણા રોકાણકારોના પૈસા ભેગા કરીને શેર અને બૉન્ડ ખરીદે છે. તમે એક નાની વાર્ષિક ફી ચૂકવો છો.',
-    tabs:['ભાવ','સ્કોર','આઉટલૂક','નાણાં','સ્પર્ધક','કંપની','SWOT'],
+    tabs:['ભાવ','સ્કોર','આઉટલૂક','નાણાં','સ્પર્ધક','કંપની','રિસર્ચ'],
     verdicts:{h:'મજબૂત સંશોધન ઉમેદવાર',m:'મધ્યમ રસ',l:'સાવધાનીથી જુઓ'},
     vsubs:{h:'ફન્ડામેન્ટલ્સ મજબૂત — ઊંડો અભ્યાસ કરો',m:'મિશ્ર સંકેત — નજીકથી નજર રાખો',l:'નબળા સંકેત — જોખમ સમજો'},
     modeNovice:'નવો',modePro:'પ્રો મોડ',
@@ -1112,8 +1112,8 @@ function goHome() {
   const ov = document.getElementById('resOverlay'); if(ov) ov.style.display = 'block';
   const ri = document.getElementById('resSearch'); if(ri) ri.value = '';
   currentStock = null; currentSym = ''; currentLive = null;
-  if (chartInst) { chartInst.destroy(); chartInst = null; }
-  if (outChartInst) { outChartInst.destroy(); outChartInst = null; }
+  [chartInst, outChartInst, volChartInst, rsiChartInst].forEach(c => { if(c) c.destroy(); });
+  chartInst = outChartInst = volChartInst = rsiChartInst = null;
 }
 
 // ── LOAD STOCK — UNIVERSAL, ANY NSE/BSE SYMBOL ───────────────────
@@ -1127,8 +1127,10 @@ async function loadStock(sym) {
   const rc = document.getElementById('rcard'); if(rc) rc.classList.remove('v');
   const nb = document.getElementById('nfBox'); if(nb) nb.classList.remove('v');
   const lb = document.getElementById('loading'); if(lb) lb.classList.add('v');
-  if (chartInst) { chartInst.destroy(); chartInst = null; }
+  if (chartInst)    { chartInst.destroy();    chartInst    = null; }
   if (outChartInst) { outChartInst.destroy(); outChartInst = null; }
+  if (volChartInst) { volChartInst.destroy(); volChartInst = null; }
+  if (rsiChartInst) { rsiChartInst.destroy(); rsiChartInst = null; }
 
   const live = await api('quote', { symbol: sym });
   const lb2 = document.getElementById('loading'); if(lb2) lb2.classList.remove('v');
@@ -1200,8 +1202,8 @@ function renderStock(sym, s) {
   if(el('vPrice')) el('vPrice').textContent = price > 0 ? fmtPrice(price) : '—';
   const tod = el('vToday');
   if (tod) { tod.textContent = (up?'+':'') + pct.toFixed(2)+'%'; tod.className = 'pval ' + (up?'up':'dn'); }
-  if(el('vPE')) el('vPE').textContent = s.pe > 0 ? s.pe.toFixed(1) : '—';
-  if(el('vMktCap')) el('vMktCap').textContent = s.mktCap ? fmtMktCap(s.mktCap) : '—';
+  if(el('vPE')) el('vPE').textContent = s.pe > 0 ? s.pe.toFixed(1) : 'N/A';
+  if(el('vMktCap')) el('vMktCap').textContent = s.mktCap ? fmtMktCap(s.mktCap) : 'N/A';
 
   const score = s.score || 5;
   const ring = el('ring');
@@ -1226,7 +1228,7 @@ function renderStock(sym, s) {
 
 function buildTabBar(sym, s) {
   const bar = document.getElementById('tabBar'); if (!bar) return;
-  const keys = ['price','score','outlook','financials','peers','company','swot'];
+  const keys = ['price','score','outlook','financials','peers','company','research'];
   const labels = t('tabs');
   bar.innerHTML = keys.map((k,i) =>
     `<div class="tab${i===0?' on':''}" onclick="switchResTab('${k}','${currentSym}',currentStock)">${labels[i]}</div>`
@@ -1236,9 +1238,15 @@ function buildTabBar(sym, s) {
 function switchResTab(key, sym, s) {
   document.querySelectorAll('.tab').forEach(x => x.classList.remove('on'));
   const tabs = document.querySelectorAll('.tab');
-  const keys = ['price','score','outlook','financials','peers','company','swot'];
+  const keys = ['price','score','outlook','financials','peers','company','research'];
   const idx = keys.indexOf(key);
   if (tabs[idx]) tabs[idx].classList.add('on');
+
+  // Destroy price-tab charts when leaving price tab
+  if (key !== 'price') {
+    if (volChartInst) { volChartInst.destroy(); volChartInst = null; }
+    if (rsiChartInst) { rsiChartInst.destroy(); rsiChartInst = null; }
+  }
 
   const tc = document.getElementById('tabContents');
   if (!tc) return;
@@ -1249,10 +1257,9 @@ function switchResTab(key, sym, s) {
   else if (key === 'financials') html = buildFinancialsTab(s);
   else if (key === 'peers') html = buildPeersTab(sym, s);
   else if (key === 'company') html = buildCompanyTab(s);
-  else if (key === 'swot') html = buildSWOTTab(s);
+  else if (key === 'research') html = buildSWOTTab(s);
   tc.innerHTML = `<div class="tc on">${html}</div>`;
 
-  // Render charts after DOM
   if (key === 'price') setTimeout(() => renderPriceChart(sym, '1Y'), 80);
   if (key === 'outlook') setTimeout(() => renderOutlookChart(s), 80);
 }
@@ -1307,8 +1314,38 @@ function buildPriceTab(sym, s) {
     <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
       ${['1W','1M','3M','6M','1Y','3Y','5Y'].map(r=>`<button onclick="renderPriceChart('${sym}','${r}')" style="background:${r==='1Y'?'var(--gm)':'var(--bg)'};color:${r==='1Y'?'#fff':'var(--muted)'};border:0.5px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer" id="btn-${r}">${r}</button>`).join('')}
     </div>
-    <div style="position:relative;height:180px;margin-bottom:12px"><canvas id="priceChart"></canvas></div>
+    <div style="position:relative;height:180px;margin-bottom:4px"><canvas id="priceChart"></canvas></div>
+    <div style="font-size:10px;color:var(--muted);text-align:center;margin-bottom:12px">📖 Price Chart: Shows the closing price over the selected period. A rising line = buyers in control. Falling = sellers in control.</div>
+
+    <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:6px;margin-top:4px">📊 Volume (shares traded per period)</div>
+    <div style="position:relative;height:80px;margin-bottom:4px"><canvas id="volumeChart"></canvas></div>
+    <div style="font-size:10px;color:var(--muted);text-align:center;margin-bottom:12px">📖 Volume: High volume on an up day = strong buying conviction. High volume on a down day = strong selling pressure.</div>
+
+    <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:6px">📉 RSI — Relative Strength Index (14-period)</div>
+    <div style="position:relative;height:80px;margin-bottom:4px"><canvas id="rsiChart"></canvas></div>
+    <div style="font-size:10px;color:var(--muted);text-align:center;margin-bottom:12px">📖 RSI: Above 70 = possibly overbought (overpriced in the short term). Below 30 = possibly oversold (underpriced short term). Between 30-70 = neutral zone.</div>
     <div class="disc">${t('scoreDisc')}</div>`;
+}
+
+let volChartInst = null, rsiChartInst = null;
+
+function calcRSI(prices, period = 14) {
+  if (prices.length < period + 1) return prices.map(() => 50);
+  const rsi = new Array(prices.length).fill(null);
+  let gains = 0, losses = 0;
+  for (let i = 1; i <= period; i++) {
+    const diff = prices[i] - prices[i - 1];
+    if (diff > 0) gains += diff; else losses -= diff;
+  }
+  let avgGain = gains / period, avgLoss = losses / period;
+  rsi[period] = avgLoss === 0 ? 100 : 100 - (100 / (1 + avgGain / avgLoss));
+  for (let i = period + 1; i < prices.length; i++) {
+    const diff = prices[i] - prices[i - 1];
+    avgGain = (avgGain * (period - 1) + (diff > 0 ? diff : 0)) / period;
+    avgLoss = (avgLoss * (period - 1) + (diff < 0 ? -diff : 0)) / period;
+    rsi[i] = avgLoss === 0 ? 100 : 100 - (100 / (1 + avgGain / avgLoss));
+  }
+  return rsi;
 }
 
 async function renderPriceChart(sym, range) {
@@ -1320,39 +1357,128 @@ async function renderPriceChart(sym, range) {
   const [r,i] = (RMAP[range]||'1y|1wk').split('|');
   const data = await api('history', { symbol: sym, range: r, interval: i });
   const ctx = document.getElementById('priceChart'); if(!ctx) return;
-  if(chartInst) { chartInst.destroy(); chartInst=null; }
-  if(!data?.prices?.length) {
-    ctx.parentElement.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-size:12px">Chart data unavailable for this range</div>';
+
+  // Destroy previous instances
+  if (chartInst)   { chartInst.destroy();   chartInst   = null; }
+  if (volChartInst){ volChartInst.destroy(); volChartInst= null; }
+  if (rsiChartInst){ rsiChartInst.destroy(); rsiChartInst= null; }
+
+  if (!data?.prices?.length) {
+    ctx.parentElement.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-size:12px">Chart data unavailable</div>';
     return;
   }
-  const prices = data.prices.map(p=>p.close);
-  const labels = data.prices.map(p=>p.date);
-  const up = prices[prices.length-1] >= prices[0];
-  const color = up ? '#1a7c4a' : '#c0392b';
+
+  const prices  = data.prices.map(p => p.close);
+  const volumes = data.prices.map(p => p.volume || 0);
+  const labels  = data.prices.map(p => p.date);
+  const rsiVals = calcRSI(prices);
+  const up      = prices[prices.length-1] >= prices[0];
+  const color   = up ? '#1a7c4a' : '#c0392b';
+  const defOpts = { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{display:false}} };
+
+  // Price chart
   chartInst = new Chart(ctx.getContext('2d'), {
     type:'line',
     data:{ labels, datasets:[{ data:prices, borderColor:color, borderWidth:2, pointRadius:0, tension:0.3, fill:true, backgroundColor:up?'rgba(26,124,74,0.08)':'rgba(192,57,43,0.08)' }] },
-    options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>'₹'+c.raw?.toLocaleString('en-IN',{maximumFractionDigits:2})}} }, scales:{ x:{display:false}, y:{ticks:{font:{size:9},color:'#6b6b65',callback:v=>'₹'+(v>=1000?(v/1000).toFixed(0)+'K':v)},grid:{color:'#f0efe9'}} } }
+    options:{ ...defOpts, plugins:{...defOpts.plugins, tooltip:{callbacks:{label:c=>'₹'+c.raw?.toLocaleString('en-IN',{maximumFractionDigits:2})}}}, scales:{x:{display:false}, y:{ticks:{font:{size:9},color:'#6b6b65',callback:v=>'₹'+(v>=1000?(v/1000).toFixed(1)+'K':v)},grid:{color:'#f0efe9'}}} }
   });
+
+  // Volume chart
+  const volCtx = document.getElementById('volumeChart');
+  if (volCtx && volumes.some(v => v > 0)) {
+    volChartInst = new Chart(volCtx.getContext('2d'), {
+      type:'bar',
+      data:{ labels, datasets:[{ data:volumes, backgroundColor: prices.map((p,i) => i===0?'#6b6b65':p>=prices[i-1]?'rgba(26,124,74,0.6)':'rgba(192,57,43,0.6)'), borderWidth:0 }] },
+      options:{ ...defOpts, scales:{x:{display:false}, y:{ticks:{font:{size:9},color:'#6b6b65',callback:v=>v>=1e7?(v/1e7).toFixed(1)+'Cr':v>=1e5?(v/1e5).toFixed(0)+'L':v},grid:{color:'#f0efe9'}}} }
+    });
+  }
+
+  // RSI chart
+  const rsiCtx = document.getElementById('rsiChart');
+  if (rsiCtx) {
+    const rsiColors = rsiVals.map(v => v === null ? 'transparent' : v > 70 ? '#c0392b' : v < 30 ? '#1a7c4a' : '#d4870a');
+    rsiChartInst = new Chart(rsiCtx.getContext('2d'), {
+      type:'line',
+      data:{ labels, datasets:[
+        { data:rsiVals, borderColor:'#d4870a', borderWidth:1.5, pointRadius:0, tension:0.3, fill:false },
+        { data:labels.map(()=>70), borderColor:'rgba(192,57,43,0.3)', borderWidth:1, borderDash:[4,3], pointRadius:0 },
+        { data:labels.map(()=>30), borderColor:'rgba(26,124,74,0.3)', borderWidth:1, borderDash:[4,3], pointRadius:0 },
+      ]},
+      options:{ ...defOpts, scales:{x:{display:false}, y:{min:0,max:100,ticks:{font:{size:9},color:'#6b6b65',stepSize:25},grid:{color:'#f0efe9'}}} }
+    });
+  }
 }
 
-// ── SCORE TAB ────────────────────────────────────────────────────
+// ── SCORE TAB — Live signals with benchmarks, no advice ──────────
 function buildScoreTab(s) {
   const pillars = s.pillars || [];
-  const noviceH = t('noviceHint').score;
+  const pe = s.pe || 0;
+  const mktCapCr = s.mktCap > 0 ? Math.round(s.mktCap / 1e7) : 0;
+  const bench = BENCH[s.sector] || BENCH['IT Services'];
+  const w52pct = s.w52High > s.w52Low ? Math.round((s.price - s.w52Low) / (s.w52High - s.w52Low) * 100) : 50;
+
+  // Benchmark comparisons with explanations
+  const benchRows = [
+    {
+      label: 'P/E vs Sector Avg',
+      value: pe > 0 ? pe.toFixed(1) : 'N/A',
+      benchmark: bench.pe,
+      explain: 'P/E = Price ÷ Earnings Per Share. Compare with sector average to judge if a stock is expensive or cheap for its industry.',
+      signal: pe > 0 ? (pe < bench.pe ? 'below avg' : pe < bench.pe * 1.5 ? 'near avg' : 'above avg') : 'no data',
+      signalColor: pe > 0 ? (pe < bench.pe ? 'var(--g)' : pe < bench.pe * 1.5 ? 'var(--a)' : 'var(--r)') : 'var(--muted)',
+    },
+    {
+      label: '52-Week Position',
+      value: w52pct + '%',
+      benchmark: '30–70% = healthy',
+      explain: 'Where the current price sits within the past year\'s range. 0% = yearly low, 100% = yearly high. Middle zone is generally less risky.',
+      signal: w52pct > 80 ? 'near high' : w52pct < 20 ? 'near low' : 'mid range',
+      signalColor: w52pct > 80 ? 'var(--a)' : w52pct < 20 ? 'var(--r)' : 'var(--g)',
+    },
+    {
+      label: 'Market Cap Category',
+      value: mktCapCr > 20000 ? 'Large Cap' : mktCapCr > 5000 ? 'Mid Cap' : mktCapCr > 0 ? 'Small Cap' : 'N/A',
+      benchmark: mktCapCr > 20000 ? '>₹20,000 Cr' : mktCapCr > 5000 ? '₹5,000–20,000 Cr' : '<₹5,000 Cr',
+      explain: 'Large caps are more stable but grow slower. Mid caps balance growth and stability. Small caps can grow fast but carry more risk.',
+      signal: mktCapCr > 20000 ? 'stable' : mktCapCr > 5000 ? 'growth' : 'risky',
+      signalColor: mktCapCr > 20000 ? 'var(--b)' : mktCapCr > 5000 ? 'var(--g)' : 'var(--a)',
+    },
+    {
+      label: 'Promoter Holding',
+      value: s.promoter > 0 ? s.promoter + '%' : 'N/A',
+      benchmark: '>50% = high confidence',
+      explain: 'Promoters are founders or controlling shareholders. High holding means they believe in the company. Very low holding can signal lack of confidence.',
+      signal: s.promoter > 50 ? 'high' : s.promoter > 25 ? 'moderate' : s.promoter > 0 ? 'low' : 'no data',
+      signalColor: s.promoter > 50 ? 'var(--g)' : s.promoter > 25 ? 'var(--a)' : s.promoter > 0 ? 'var(--r)' : 'var(--muted)',
+    },
+  ];
+
   return `
-    <div class="novice-hint v">${noviceH}</div>
-    ${pillars.map((p,i) => `
-      <div class="pillar">
-        <div class="ptop">
-          <div class="pname">${p.name} <span style="font-size:9px;color:var(--muted);font-weight:400">(<input class="weight-inp" id="w${i}" value="${p.weight||20}" onchange="recalcScore()" type="number" min="0" max="50">%)</span></div>
-          <div class="pscore" style="color:${p.score>=7.5?'var(--g)':p.score>=5?'var(--a)':'var(--r)'}">${(p.score||0).toFixed(1)}</div>
+    <div style="background:var(--al);border-radius:9px;padding:10px 12px;margin-bottom:12px">
+      <div style="font-size:11px;font-weight:700;color:var(--a);margin-bottom:3px">⚠️ Educational Score Only</div>
+      <div style="font-size:10px;color:var(--text);line-height:1.5">This score is calculated from live market data signals only — P/E ratio, 52-week position, market cap, and promoter holding. It is <b>not a buy or sell recommendation</b>. Full fundamental analysis requires P&L, balance sheet, and cash flow data. Always do your own research.</div>
+    </div>
+
+    <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">Live Signal Analysis vs Sector Benchmark</div>
+
+    ${benchRows.map(row => `
+      <div style="background:var(--card);border:0.5px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div style="font-size:12px;font-weight:600">${row.label}</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <div style="font-size:13px;font-weight:700">${row.value}</div>
+            <div style="font-size:10px;font-weight:600;color:${row.signalColor};background:${row.signalColor}18;border-radius:4px;padding:2px 7px">${row.signal}</div>
+          </div>
         </div>
-        <div class="pbar-bg"><div class="pbar" style="width:${(p.score||0)*10}%;background:${p.score>=7.5?'var(--gm)':p.score>=5?'var(--a)':'var(--r)'}"></div></div>
-        <div class="pwhy">${p.why||''}</div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:4px">Sector avg: <b>${row.benchmark}</b></div>
+        <div style="font-size:10px;color:var(--muted);line-height:1.5">${row.explain}</div>
       </div>`).join('')}
-    <div style="background:var(--bg);border-radius:8px;padding:10px;text-align:center;font-size:11px;color:var(--muted);margin-bottom:8px">Adjust weights above to reflect your priorities. Total should equal 100%.</div>
-    <div class="score-disclaimer">${t('scoreDisc')}</div>`;
+
+    <div style="background:var(--bg);border-radius:8px;padding:10px 12px;margin-top:4px">
+      <div style="font-size:10px;font-weight:600;color:var(--muted);margin-bottom:4px">What this score does NOT include:</div>
+      <div style="font-size:10px;color:var(--muted);line-height:1.6">Revenue growth · Profit margins · Debt levels · Cash flow · Management quality · Competitive position · Industry trends · Macroeconomic factors. <b>For complete analysis, use Screener.in, BSE filings, or consult a SEBI-registered advisor.</b></div>
+    </div>
+    <div class="disc" style="margin-top:8px">${t('scoreDisc')}</div>`;
 }
 
 function recalcScore() {
@@ -1487,81 +1613,110 @@ async function loadWhyMoved(sym) {
 }
 
 // ── FINANCIALS TAB — 100% Live from Yahoo Finance ────────────────
+// ── FINANCIALS TAB — Real ratios with explanations ────────────────
 function buildFinancialsTab(s) {
-  const noviceH = t('noviceHint').financials;
   const sym = s.nseCode || currentSym || '';
-  const bseUrl = `https://www.bseindia.com/stock-share-price/${sym.toLowerCase()}/equity/`;
-  const screenerUrl = `https://www.screener.in/company/${sym}/`;
-  const eps = s.pe > 0 && s.price > 0 ? (s.price / s.pe).toFixed(2) : null;
+  const eps = s.pe > 0 && s.price > 0 ? (s.price / s.pe) : null;
   const mktCapCr = s.mktCap > 0 ? Math.round(s.mktCap / 1e7) : null;
-  const capCategory = mktCapCr > 20000 ? 'Large Cap (>₹20,000 Cr)' : mktCapCr > 5000 ? 'Mid Cap (₹5,000–20,000 Cr)' : mktCapCr ? 'Small Cap (<₹5,000 Cr)' : '—';
+  const bench = BENCH[s.sector] || {};
+
+  // All ratios we can compute from live Yahoo data
+  const ratios = [
+    { label:'Current Price', value: s.price > 0 ? fmtPrice(s.price) : '—', bench: '—', explain: 'The price of one share right now.' },
+    { label:'P/E Ratio', value: s.pe > 0 ? s.pe.toFixed(1) + 'x' : 'N/A', bench: bench.pe ? bench.pe + 'x sector avg' : '—', explain: 'How much you pay for ₹1 of company earnings. P/E 25 means you pay ₹25 for every ₹1 the company earns annually. High P/E = growth expected. Low P/E = value or trouble.' },
+    { label:'EPS (₹)', value: eps ? '₹' + eps.toFixed(2) : 'N/A', bench: '—', explain: 'Earnings Per Share = Total Profit ÷ Total Shares. Shows how much money each share earns. Rising EPS year-over-year is a positive sign.' },
+    { label:'Market Cap', value: mktCapCr ? '₹' + mktCapCr.toLocaleString('en-IN') + ' Cr' : '—', bench: mktCapCr > 20000 ? 'Large Cap' : mktCapCr > 5000 ? 'Mid Cap' : 'Small Cap', explain: 'Total value of the company = Share Price × Total Shares. Large cap (>₹20,000 Cr) = stable. Mid cap = growth. Small cap = higher risk/reward.' },
+    { label:'52W High / Low', value: s.w52High > 0 ? fmtPrice(s.w52High) + ' / ' + fmtPrice(s.w52Low) : '—', bench: '—', explain: 'Highest and lowest price in the past 52 weeks. If current price is near the 52W high, momentum is strong. Near the low may mean value or distress.' },
+    { label:'Promoter Holding', value: s.promoter > 0 ? s.promoter + '%' : 'N/A', bench: '>50% = high confidence', explain: 'Promoters are founders or controlling owners. High holding = founders have skin in the game. Very low holding (<15%) can be a concern.' },
+    { label:'FII Holding', value: s.fii > 0 ? s.fii + '%' : 'N/A', bench: '>15% = institutional interest', explain: 'Foreign Institutional Investors (FIIs) are large global funds. High FII holding = international confidence. Sudden FII selling can cause sharp price drops.' },
+    { label:'DII Holding', value: s.dii > 0 ? s.dii + '%' : 'N/A', bench: '—', explain: 'Domestic Institutional Investors — Indian mutual funds and insurance companies. High DII buying often stabilises prices when FIIs sell.' },
+  ];
 
   return `
-    <div class="novice-hint v">${noviceH}</div>
+    <div style="background:var(--al);border-radius:9px;padding:10px 12px;margin-bottom:12px">
+      <div style="font-size:11px;font-weight:700;color:var(--a);margin-bottom:3px">⚠️ What you see here vs what you need</div>
+      <div style="font-size:10px;color:var(--text);line-height:1.5">These ratios come from live Yahoo Finance data. For complete fundamental analysis you also need: <b>5-year revenue growth, profit margins, debt/equity ratio, cash flow, return on equity, and quarterly results</b>. See Screener.in below — it is free and has all of this.</div>
+    </div>
 
-    <div class="sec-title" style="margin-bottom:8px">📡 Live Data from Yahoo Finance</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:14px">
-      ${[
-        ['P/E Ratio',         s.pe > 0 ? s.pe.toFixed(1) : '—',       'Price ÷ Earnings per share. Lower = cheaper vs profits'],
-        ['Market Cap',        mktCapCr ? '₹' + mktCapCr.toLocaleString('en-IN') + ' Cr' : '—', capCategory],
-        ['EPS (₹)',           eps ? '₹' + eps : '—',                   'Earnings Per Share = Profit ÷ Total shares'],
-        ['52W High',          s.w52High > 0 ? fmtPrice(s.w52High) : '—', 'Highest price in past 52 weeks'],
-        ['52W Low',           s.w52Low  > 0 ? fmtPrice(s.w52Low)  : '—', 'Lowest price in past 52 weeks'],
-        ['Prev Close',        s.prevClose > 0 ? fmtPrice(s.prevClose) : '—', 'Yesterday\'s closing price'],
-        ['Day Volume',        fmtVol(s.volume),                          'Shares traded today'],
-        ['Day Range',         s.high > 0 ? `${fmtPrice(s.low)} – ${fmtPrice(s.high)}` : '—', 'Today\'s trading range'],
-      ].map(([l,v,d]) => `
-        <div style="background:var(--bg);border-radius:8px;padding:10px;border:0.5px solid var(--border)">
-          <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:3px">${l}</div>
-          <div style="font-size:14px;font-weight:700;margin-bottom:2px">${v}</div>
-          <div style="font-size:9px;color:var(--muted);line-height:1.4">${d}</div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
+      ${ratios.map(row => `
+        <div style="background:var(--card);border:0.5px solid var(--border);border-radius:10px;padding:10px 12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+            <div style="font-size:11px;font-weight:600">${row.label}</div>
+            <div style="text-align:right">
+              <div style="font-size:13px;font-weight:700">${row.value}</div>
+              ${row.bench !== '—' ? `<div style="font-size:9px;color:var(--muted)">${row.bench}</div>` : ''}
+            </div>
+          </div>
+          <div style="font-size:10px;color:var(--muted);line-height:1.5">${row.explain}</div>
         </div>`).join('')}
     </div>
 
-    <div style="background:var(--bl);border-radius:10px;padding:12px;margin-bottom:12px">
-      <div style="font-size:11px;font-weight:600;color:var(--b);margin-bottom:6px">📚 Where to find full financial statements</div>
-      <div style="font-size:11px;color:var(--b);line-height:1.7">
-        For balance sheet, profit & loss, cash flow, and quarterly results — use the official sources below. They are free and always up to date.
-      </div>
+    <div style="background:var(--gl);border-radius:10px;padding:12px;margin-bottom:10px">
+      <div style="font-size:11px;font-weight:700;color:var(--g);margin-bottom:5px">📊 Get complete financial data (free)</div>
+      <a href="https://www.screener.in/company/${sym}/" target="_blank"
+        style="display:block;background:#fff;border-radius:8px;padding:10px 12px;margin-bottom:6px;text-decoration:none;border:0.5px solid var(--border)">
+        <div style="font-size:12px;font-weight:600;color:var(--g)">🔍 Screener.in — ${sym}</div>
+        <div style="font-size:10px;color:var(--muted)">P&L · Balance Sheet · Cash Flow · Quarterly Results · 10-year history</div>
+      </a>
+      <a href="https://www.bseindia.com/stock-share-price/${sym.toLowerCase()}/equity/" target="_blank"
+        style="display:block;background:#fff;border-radius:8px;padding:10px 12px;text-decoration:none;border:0.5px solid var(--border)">
+        <div style="font-size:12px;font-weight:600;color:var(--b)">📋 BSE India — Official Filings</div>
+        <div style="font-size:10px;color:var(--muted)">Annual Reports · Quarterly Results · Shareholding · Corporate Actions</div>
+      </a>
     </div>
-
-    <div class="ext-links">
-      <a href="${bseUrl}" target="_blank" class="ext-link">📊 BSE India filings</a>
-      <a href="https://www.nseindia.com/get-quotes/equity?symbol=${sym}" target="_blank" class="ext-link">📈 NSE Live data</a>
-      <a href="${screenerUrl}" target="_blank" class="ext-link">🔍 Screener.in (free financials)</a>
-      <a href="https://finance.yahoo.com/quote/${sym}.NS" target="_blank" class="ext-link">🌐 Yahoo Finance</a>
-    </div>
-    <div class="disc">All price data is live from Yahoo Finance. For complete P&L, balance sheet, and historical financials, use the links above. This app is for educational exploration only — not investment advice.</div>`;
+    <div class="disc">All price data from Yahoo Finance. Shareholding data from last quarterly filing. This is for educational reference only — not investment advice.</div>`;
 }
 
-// ── PEERS TAB ────────────────────────────────────────────────────
+// ── PEERS TAB — Comparative analysis with live P/E ───────────────
 function buildPeersTab(sym, s) {
-  const noviceH = t('noviceHint').peers;
   const bench = BENCH[s.sector] || {};
-  const peerList = s.peers?.length ? s.peers : [sym];
+  const peerList = (s.peers?.length ? s.peers : []).filter(p => p !== sym).slice(0, 4);
+
+  // What makes a good peer comparison — explain the methodology
+  const comparisons = [
+    { metric: 'P/E Ratio', yours: s.pe > 0 ? s.pe.toFixed(1) + 'x' : 'N/A', sector: bench.pe ? bench.pe + 'x' : '—',
+      explain: 'Lower P/E than sector avg = potentially cheaper. Higher = market expects more growth or stock is expensive.' },
+    { metric: 'Market Cap', yours: s.mktCap > 0 ? fmtMktCap(s.mktCap) : 'N/A', sector: '—',
+      explain: 'Larger market cap = more stable, harder to manipulate. Smaller = higher volatility, more growth potential.' },
+    { metric: 'Promoter %', yours: s.promoter > 0 ? s.promoter + '%' : 'N/A', sector: bench.roe ? '>40% ideal' : '—',
+      explain: 'Higher promoter holding means founders are committed. Low holding can mean they have sold or reduced belief in the company.' },
+    { metric: 'FII Interest', yours: s.fii > 0 ? s.fii + '%' : 'N/A', sector: '>10% = watched',
+      explain: 'High FII holding = global institutions trust this stock. But high FII also means vulnerability if they exit suddenly.' },
+    { metric: '52W Position', yours: s.w52High > s.w52Low ? Math.round((s.price - s.w52Low) / (s.w52High - s.w52Low) * 100) + '%' : 'N/A', sector: '30–70% healthy',
+      explain: 'Where the stock sits in its yearly range. Near the top = momentum. Near the bottom = potential value or ongoing trouble.' },
+  ];
+
   return `
-    <div class="novice-hint v">${noviceH}</div>
-    <div class="sec-title">${t('peersTitle')} — ${s.sector}</div>
-    <div class="peer-scroll">
-      <table class="peer-table">
-        <thead><tr>
-          <th>Metric</th>
-          <th>Sector Avg</th>
-          <th class="active-col" style="color:var(--gm)">${sym} ★</th>
-          ${peerList.filter(p=>p!==sym).map(p=>`<th>${p}</th>`).join('')}
-        </tr></thead>
-        <tbody>
-          <tr><td>Score /10</td><td>${s.score?.toFixed(1)||'—'}</td><td class="active-col" style="color:var(--gm);font-weight:700">${s.score?.toFixed(1)||'—'}</td>${peerList.filter(p=>p!==sym).map(p=>`<td><span class="peer-tap" onclick="loadStock('${p}')">Tap ↗</span></td>`).join('')}</tr>
-          <tr><td>P/E (live)</td><td>${bench.pe||'—'}</td><td class="active-col" style="font-weight:600">${s.pe>0?s.pe.toFixed(1):'—'}</td>${peerList.filter(p=>p!==sym).map(p=>`<td><span class="peer-tap" onclick="loadStock('${p}')">Tap ↗</span></td>`).join('')}</tr>
-          ${s.fundamentals?`
-          <tr><td>Rev Growth</td><td>${bench.salesGrowth||'—'}%</td><td class="active-col" style="font-weight:600">${s.fundamentals.revenue?.length>=2?((s.fundamentals.revenue.slice(-1)[0]/s.fundamentals.revenue.slice(-2)[0]-1)*100).toFixed(0)+'%':'—'}</td>${peerList.filter(p=>p!==sym).map(p=>`<td>—</td>`).join('')}</tr>
-          <tr><td>Profit Growth</td><td>${bench.profitGrowth||'—'}%</td><td class="active-col" style="font-weight:600">${s.fundamentals.profit?.length>=2?((s.fundamentals.profit.slice(-1)[0]/s.fundamentals.profit.slice(-2)[0]-1)*100).toFixed(0)+'%':'—'}</td>${peerList.filter(p=>p!==sym).map(p=>`<td>—</td>`).join('')}</tr>`:''}
-          <tr><td>Promoter %</td><td>—</td><td class="active-col" style="font-weight:600">${s.promoter||0}%</td>${peerList.filter(p=>p!==sym).map(p=>`<td>${STOCKS[p]?.promoter||'—'}%</td>`).join('')}</tr>
-        </tbody>
-      </table>
+    <div style="background:var(--al);border-radius:9px;padding:10px 12px;margin-bottom:12px">
+      <div style="font-size:11px;font-weight:700;color:var(--a);margin-bottom:3px">⚠️ How to use peer comparison</div>
+      <div style="font-size:10px;color:var(--text);line-height:1.5">Comparing a stock with its peers helps you understand relative value. But companies in the same sector can have very different business models. Always look at the specific reasons behind each difference.</div>
     </div>
-    <div style="font-size:11px;color:var(--muted);margin-top:8px">Tap any peer symbol to load their full research profile.</div>
-    <div class="disc">Peer comparisons are educational. Live P/E updated from market data. Historical metrics from stored data.</div>`;
+
+    <div style="font-size:11px;font-weight:600;color:var(--text);margin-bottom:10px">${sym} vs Sector: ${s.sector}</div>
+
+    ${comparisons.map(row => `
+      <div style="background:var(--card);border:0.5px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+          <div style="font-size:12px;font-weight:600">${row.metric}</div>
+          <div style="text-align:right">
+            <div style="font-size:13px;font-weight:700;color:var(--gm)">${row.yours}</div>
+            <div style="font-size:9px;color:var(--muted)">Sector: ${row.sector}</div>
+          </div>
+        </div>
+        <div style="font-size:10px;color:var(--muted);line-height:1.5">${row.explain}</div>
+      </div>`).join('')}
+
+    ${peerList.length > 0 ? `
+      <div style="font-size:11px;font-weight:600;color:var(--muted);margin:12px 0 8px;text-transform:uppercase;letter-spacing:0.5px">Load peers to compare live</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+        ${peerList.map(p => `
+          <div onclick="loadStock('${p}')" style="background:var(--bl);border:1px solid var(--b);border-radius:8px;padding:8px 14px;cursor:pointer;font-size:12px;font-weight:600;color:var(--b)">
+            ${p} <span style="font-size:10px;opacity:0.7">↗ Load</span>
+          </div>`).join('')}
+      </div>` : ''}
+
+    <div class="disc">Peer data is for educational comparison only. Live P/E from Yahoo Finance. Shareholding from quarterly BSE filings. Not investment advice.</div>`;
 }
 
 // ── COMPANY TAB ───────────────────────────────────────────────────
@@ -1592,64 +1747,55 @@ function buildCompanyTab(s) {
       </div>
     </div>
     <div class="ext-links">
-      ${s.website?`<a href="https://${s.website}" target="_blank" class="ext-link">🌐 Company website</a>`:''}
-      <a href="https://www.bseindia.com/stock-share-price/${(s.nseCode||'').toLowerCase()}/equity/" target="_blank" class="ext-link">📋 BSE filings</a>
-      <a href="https://www.nseindia.com/get-quotes/equity?symbol=${s.nseCode||''}" target="_blank" class="ext-link">📈 NSE profile</a>
+      ${s.website ? `<a href="https://${s.website}" target="_blank" class="ext-link">🌐 Company website</a>` : ''}
+      <a href="https://www.bseindia.com/stock-share-price/${(s.nseCode||'').toLowerCase()}/equity/" target="_blank" class="ext-link">📋 BSE Filings</a>
+      <a href="https://www.nseindia.com/get-quotes/equity?symbol=${s.nseCode||''}" target="_blank" class="ext-link">📈 NSE Quote</a>
+      <a href="https://www.screener.in/company/${s.nseCode||''}/" target="_blank" class="ext-link">🔍 Screener.in</a>
     </div>
-    <div class="disc">Shareholding data from latest quarterly filing. Updated each quarter by the company.</div>`;
+    <div class="disc">Company details from public NSE/BSE filings. Shareholding from latest quarterly disclosure. Links open official websites.</div>`;
 }
 
-// ── SWOT TAB — Generated from live data context ───────────────────
+// ── SWOT TAB — Replaced with honest Data Quality & Learning Guide ─
 function buildSWOTTab(s) {
-  const noviceH = t('noviceHint').swot;
-  const pe = s.pe || 0;
-  const price = s.price || 0;
-  const w52h = s.w52High || price, w52l = s.w52Low || 0;
-  const pct52 = w52h > w52l ? ((price - w52l) / (w52h - w52l) * 100).toFixed(0) : 50;
+  const sym = s.nseCode || currentSym || '';
   const mktCapCr = s.mktCap > 0 ? Math.round(s.mktCap / 1e7) : 0;
-  const capLabel = mktCapCr > 20000 ? 'Large Cap' : mktCapCr > 5000 ? 'Mid Cap' : mktCapCr > 0 ? 'Small Cap' : 'Listed';
-  const sector = s.sector || 'this sector';
+  const hasGoodData = s.pe > 0 && s.mktCap > 0 && s.w52High > 0;
 
-  // Generate SWOT from live data signals
-  const swot = {
-    s: [
-      s.isLive ? `Listed on NSE/BSE — fully regulated, transparent disclosures required` : 'Regulated listed company',
-      pe > 0 && pe < 20 ? `Attractive valuation — P/E of ${pe.toFixed(1)} is below market average` : pe > 0 ? `Market confidence reflected in P/E of ${pe.toFixed(1)}` : 'Publicly traded with institutional coverage',
-      mktCapCr > 20000 ? `${capLabel} — scale provides stability and institutional interest` : `${capLabel} — potential for faster growth vs large caps`,
-    ],
-    w: [
-      pe > 60 ? `High P/E of ${pe.toFixed(1)} — stock is priced for significant future growth; any disappointment can hurt` : pe > 35 ? `P/E of ${pe.toFixed(1)} leaves limited margin of safety` : 'Detailed financials require BSE/NSE filing review',
-      parseFloat(pct52) > 80 ? 'Near 52-week high — limited upside in the short term, momentum risk' : parseFloat(pct52) < 20 ? 'Near 52-week low — may indicate business or sector headwinds' : 'Historical financial quality requires external research',
-      s.promoter > 0 && s.promoter < 25 ? `Low promoter holding at ${s.promoter}% — founders have limited direct stake` : 'Management quality requires external research',
-    ],
-    o: [
-      `${sector} sector aligned with India\'s long-term growth story`,
-      'India\'s rising middle class and digital adoption support consumption growth',
-      mktCapCr < 5000 && mktCapCr > 0 ? 'Smaller size allows faster percentage growth than large caps' : 'Scale enables competitive advantages and better pricing power',
-    ],
-    t: [
-      'Global macro headwinds (US recession fears, high interest rates) affect all stocks',
-      'Regulatory changes in India can impact sector margins and growth',
-      parseFloat(pct52) > 70 ? 'Near yearly high — watch for profit-booking pressure from early investors' : 'Market volatility can create sharp short-term price swings',
-    ],
-  };
-
-  const sec = [{k:'s',lbl:t('swotS'),cls:'sb slb sdb'},{k:'w',lbl:t('swotW'),cls:'wb wlb wdb'},{k:'o',lbl:t('swotO'),cls:'ob olb odb'},{k:'t',lbl:t('swotT'),cls:'tb tlb tdb'}];
   return `
-    <div class="novice-hint v">${noviceH}</div>
-    <div class="swot-grid">
-      ${sec.map(se => {
-        const [boxC,lblC,dotC] = se.cls.split(' ');
-        return `<div class="swot-box ${boxC}">
-          <div class="swot-lbl ${lblC}">${se.lbl}</div>
-          <div class="swot-pts">${(swot[se.k]||[]).map(pt=>`<div class="swot-pt"><div class="swot-dot ${dotC}"></div><span>${pt}</span></div>`).join('')}</div>
-        </div>`;
-      }).join('')}
+    <div style="background:var(--al);border-radius:9px;padding:12px;margin-bottom:12px">
+      <div style="font-size:12px;font-weight:700;color:var(--a);margin-bottom:5px">⚠️ Why we removed SWOT from this app</div>
+      <div style="font-size:11px;color:var(--text);line-height:1.6">A meaningful SWOT (Strengths, Weaknesses, Opportunities, Threats) requires deep knowledge of the company's business, management, competition, and industry. Generating it from price data alone would be misleading. We do not want to give you incorrect information about a company.</div>
     </div>
-    <div style="background:var(--bl);border-radius:9px;padding:10px;margin-top:8px;font-size:10px;color:var(--b);line-height:1.5">
-      💡 For sector-specific SWOT analysis — visit <b>Screener.in</b> or <b>Tijori Finance</b> for deep research on this company.
+
+    <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">Data quality for ${sym}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:14px">
+      ${[
+        ['Price Data', s.price > 0, 'Live from Yahoo Finance'],
+        ['P/E Ratio', s.pe > 0, s.pe > 0 ? 'Available' : 'Not in Yahoo data'],
+        ['Market Cap', s.mktCap > 0, s.mktCap > 0 ? 'Available' : 'Not available'],
+        ['52W Range', s.w52High > 0, 'Available'],
+        ['Shareholding', s.promoter > 0, s.promoter > 0 ? 'From BSE quarterly filing' : 'Not in our database yet'],
+        ['P&L / Balance Sheet', false, 'Available on Screener.in'],
+      ].map(([label, ok, note]) => `
+        <div style="background:${ok ? 'var(--gl)' : 'var(--bg)'};border:0.5px solid var(--border);border-radius:8px;padding:9px 10px">
+          <div style="font-size:10px;font-weight:700;color:${ok ? 'var(--g)' : 'var(--muted)'};">${ok ? '✅' : '○'} ${label}</div>
+          <div style="font-size:9px;color:var(--muted);margin-top:2px">${note}</div>
+        </div>`).join('')}
     </div>
-    <div class="disc">SWOT is generated from live market signals. For detailed business SWOT, refer to analyst reports or company annual reports. Not investment advice.</div>`;
+
+    <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">How to do your own SWOT</div>
+    ${[
+      ['📊 Financials (Screener.in)', 'Look at 5-year revenue and profit trend. Is it growing consistently? Are margins improving or falling?', `https://www.screener.in/company/${sym}/`],
+      ['📋 Annual Report (BSE)', 'Read the MD&A section. Management explains their business outlook, risks, and strategy honestly here.', `https://www.bseindia.com/stock-share-price/${sym.toLowerCase()}/equity/`],
+      ['📰 Business News', 'Search for recent news about the company and its industry. What are analysts saying?', `https://news.google.com/search?q=${sym}+NSE+India`],
+      ['🏭 Industry Reports', 'IBEF.org has free sector reports. Understanding the industry helps evaluate the company\'s position.', 'https://www.ibef.org/industry'],
+    ].map(([title, desc, url]) => `
+      <a href="${url}" target="_blank" style="display:block;background:var(--card);border:0.5px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;text-decoration:none">
+        <div style="font-size:11px;font-weight:600;color:var(--b);margin-bottom:4px">${title} ↗</div>
+        <div style="font-size:10px;color:var(--muted);line-height:1.5">${desc}</div>
+      </a>`).join('')}
+
+    <div class="disc">StockSense does not generate SWOT analysis because doing so without proper research would be misleading. The links above give you the tools to build your own. This is the correct way to learn.</div>`;
 }
 
 // ── HOME — LIVE INDICES ──────────────────────────────────────────
