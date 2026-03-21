@@ -1,96 +1,185 @@
-// --- STOCKSENSE CORE LOGIC V2 ---
-const API_URL = '/api/market';
-let currentStock = null;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>StockSense India — Smart Market Learning</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        /* I have preserved your original professional styling here */
+        :root{
+            --g:#1a7c4a;--gl:#e8f5ee;--gm:#2ea366;
+            --r:#c0392b;--rl:#fdf0ee;
+            --a:#d4870a;--al:#fef7e6;
+            --b:#1a5fa8;--bl:#eaf1fb;
+            --bg:#f7f6f2;--card:#fff;--text:#1a1a18;
+            --muted:#6b6b65;--border:#e4e2db;
+            --shadow:0 2px 16px rgba(0,0,0,0.07);
+        }
+        *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+        body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
+        
+        /* Layout & Navigation Styles */
+        .page{display:none;padding:20px 16px 100px;max-width:600px;margin:0 auto}
+        .page.act{display:block}
+        .nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);display:flex;justify-content:space-around;padding:10px 0;z-index:1000}
+        .nitem{text-align:center;color:var(--muted);font-size:10px;text-decoration:none;cursor:pointer}
+        .nitem.on{color:var(--b);font-weight:600}
+        
+        /* Search Bar & Dropdown Styling */
+        .search-box{position:relative;margin-bottom:20px}
+        input{width:100%;padding:14px 18px;border-radius:12px;border:1px solid var(--border);font-size:15px;outline:none}
+        .sd{position:absolute;top:100%;left:0;right:0;background:var(--card);border:1px solid var(--border);border-radius:12px;margin-top:8px;max-height:250px;overflow-y:auto;display:none;z-index:1100;box-shadow:var(--shadow)}
+        .sd.open{display:block}
+        .sditem{padding:12px 16px;border-bottom:0.5px solid var(--border);cursor:pointer;display:flex;justify-content:space-between}
+        .sditem:hover{background:var(--bg)}
+        
+        /* Result Card (The Scorecard) */
+        .rcard{background:var(--card);border-radius:16px;padding:20px;border:1px solid var(--border);display:none;box-shadow:var(--shadow)}
+        .rcard.v{display:block}
+        .rhead{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px}
+        .rsym{font-size:24px;font-weight:700;letter-spacing:-0.5px}
+        .rname{color:var(--muted);font-size:14px}
+        .ring{width:60px;height:60px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;border:4px solid}
+        .ring.rg{border-color:var(--g);color:var(--g)}
+        .ring.ra{border-color:var(--a);color:var(--a)}
+        .rn{font-size:18px;font-weight:700}
+        .rd{font-size:8px;font-weight:600}
+        .pstrip{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
+        .pc{padding:12px;background:var(--bg);border-radius:12px}
+        .plbl{font-size:10px;color:var(--muted);margin-bottom:4px}
+        .pval{font-size:16px;font-weight:600}
+        .up{color:var(--g)} .dn{color:var(--r)}
+        .edu-box{background:var(--bl);padding:15px;border-radius:12px;font-size:13px;line-height:1.5}
+    </style>
+</head>
+<body>
 
-// 1. Setup Search (Home & Research)
-function setupSearch(inpId, dropId, onSelect) {
-  const inp = document.getElementById(inpId);
-  const drop = document.getElementById(dropId);
-  let debounce;
-
-  inp.addEventListener('input', () => {
-    clearTimeout(debounce);
-    const q = inp.value.trim();
-    if (q.length < 2) return drop.classList.remove('open');
-
-    debounce = setTimeout(async () => {
-      try {
-        const res = await fetch(`${API_URL}?action=search&q=${q}`);
-        const data = await res.json();
-        drop.innerHTML = data.results.map(s => `
-          <div class="sditem" onclick="handleSelect('${s.symbol}', '${inpId}', '${dropId}')">
-            <span class="sdname">${s.symbol}</span>
-            <span class="sdsect">${s.name}</span>
-          </div>
-        `).join('');
-        drop.classList.add('open');
-      } catch (e) { console.error("Search failed"); }
-    }, 300);
-  });
-}
-
-async function handleSelect(sym, inpId, dropId) {
-  document.getElementById(dropId).classList.remove('open');
-  document.getElementById(inpId).value = sym;
-  showPage('research');
-  loadStock(sym);
-}
-
-// 2. Load Stock & Calculate Educational Score
-async function loadStock(sym) {
-  const rCard = document.querySelector('.rcard');
-  rCard.classList.add('v');
-  rCard.innerHTML = '<div class="dh-loading">Fetching live market data...</div>';
-
-  try {
-    const res = await fetch(`${API_URL}?action=quote&symbol=${sym}`);
-    const s = await res.json();
-    currentStock = s;
-
-    // Calculate Scorecard (Accountant Style Logic)
-    let score = 0;
-    if (s.pe > 0 && s.pe < 25) score += 40; // Value
-    if (s.changePct > 0) score += 30;       // Momentum
-    if (s.price > (s.high52 * 0.8)) score += 30; // Strength
-
-    rCard.innerHTML = `
-      <div class="rhead">
-        <div>
-          <div class="rsym">${s.symbol}</div>
-          <div class="rname">${s.name}</div>
-          <div class="rsect">${s.sector}</div>
+    <div id="homePage" class="page act">
+        <h1 style="font-family:'DM Serif Display',serif;font-size:32px;margin-bottom:20px">Market Overview</h1>
+        <div class="search-box">
+            <input type="text" id="homeSearch" placeholder="Search stocks (e.g. Reliance)">
+            <div id="homeDrop" class="sd"></div>
         </div>
-        <div class="ring ${score > 70 ? 'rg' : 'ra'}">
-          <div class="rn">${score}</div>
-          <div class="rd">SCORE</div>
+        <div style="background:var(--card);padding:20px;border-radius:16px;border:1px solid var(--border)">
+            <p style="color:var(--muted);font-size:14px">Welcome to StockSense. Start by searching for a company above to see its weighted performance scorecard.</p>
         </div>
-      </div>
-      <div class="pstrip">
-        <div class="pc"><div class="plbl">PRICE</div><div class="pval">₹${s.price.toFixed(2)}</div></div>
-        <div class="pc"><div class="plbl">CHG%</div><div class="pval ${s.changePct >= 0 ? 'up' : 'dn'}">${s.changePct.toFixed(2)}%</div></div>
-        <div class="pc"><div class="plbl">52W H</div><div class="pval">₹${s.high52.toFixed(0)}</div></div>
-        <div class="pc"><div class="plbl">P/E</div><div class="pval">${s.pe.toFixed(1)}</div></div>
-      </div>
-      <div class="tc on">
-        <p class="score-disclaimer"><b>Education Insight:</b> This stock has a score of ${score}/100 based on fundamental weightage. A higher score indicates better alignment with historical growth patterns.</p>
-      </div>
-    `;
-  } catch (e) {
-    rCard.innerHTML = '<div class="dh-loading">Error loading stock. Please try a different symbol.</div>';
-  }
-}
+    </div>
 
-// 3. Navigation
-function showPage(p) {
-  document.querySelectorAll('.page').forEach(pg => pg.classList.remove('act'));
-  document.getElementById(p + 'Page').classList.add('act');
-  document.querySelectorAll('.nitem').forEach(ni => ni.classList.remove('on'));
-  document.querySelector(`[onclick="showPage('${p}')"]`).classList.add('on');
-}
+    <div id="researchPage" class="page">
+        <h1 style="font-family:'DM Serif Display',serif;font-size:32px;margin-bottom:20px">Research</h1>
+        <div class="search-box">
+            <input type="text" id="resSearch" placeholder="Search symbol...">
+            <div id="resDrop" class="sd"></div>
+        </div>
+        <div class="rcard">
+            </div>
+    </div>
 
-// Initialize
-document.addEventListener('DOMContentLoaded', () => {
-  setupSearch('homeSearch', 'homeDrop');
-  setupSearch('resSearch', 'resDrop');
-  showPage('home');
-});
+    <div class="nav">
+        <div class="nitem on" onclick="showPage('home')">🏠<br>Home</div>
+        <div class="nitem" onclick="showPage('research')">🔍<br>Research</div>
+    </div>
+
+    <script>
+        // --- STOCKSENSE CORE LOGIC V2 ---
+        // This is the "brain" of your app. It talks to your Vercel API.
+        const API_URL = '/api/market';
+
+        // Function to setup the search bars
+        function setupSearch(inpId, dropId) {
+            const inp = document.getElementById(inpId);
+            const drop = document.getElementById(dropId);
+            let timer;
+
+            inp.addEventListener('input', () => {
+                clearTimeout(timer);
+                const q = inp.value.trim();
+                if (q.length < 2) return drop.classList.remove('open');
+
+                timer = setTimeout(async () => {
+                    try {
+                        const res = await fetch(`${API_URL}?action=search&q=${encodeURIComponent(q)}`);
+                        const data = await res.json();
+                        drop.innerHTML = data.results.map(s => `
+                            <div class="sditem" onclick="handleSelect('${s.symbol}', '${inpId}', '${dropId}')">
+                                <b>${s.symbol}</b>
+                                <span style="font-size:11px;color:var(--muted)">${s.name}</span>
+                            </div>
+                        `).join('');
+                        drop.classList.add('open');
+                    } catch (e) { console.error("Search failed"); }
+                }, 400);
+            });
+        }
+
+        // Logic for when you click a stock in the search results
+        async function handleSelect(sym, inpId, dropId) {
+            document.getElementById(dropId).classList.remove('open');
+            document.getElementById(inpId).value = sym;
+            showPage('research');
+            loadStock(sym);
+        }
+
+        // The "Weighted Scorecard" Logic (Your Plan Section 2b)
+        async function loadStock(sym) {
+            const rCard = document.querySelector('.rcard');
+            rCard.style.display = 'block';
+            rCard.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted)">Analyzing ' + sym + '...</div>';
+
+            try {
+                const res = await fetch(`${API_URL}?action=quote&symbol=${sym}`);
+                const s = await res.json();
+
+                // Weighted Score (The Accountant Method)
+                let score = 0;
+                if (s.pe > 0 && s.pe < 25) score += 40;     // Value Points
+                if (s.changePct > 0) score += 30;           // Momentum Points
+                if (s.price > (s.high52 * 0.8)) score += 30; // Price Strength
+
+                rCard.innerHTML = `
+                    <div class="rhead">
+                        <div>
+                            <div class="rsym">${s.symbol}</div>
+                            <div class="rname">${s.name}</div>
+                        </div>
+                        <div class="ring ${score > 60 ? 'rg' : 'ra'}">
+                            <div class="rn">${score}</div>
+                            <div class="rd">SCORE</div>
+                        </div>
+                    </div>
+                    <div class="pstrip">
+                        <div class="pc"><div class="plbl">PRICE</div><div class="pval">₹${s.price.toFixed(2)}</div></div>
+                        <div class="pc"><div class="plbl">CHG%</div><div class="pval ${s.changePct >= 0 ? 'up' : 'dn'}">${s.changePct.toFixed(2)}%</div></div>
+                        <div class="pc"><div class="plbl">52W HIGH</div><div class="pval">₹${s.high52.toFixed(0)}</div></div>
+                        <div class="pc"><div class="plbl">P/E RATIO</div><div class="pval">${s.pe > 0 ? s.pe.toFixed(1) : 'N/A'}</div></div>
+                    </div>
+                    <div class="edu-box">
+                        <strong>Smart Insight:</strong> This stock has a score of ${score}/100. ${score > 70 ? 'This suggests strong fundamentals and price momentum.' : 'This score suggests you should compare it with other sector peers.'}
+                        <br><br><small>Note: This is an educational scorecard based on historical data.</small>
+                    </div>
+                `;
+            } catch (e) {
+                rCard.innerHTML = '<div style="padding:40px;text-align:center;color:var(--r)">Error: Could not load market data.</div>';
+            }
+        }
+
+        // Navigation Function
+        function showPage(p) {
+            document.querySelectorAll('.page').forEach(pg => pg.classList.remove('act'));
+            document.getElementById(p + 'Page').classList.add('act');
+            document.querySelectorAll('.nitem').forEach(ni => ni.classList.remove('on'));
+            // Set nav active state
+            const navItems = document.querySelectorAll('.nitem');
+            if(p === 'home') navItems[0].classList.add('on');
+            if(p === 'research') navItems[1].classList.add('on');
+        }
+
+        // Start the app
+        document.addEventListener('DOMContentLoaded', () => {
+            setupSearch('homeSearch', 'homeDrop');
+            setupSearch('resSearch', 'resDrop');
+        });
+    </script>
+</body>
+</html>
