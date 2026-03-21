@@ -2,151 +2,116 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-    <title>StockSense India — Live Market Learning</title>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StockSense India</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --b: #1a5fa8; --bg: #f7f6f2; --card: #ffffff; --text: #1a1a18;
-            --muted: #6b6b65; --border: #e4e2db; --g: #1a7c4a; --r: #c0392b;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'DM Sans', sans-serif; }
-        body { background: var(--bg); color: var(--text); padding-bottom: 80px; }
-        
-        /* Header & Pages */
-        header { background: var(--card); padding: 20px; border-bottom: 1px solid var(--border); text-align: center; }
-        .page { display: none; padding: 16px; max-width: 500px; margin: 0 auto; }
+        :root { --b: #1a5fa8; --bg: #f7f6f2; --card: #fff; --border: #e4e2db; --text: #1a1a18; }
+        body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); padding: 0; margin: 0; }
+        header { background: var(--card); padding: 20px; text-align: center; border-bottom: 1px solid var(--border); font-weight: 700; color: var(--b); }
+        .page { display: none; padding: 20px; max-width: 500px; margin: 0 auto; }
         .page.active { display: block; }
-
-        /* Search Styles */
-        .search-container { position: relative; margin-bottom: 20px; }
-        input { width: 100%; padding: 15px; border-radius: 12px; border: 1px solid var(--border); outline: none; font-size: 16px; }
-        .dropdown { position: absolute; top: 100%; left: 0; right: 0; background: var(--card); border: 1px solid var(--border); border-radius: 12px; max-height: 250px; overflow-y: auto; display: none; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .dropdown.open { display: block; }
-        .item { padding: 12px; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; justify-content: space-between; }
-        .item:hover { background: #f0f0f0; }
-
-        /* Result Card */
-        .card { background: var(--card); border-radius: 16px; padding: 20px; border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .row { display: flex; justify-content: space-between; margin-bottom: 15px; }
-        .price { font-size: 28px; font-weight: 700; color: var(--b); }
-        .score-circle { width: 70px; height: 70px; border-radius: 50%; border: 5px solid var(--b); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 20px; }
-        .label { font-size: 12px; color: var(--muted); text-transform: uppercase; }
-        .val { font-size: 16px; font-weight: 500; }
-        .green { color: var(--g); } .red { color: var(--r); }
-        
-        /* Footer Nav */
+        .search-box { position: relative; margin-bottom: 20px; }
+        input { width: 100%; padding: 16px; border-radius: 12px; border: 1px solid var(--border); font-size: 16px; outline: none; }
+        .drop { position: absolute; top: 100%; left: 0; right: 0; background: var(--card); border: 1px solid var(--border); border-radius: 12px; max-height: 200px; overflow-y: auto; display: none; z-index: 99; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .drop.open { display: block; }
+        .res-item { padding: 12px; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; justify-content: space-between; font-size: 14px; }
+        .res-item:hover { background: #f9f9f9; }
+        .card { background: var(--card); border-radius: 16px; padding: 20px; border: 1px solid var(--border); }
+        .score { width: 60px; height: 60px; border-radius: 50%; border: 4px solid var(--b); display: flex; align-items: center; justify-content: center; font-weight: 700; }
         nav { position: fixed; bottom: 0; width: 100%; background: var(--card); display: flex; border-top: 1px solid var(--border); }
-        .n-btn { flex: 1; padding: 15px; text-align: center; cursor: pointer; color: var(--muted); font-size: 12px; }
-        .n-btn.active { color: var(--b); font-weight: 700; }
+        .nav-item { flex: 1; padding: 15px; text-align: center; font-size: 12px; cursor: pointer; color: #666; }
+        .nav-item.active { color: var(--b); font-weight: 700; }
+        .green { color: #1a7c4a; } .red { color: #c0392b; }
     </style>
 </head>
 <body>
 
-    <header><h3>StockSense India</h3></header>
+<header>STOCKSENSE INDIA</header>
 
-    <div id="home" class="page active">
-        <h2 style="margin-bottom:15px">Market Discovery</h2>
-        <div class="search-container">
-            <input type="text" id="hSearch" placeholder="Search Company (e.g. Tata)">
-            <div id="hDrop" class="dropdown"></div>
-        </div>
-        <div class="card">
-            <p style="color:var(--muted)">Search for a stock to see the live <b>Learning Scorecard</b>. This app helps you understand fundamentals through automated analysis.</p>
-        </div>
+<div id="home" class="page active">
+    <h2>Explore Stocks</h2>
+    <div class="search-box">
+        <input type="text" id="hSearch" placeholder="Type Company Name...">
+        <div id="hDrop" class="drop"></div>
     </div>
+    <div class="card">Enter a stock name above to see live analysis.</div>
+</div>
 
-    <div id="research" class="page">
-        <div class="search-container">
-            <input type="text" id="rSearch" placeholder="Change symbol...">
-            <div id="rDrop" class="dropdown"></div>
-        </div>
-        <div id="resultArea">
-            <div class="card" style="text-align:center; color:var(--muted)">Select a stock to view details</div>
-        </div>
+<div id="research" class="page">
+    <div class="search-box">
+        <input type="text" id="rSearch" placeholder="Search again...">
+        <div id="rDrop" class="drop"></div>
     </div>
+    <div id="details"></div>
+</div>
 
-    <nav>
-        <div class="n-btn active" onclick="nav('home')">🏠<br>Home</div>
-        <div class="n-btn" onclick="nav('research')">🔍<br>Research</div>
-    </nav>
+<nav>
+    <div class="nav-item active" onclick="go('home')">Home</div>
+    <div class="nav-item" onclick="go('research')">Research</div>
+</nav>
 
-    <script>
-        const API = '/api/market';
-
-        function setupSearch(inpId, dropId) {
-            const inp = document.getElementById(inpId);
-            const drop = document.getElementById(dropId);
-            let timer;
-
-            inp.addEventListener('input', () => {
-                clearTimeout(timer);
-                if (inp.value.length < 2) return drop.classList.remove('open');
-                timer = setTimeout(async () => {
-                    const res = await fetch(`${API}?action=search&q=${inp.value}`);
-                    const data = await res.json();
-                    drop.innerHTML = data.results.map(s => `
-                        <div class="item" onclick="select('${s.symbol}')">
-                            <span><b>${s.symbol}</b></span>
-                            <span style="font-size:10px">${s.name.slice(0,20)}</span>
-                        </div>
-                    `).join('');
-                    drop.classList.add('open');
-                }, 400);
-            });
-        }
-
-        async function select(sym) {
-            document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('open'));
-            nav('research');
-            const area = document.getElementById('resultArea');
-            area.innerHTML = `<div class="card">Loading ${sym}...</div>`;
-
-            try {
-                const res = await fetch(`${API}?action=quote&symbol=${sym}`);
-                const s = await res.json();
-
-                let score = 0;
-                if (s.pe > 0 && s.pe < 25) score += 40;
-                if (s.changePct > 0) score += 30;
-                if (s.price > (s.high52 * 0.8)) score += 30;
-
-                area.innerHTML = `
-                    <div class="card">
-                        <div class="row">
-                            <div>
-                                <h1 style="font-size:32px">${s.symbol}</h1>
-                                <p style="color:var(--muted)">${s.name}</p>
-                            </div>
-                            <div class="score-circle" style="border-color:${score > 60 ? '#1a7c4a' : '#d4870a'}">${score}</div>
-                        </div>
-                        <div class="price">₹${s.price.toLocaleString('en-IN')}</div>
-                        <p class="${s.changePct >= 0 ? 'green' : 'red'}" style="margin-bottom:20px">
-                            ${s.changePct >= 0 ? '▲' : '▼'} ${s.changePct.toFixed(2)}%
-                        </p>
-                        <div class="row">
-                            <div><div class="label">52W High</div><div class="val">₹${s.high52.toLocaleString('en-IN')}</div></div>
-                            <div><div class="label">P/E Ratio</div><div class="val">${s.pe || 'N/A'}</div></div>
-                        </div>
-                        <div style="margin-top:20px; padding:12px; background:#f0f7ff; border-radius:8px; font-size:13px">
-                            <b>Educational Insight:</b> ${score > 70 ? 'High Score: Strong momentum and valuation.' : 'Moderate Score: Evaluate sector peers for comparison.'}
-                        </div>
+<script>
+    async function doSearch(q, drop) {
+        if (q.length < 2) { drop.classList.remove('open'); return; }
+        try {
+            const res = await fetch(`/api/market?action=search&q=${q}`);
+            const data = await res.json();
+            if (data.results && data.results.length > 0) {
+                drop.innerHTML = data.results.map(s => `
+                    <div class="res-item" onclick="selectStock('${s.symbol}')">
+                        <b>${s.symbol}</b> <span>${s.name.slice(0,25)}</span>
                     </div>
-                `;
-            } catch (e) {
-                area.innerHTML = `<div class="card" style="color:red">Error loading ${sym}. Try again.</div>`;
+                `).join('');
+                drop.classList.add('open');
             }
-        }
+        } catch (e) { console.log("Search failed"); }
+    }
 
-        function nav(id) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            document.querySelectorAll('.n-btn').forEach(b => b.classList.remove('active'));
-            event?.currentTarget?.classList?.add('active');
-        }
+    async function selectStock(sym) {
+        document.querySelectorAll('.drop').forEach(d => d.classList.remove('open'));
+        go('research');
+        const det = document.getElementById('details');
+        det.innerHTML = '<div class="card">Loading ' + sym + '...</div>';
 
-        setupSearch('hSearch', 'hDrop');
-        setupSearch('rSearch', 'rDrop');
-    </script>
+        try {
+            const res = await fetch(`/api/market?action=quote&symbol=${sym}`);
+            const s = await res.json();
+
+            let score = 0;
+            if (s.pe > 0 && s.pe < 25) score += 40;
+            if (s.changePct > 0) score += 30;
+            if (s.price > (s.high52 * 0.8)) score += 30;
+
+            det.innerHTML = `
+                <div class="card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px">
+                        <div><h1 style="margin:0">${s.symbol}</h1><small>${s.name}</small></div>
+                        <div class="score" style="border-color:${score > 60 ? '#1a7c4a' : '#d4870a'}">${score}</div>
+                    </div>
+                    <div style="font-size:24px; font-weight:700">₹${s.price.toLocaleString('en-IN')}</div>
+                    <div class="${s.changePct >= 0 ? 'green' : 'red'}" style="margin-bottom:15px">
+                        ${s.changePct >= 0 ? '▲' : '▼'} ${s.changePct.toFixed(2)}%
+                    </div>
+                    <hr style="border:0; border-top:1px solid #eee; margin:15px 0">
+                    <div style="display:flex; justify-content:space-between">
+                        <div><small>52W High</small><br><b>₹${s.high52.toLocaleString('en-IN')}</b></div>
+                        <div><small>P/E Ratio</small><br><b>${s.pe ? s.pe.toFixed(1) : 'N/A'}</b></div>
+                    </div>
+                </div>
+            `;
+        } catch (e) { det.innerHTML = '<div class="card">Error loading data.</div>'; }
+    }
+
+    function go(id) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    }
+
+    document.getElementById('hSearch').oninput = (e) => doSearch(e.target.value, document.getElementById('hDrop'));
+    document.getElementById('rSearch').oninput = (e) => doSearch(e.target.value, document.getElementById('rDrop'));
+</script>
+
 </body>
 </html>
