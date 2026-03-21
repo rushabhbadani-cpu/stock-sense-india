@@ -3,62 +3,167 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StockSense India</title>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700&display=swap" rel="stylesheet">
+    <title>StockSense India | Financial Terminal</title>
     <style>
-        :root { --b: #1a5fa8; --bg: #f7f6f2; --card: #fff; --text: #1a1a18; }
-        body { font-family: 'DM Sans', sans-serif; background: var(--bg); margin:0; }
-        .nav-top { background: var(--card); padding: 15px; text-align: center; border-bottom: 1px solid #ddd; color: var(--b); font-weight: bold; }
-        .container { padding: 20px; max-width: 500px; margin: 0 auto; }
-        input { width: 100%; padding: 15px; border-radius: 10px; border: 1px solid #ccc; box-sizing: border-box; }
-        .result-card { background: #fff; padding: 20px; border-radius: 15px; margin-top: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); display: none; }
-        .drop { background: #fff; border: 1px solid #ddd; border-radius: 10px; margin-top: 5px; max-height: 200px; overflow-y: auto; }
-        .drop-item { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; }
+        :root {
+            --primary: #1a365d;
+            --accent: #2b6cb0;
+            --success: #2f855a;
+            --bg: #f7fafc;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); margin: 0; padding: 20px; }
+        .container { max-width: 1200px; margin: auto; }
+        
+        /* Header & Search */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 3px solid var(--primary); padding-bottom: 10px; }
+        .search-box { display: flex; gap: 10px; }
+        input { padding: 10px; width: 300px; border: 1px solid #cbd5e0; border-radius: 4px; }
+        button { padding: 10px 20px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: var(--accent); }
+
+        /* Dashboard Grid */
+        .grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { text-align: left; background: #edf2f7; padding: 12px; border-bottom: 2px solid #cbd5e0; }
+        td { padding: 12px; border-bottom: 1px solid #edf2f7; vertical-align: top; font-size: 14px; }
+        .highlight { background: #f0fff4; font-weight: bold; color: var(--success); }
+        
+        .loading { display: none; color: var(--accent); font-weight: bold; }
+        .error { color: #c53030; padding: 10px; background: #fff5f5; border-radius: 4px; display: none; }
     </style>
 </head>
 <body>
-    <div class="nav-top">STOCKSENSE INDIA</div>
-    <div class="container">
-        <input type="text" id="srch" placeholder="Search (e.g. Reliance, HDFC)..." oninput="doSearch(this.value)">
-        <div id="drop" class="drop"></div>
-        <div id="res" class="result-card"></div>
+
+<div class="container">
+    <div class="header">
+        <h1>StockSense <span style="color: var(--accent);">India</span></h1>
+        <div class="search-box">
+            <input type="text" id="tickerInput" placeholder="Enter Company Name (e.g. Reliance)">
+            <button onclick="searchStock()">Audit Stock</button>
+        </div>
     </div>
 
-    <script>
-        async function doSearch(q) {
-            const d = document.getElementById('drop');
-            if (q.length < 2) { d.innerHTML = ''; return; }
-            const res = await fetch(`/api/market?action=search&q=${q}`);
-            const data = await res.json();
-            d.innerHTML = (data.results || []).map(s => `
-                <div class="drop-item" onclick="loadStock('${s.symbol}')">
-                    <b>${s.symbol}</b> - ${s.shortname || ''}
+    <div id="loading" class="loading">Fetching Financial Data...</div>
+    <div id="error" class="error"></div>
+
+    <div class="grid">
+        <div class="main-content">
+            <div class="card" id="priceCard" style="display:none;">
+                <h2 id="companyName">Company Overview</h2>
+                <div id="priceDetails"></div>
+            </div>
+
+            <div class="card">
+                <h2>Corporate Ledger (Meetings & Dividends)</h2>
+                <div id="corporateActions">
+                    <p style="color: #a0aec0;">Search for a stock to view board meetings and dividend history.</p>
                 </div>
-            `).join('');
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="card">
+                <h2>Quick Financials</h2>
+                <div id="financialStats">
+                    <p style="color: #a0aec0;">P&L and Balance Sheet summaries will appear here.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const apiBase = '/api/market';
+
+    async function searchStock() {
+        const query = document.getElementById('tickerInput').value;
+        const loader = document.getElementById('loading');
+        const errDiv = document.getElementById('error');
+        
+        if (!query) return;
+
+        loader.style.display = 'block';
+        errDiv.style.display = 'none';
+
+        try {
+            // Step 1: Search for the correct symbol
+            const searchRes = await fetch(`${apiBase}?action=search&q=${query}`);
+            const searchData = await searchRes.json();
+            
+            // IndianAPI returns a symbol in its search results
+            const symbol = searchData.symbol || searchData[0]?.symbol || query.toUpperCase();
+
+            // Step 2: Fetch Corporate Actions (Using the structure you provided)
+            await fetchCorporateData(symbol);
+            
+            // Step 3: Fetch Live Details
+            await fetchLiveDetails(symbol);
+
+        } catch (err) {
+            errDiv.innerText = "Audit Failed: " + err.message;
+            errDiv.style.display = 'block';
+        } finally {
+            loader.style.display = 'none';
+        }
+    }
+
+    async function fetchCorporateData(symbol) {
+        const res = await fetch(`${apiBase}?action=corporate&symbol=${symbol}`);
+        const result = await res.json();
+        
+        let html = `<table>
+                        <thead>
+                            <tr><th>Date</th><th>Agenda & Outcome</th></tr>
+                        </thead>
+                        <tbody>`;
+
+        if (result.data && result.data.length > 0) {
+            result.data.forEach(meeting => {
+                const date = meeting[0];
+                const agenda = meeting[1];
+                
+                // Smart Highlight for Accountants: Detect Dividends, Buybacks, or Results
+                const isAction = agenda.toLowerCase().includes("dividend") || 
+                                 agenda.toLowerCase().includes("buyback") || 
+                                 agenda.toLowerCase().includes("results");
+                
+                const rowClass = isAction ? 'class="highlight"' : '';
+
+                html += `<tr ${rowClass}>
+                            <td style="white-space:nowrap;"><strong>${date}</strong></td>
+                            <td>${agenda}</td>
+                         </tr>`;
+            });
+        } else {
+            html += `<tr><td colspan="2">No corporate actions found for this symbol.</td></tr>`;
         }
 
-        async function loadStock(sym) {
-            document.getElementById('drop').innerHTML = '';
-            const card = document.getElementById('res');
-            card.style.display = 'block';
-            card.innerHTML = "Loading data for " + sym + "...";
+        html += `</tbody></table>`;
+        document.getElementById('corporateActions').innerHTML = html;
+    }
 
-            try {
-                const res = await fetch(`/api/market?action=quote&symbol=${sym}`);
-                const s = await res.json();
-                card.innerHTML = `
-                    <h2 style="margin:0">${s.symbol}</h2>
-                    <p style="color:gray">${s.name}</p>
-                    <div style="font-size:24px; font-weight:bold; color:#1a5fa8">₹${s.price.toLocaleString('en-IN')}</div>
-                    <div style="color:${s.changePct >= 0 ? 'green' : 'red'}">${s.changePct.toFixed(2)}%</div>
-                    <hr>
-                    <p><b>52W High:</b> ₹${s.high52.toLocaleString('en-IN')}</p>
-                    <p><b>P/E Ratio:</b> ${s.pe || 'N/A'}</p>
-                `;
-            } catch (e) {
-                card.innerHTML = "Error fetching data. Please try again.";
-            }
-        }
-    </script>
+    async function fetchLiveDetails(symbol) {
+        const res = await fetch(`${apiBase}?action=details&symbol=${symbol}`);
+        const data = await res.json();
+        
+        const priceCard = document.getElementById('priceCard');
+        priceCard.style.display = 'block';
+        document.getElementById('companyName').innerText = data.companyName || symbol;
+        
+        document.getElementById('priceDetails').innerHTML = `
+            <div style="display: flex; gap: 30px; font-size: 1.2em;">
+                <div>Price: <strong>₹${data.lastPrice || 'N/A'}</strong></div>
+                <div style="color: ${data.pChange >= 0 ? 'green' : 'red'}">
+                    Change: ${data.pChange || 0}%
+                </div>
+            </div>
+            <p>52W High: ₹${data.dayHigh || 'N/A'} | 52W Low: ₹${data.dayLow || 'N/A'}</p>
+        `;
+    }
+</script>
+
 </body>
 </html>
