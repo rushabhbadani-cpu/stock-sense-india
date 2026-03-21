@@ -91,7 +91,7 @@ async function getQuote(symbol, session) {
 
 // ── BATCH QUOTES — all symbols in ONE handler call ────────────────
 async function getBatchQuotes(symbolsStr, session) {
-  const symbols = symbolsStr.split(',').map(s => s.trim().toUpperCase()).filter(Boolean).slice(0, 30);
+  const symbols = symbolsStr.split(',').map(s => s.trim().toUpperCase()).filter(Boolean).slice(0, 60);
   console.log(`Batch: ${symbols.length} symbols`);
   const results = await Promise.allSettled(
     symbols.map(async (symbol) => {
@@ -163,22 +163,19 @@ async function getIndices(session) {
 // ── MARKET SCAN — Nifty 50 + Nifty Next 50 (100 real stocks) ─────
 // Used by Dark Horse instead of a hardcoded 15-stock list
 async function getMarketScan(session) {
-  // NSE's top 100 stocks — Nifty 50 + Nifty Next 50
-  const NIFTY100 = [
+  // Nifty 50 — official NSE index stocks, fetched in parallel
+  // 50 stocks is the sweet spot: comprehensive enough to find a real dark horse,
+  // fast enough to complete within Vercel's execution limit
+  const NIFTY50 = [
     'RELIANCE','TCS','HDFCBANK','BHARTIARTL','ICICIBANK','SBIN','INFY','HINDUNILVR','ITC','KOTAKBANK',
     'LT','AXISBANK','BAJFINANCE','MARUTI','NTPC','HCLTECH','SUNPHARMA','POWERGRID','WIPRO','ULTRACEMCO',
     'ADANIPORTS','NESTLEIND','TITAN','TATAMOTORS','ONGC','BAJAJFINSV','M&M','JSWSTEEL','TATASTEEL','COALINDIA',
     'GRASIM','CIPLA','DIVISLAB','BPCL','INDUSINDBK','TATACONSUM','DRREDDY','APOLLOHOSP','ASIANPAINT','EICHERMOT',
     'HDFCLIFE','SBILIFE','TECHM','HEROMOTOCO','BRITANNIA','HINDALCO','ADANIENT','BAJAJ-AUTO','VEDL','UPL',
-    'HAL','BEL','DIXON','PERSISTENT','MPHASIS','COFORGE','LTIM','TATAELXSI','MAZDOCK','BHARATFORG',
-    'PIIND','SCHAEFFLER','CUMMINSIND','TIINDIA','POLYCAB','PAGEIND','DMART','TRENT','NYKAA','ZOMATO',
-    'IRCTC','INDIGO','LICI','HDFCAMC','CHOLAFIN','ICICIPRULI','ICICIGI','BANKBARODA','CANBK','PNB',
-    'NHPC','SJVN','TATAPOWER','ADANIGREEN','TORNTPOWER','CESC','RECLTD','PFC','IRFC','RVNL',
-    'KAYNES','AMBER','SYRMA','MOTHERSON','MINCOMETAL','SAIL','NMDC','NATIONALUM','HINDCOPPER','AUROPHARMA',
   ];
-  console.log(`Market scan: fetching ${NIFTY100.length} stocks`);
-  const result = await getBatchQuotes(NIFTY100.join(','), session);
-  return { ...result, scanned: NIFTY100.length };
+  console.log(`Market scan: fetching ${NIFTY50.length} Nifty50 stocks`);
+  const result = await getBatchQuotes(NIFTY50.join(','), session);
+  return { ...result, scanned: NIFTY50.length };
 }
 
 // ── COMMODITIES ───────────────────────────────────────────────────
