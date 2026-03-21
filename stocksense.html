@@ -909,98 +909,69 @@ function updatePillarsWithLive(pillars, live) {
   });
 }
 
-// ── STOCK PROFILES (identity + fundamentals only — NO prices) ─────
+// ── STOCK IDENTITY LOOKUP (name + sector only — all prices & financials come from live API) ─────
+// No hardcoded prices, revenue, profit, quarterly data, or pillar scores here.
+// Everything financial is computed live from Yahoo Finance via the API.
 const STOCKS = {
-  TCS:{ name:'Tata Consultancy Services', sector:'IT Services', nseCode:'TCS', bseCode:'532540', index:'Nifty 50', website:'www.tcs.com', promoterName:'Tata Sons (N Chandrasekaran — Chairman)', ceo:'K Krithivasan (MD & CEO)', keyMgmt:['Samir Seksaria — CFO','Milind Lakkad — CHRO'], riskProfile:'low', promoter:72.3, fii:12.4, dii:6.8, pub:8.5, pledgePct:0,
-    fundamentals:{ years:['FY20','FY21','FY22','FY23','FY24'], revenue:[156949,164177,191754,225458,240893], profit:[32340,33388,38327,42303,46099], eps:[87.2,90.2,103.7,114.4,124.6] },
-    quarterly:[{p:'Q2 FY25',rev:63011,profit:11909,yoyR:8.4,yoyP:5.1},{p:'Q1 FY25',rev:62232,profit:11728,yoyR:8.3,yoyP:8.7},{p:'Q4 FY24',rev:61237,profit:12434,yoyR:7.5,yoyP:0.9},{p:'Q3 FY24',rev:60583,profit:11058,yoyR:4.5,yoyP:8.4}],
-    pillars:[{name:'Earnings Quality',score:8.5,weight:20,why:'11% profit growth — consistent for 3+ years'},{name:'Revenue Growth',score:7.8,weight:20,why:'12% CAGR revenue growth over 5 years'},{name:'Balance Sheet',score:9.5,weight:20,why:'Near zero debt — extremely safe balance sheet'},{name:'Valuation',score:6.8,weight:20,why:'P/E updated live from market data'},{name:'Price Momentum',score:7.5,weight:10,why:'52W position updated live'},{name:'Trading Activity',score:7.0,weight:10,why:'Consistent institutional buying'}],
-    swot:{s:['Market leader in Indian IT','Near zero debt — massive cash reserves','Global presence in 46+ countries'],w:['Growth slowing vs mid-cap IT peers','High employee attrition risk','Revenue concentrated in US/Europe'],o:['AI & cloud services demand surging','Growing domestic India tech spending','Government digital India projects'],t:['Rupee appreciation hurts export revenue','Competition from global IT giants','Visa restrictions impacting talent mobility']},
-    peers:['TCS','INFY','WIPRO','HCLTECH','LTIM'] },
-
-  INFY:{ name:'Infosys Limited', sector:'IT Services', nseCode:'INFY', bseCode:'500209', index:'Nifty 50', website:'www.infosys.com', promoterName:'Murthy family (NR Narayana Murthy — Founder)', ceo:'Salil Parekh (MD & CEO)', keyMgmt:['Jayesh Sanghrajka — CFO'], riskProfile:'low', promoter:14.9, fii:35.1, dii:20.0, pub:30.0, pledgePct:0,
-    fundamentals:{ years:['FY20','FY21','FY22','FY23','FY24'], revenue:[90791,100472,121641,146767,153670], profit:[16639,19351,22110,24108,26248], eps:[39.1,45.5,52.5,57.5,62.9] },
-    quarterly:[{p:'Q2 FY25',rev:40986,profit:6506,yoyR:5.1,yoyP:4.7},{p:'Q1 FY25',rev:39315,profit:6368,yoyR:2.5,yoyP:6.7},{p:'Q4 FY24',rev:37923,profit:7975,yoyR:1.8,yoyP:30.0},{p:'Q3 FY24',rev:38821,profit:6106,yoyR:0.9,yoyP:7.1}],
-    pillars:[{name:'Earnings Quality',score:7.2,weight:20,why:'Steady 8–9% profit growth, reliable trajectory'},{name:'Revenue Growth',score:7.0,weight:20,why:'Revenue growth slowing — guidance cuts recently'},{name:'Balance Sheet',score:8.5,weight:20,why:'Minimal debt, strong cash generation'},{name:'Valuation',score:7.0,weight:20,why:'P/E updated live'},{name:'Price Momentum',score:6.5,weight:10,why:'52W position updated live'},{name:'Trading Activity',score:6.5,weight:10,why:'Stable institutional ownership'}],
-    swot:{s:['Strong global IT brand recognized worldwide','Consistent dividend payer','AI platform Cobalt gaining enterprise clients'],w:['Revenue guidance cuts in recent quarters','Higher attrition compared to TCS','Slower deal conversion pace'],o:['AI consulting demand surging globally','Europe digital transformation wave','Cost optimisation mandates from clients'],t:['Global IT spending slowdown','Currency headwinds','Talent competition from US tech firms']},
-    peers:['TCS','INFY','WIPRO','HCLTECH','LTIM'] },
-
-  HDFCBANK:{ name:'HDFC Bank Limited', sector:'Banking & Finance', nseCode:'HDFCBANK', bseCode:'500180', index:'Nifty 50', website:'www.hdfcbank.com', promoterName:'No promoter (widely held)', ceo:'Sashidhar Jagdishan (MD & CEO)', keyMgmt:['Srinivasan Vaidyanathan — CFO'], riskProfile:'low', promoter:0, fii:47.4, dii:21.0, pub:31.6, pledgePct:0,
-    fundamentals:{ years:['FY20','FY21','FY22','FY23','FY24'], revenue:[128552,146063,157263,188975,231400], profit:[26257,31116,36961,44109,60812], eps:[47.9,56.7,67.5,80.5,81.7] },
-    quarterly:[{p:'Q2 FY25',rev:66080,profit:16821,yoyR:9.1,yoyP:5.3},{p:'Q1 FY25',rev:64062,profit:16175,yoyR:7.4,yoyP:35.3},{p:'Q4 FY24',rev:63556,profit:16512,yoyR:24.4,yoyP:37.1},{p:'Q3 FY24',rev:63993,profit:16373,yoyR:26.5,yoyP:33.5}],
-    pillars:[{name:'Earnings Quality',score:8.8,weight:20,why:'20% profit growth — exceptional for large private bank'},{name:'Revenue Growth',score:8.5,weight:20,why:'Strong NII growth + merger synergies'},{name:'Balance Sheet',score:7.8,weight:20,why:'Low NPA ratio — best in class asset quality'},{name:'Valuation',score:8.0,weight:20,why:'P/E updated live'},{name:'Price Momentum',score:7.5,weight:10,why:'52W position updated live'},{name:'Trading Activity',score:8.0,weight:10,why:'Highest FII ownership among private banks'}],
-    swot:{s:["India's most trusted private bank","Lowest NPA ratio in large bank sector",'Massive branch + digital network'],w:['Post-HDFC merger integration complexity','Deposit growth pressure in tight liquidity','High expectations already priced in'],o:['India credit penetration still very low','Rural banking massive untapped opportunity','Wealth management and insurance cross-sell'],t:['RBI regulatory tightening','Competition from Kotak ICICI on digital','Interest rate cycle impact on NIM']},
-    peers:['HDFCBANK','ICICIBANK','KOTAKBANK','AXISBANK','SBIN'] },
-
-  RELIANCE:{ name:'Reliance Industries Ltd', sector:'Conglomerate', nseCode:'RELIANCE', bseCode:'500325', index:'Nifty 50', website:'www.ril.com', promoterName:'Mukesh Ambani family', ceo:'Mukesh Ambani (Chairman & MD)', keyMgmt:['Srikanth Venkatachari — CFO'], riskProfile:'medium', promoter:50.3, fii:22.4, dii:4.0, pub:23.3, pledgePct:0,
-    fundamentals:{ years:['FY20','FY21','FY22','FY23','FY24'], revenue:[611645,486326,792756,876023,899041], profit:[39354,49128,60705,73670,79020], eps:[58.7,73.4,90.6,108.6,116.7] },
-    quarterly:[{p:'Q2 FY25',rev:235481,profit:19323,yoyR:0.2,yoyP:-2.8},{p:'Q1 FY25',rev:236467,profit:15138,yoyR:-0.8,yoyP:6.2},{p:'Q4 FY24',rev:237052,profit:18951,yoyR:11.5,yoyP:2.4},{p:'Q3 FY24',rev:228938,profit:17265,yoyR:1.1,yoyP:9.3}],
-    pillars:[{name:'Earnings Quality',score:7.0,weight:20,why:'Multiple business segments growing steadily'},{name:'Revenue Growth',score:6.5,weight:20,why:'Overall growth slowing as Jio matures'},{name:'Balance Sheet',score:6.5,weight:20,why:'Higher debt from Jio + retail expansion'},{name:'Valuation',score:6.2,weight:20,why:'P/E updated live'},{name:'Price Momentum',score:7.0,weight:10,why:'52W position updated live'},{name:'Trading Activity',score:7.5,weight:10,why:'India\'s most traded large-cap'}],
-    swot:{s:["India's largest company by market cap",'Jio — 450M+ subscribers dominant position','Reliance Retail — largest in India'],w:['Complex conglomerate structure hard to value','Lower ROE vs IT and pharma peers','High capital expenditure still ongoing'],o:['Jio Financial Services growth story','Green energy hydrogen and solar plans','Retail IPO could unlock significant value'],t:['Oil price volatility affects refining margins','Telecom regulatory risk','Competition from Tata and Amazon in retail']},
-    peers:['RELIANCE','ONGC','BPCL','NTPC','ADANIGREEN'] },
-
-  MARUTI:{ name:'Maruti Suzuki India Ltd', sector:'Automobile', nseCode:'MARUTI', bseCode:'532500', index:'Nifty 50', website:'www.marutisuzuki.com', promoterName:'Suzuki Motor Corporation (Japan)', ceo:'Hisashi Takeuchi (MD & CEO)', keyMgmt:['Ajay Seth — CFO'], riskProfile:'medium', promoter:58.2, fii:18.8, dii:9.0, pub:14.0, pledgePct:0,
-    fundamentals:{ years:['FY20','FY21','FY22','FY23','FY24'], revenue:[75611,66922,79762,117571,141893], profit:[5567,4229,3882,8211,13489], eps:[184.3,140.0,128.6,271.8,446.9] },
-    quarterly:[{p:'Q2 FY25',rev:38084,profit:3924,yoyR:14.2,yoyP:17.5},{p:'Q1 FY25',rev:38705,profit:3651,yoyR:18.9,yoyP:47.4},{p:'Q4 FY24',rev:40214,profit:3878,yoyR:19.7,yoyP:47.8},{p:'Q3 FY24',rev:31376,profit:2820,yoyR:18.7,yoyP:31.0}],
-    pillars:[{name:'Earnings Quality',score:8.2,weight:20,why:'22% profit growth — premium model shift working'},{name:'Revenue Growth',score:8.0,weight:20,why:'16% revenue CAGR with strong SUV demand'},{name:'Balance Sheet',score:9.5,weight:20,why:'Virtually zero debt — textbook clean sheet'},{name:'Valuation',score:6.5,weight:20,why:'P/E updated live'},{name:'Price Momentum',score:6.8,weight:10,why:'52W position updated live'},{name:'Trading Activity',score:7.0,weight:10,why:'Strong institutional and retail interest'}],
-    swot:{s:['1 in 2 cars sold in India is Maruti','Zero debt with massive cash reserves','Strongest dealer and service network India'],w:['Late entrant to EV transition vs competitors','Premium segment market share still building','Technology dependence on Suzuki Japan'],o:['SUV and CNG vehicle demand surging','eVitara EV launch pipeline ready','Rural India motorisation in early stages'],t:['Hyundai Tata and MG EV competition intensifying','Commodity cost inflation risk','New emission and safety regulations']},
-    peers:['MARUTI','TATAMOTORS','M&M','BAJAJ-AUTO','HEROMOTOCO'] },
-
-  SUNPHARMA:{ name:'Sun Pharmaceutical Industries', sector:'Pharma', nseCode:'SUNPHARMA', bseCode:'524715', index:'Nifty 50', website:'www.sunpharma.com', promoterName:'Dilip Shanghvi family (Founder)', ceo:'Dilip Shanghvi (MD)', keyMgmt:['C S Muralidharan — CFO'], riskProfile:'medium', promoter:54.5, fii:19.7, dii:10.0, pub:15.8, pledgePct:0,
-    fundamentals:{ years:['FY20','FY21','FY22','FY23','FY24'], revenue:[29380,31759,35240,40639,48661], profit:[3929,5238,6730,7755,10143], eps:[16.4,21.8,28.0,32.3,42.3] },
-    quarterly:[{p:'Q2 FY25',rev:13050,profit:2956,yoyR:13.4,yoyP:23.6},{p:'Q1 FY25',rev:12337,profit:2782,yoyR:11.3,yoyP:32.8},{p:'Q4 FY24',rev:13083,profit:2273,yoyR:13.1,yoyP:43.2},{p:'Q3 FY24',rev:12176,profit:2413,yoyR:18.6,yoyP:52.6}],
-    pillars:[{name:'Earnings Quality',score:7.8,weight:20,why:'16% profit growth — specialty drug push strong'},{name:'Revenue Growth',score:7.5,weight:20,why:'Consistent double-digit revenue growth'},{name:'Balance Sheet',score:9.0,weight:20,why:'Virtually debt free — very safe'},{name:'Valuation',score:6.2,weight:20,why:'P/E updated live'},{name:'Price Momentum',score:7.0,weight:10,why:'52W position updated live'},{name:'Trading Activity',score:6.8,weight:10,why:'Moderate institutional activity'}],
-    swot:{s:['Largest Indian pharma company globally','US specialty drugs growing fast','Zero debt — very safe balance sheet'],w:['USFDA audit risk always present','Pricing pressure in US generics market','Currency exposure to USD earnings'],o:['Specialty drugs pipeline strong globally','Biosimilars opportunity in EU and US','India branded market growing steadily'],t:['USFDA import alerts disruptive risk','Generic price erosion in US market','Competitor drug approvals stealing share']},
-    peers:['SUNPHARMA','DRREDDY','CIPLA','DIVISLAB','AUROPHARMA'] },
-
-  ITC:{ name:'ITC Limited', sector:'FMCG', nseCode:'ITC', bseCode:'500875', index:'Nifty 50', website:'www.itcportal.com', promoterName:'No promoter (widely held)', ceo:'Sanjiv Puri (MD & CEO)', keyMgmt:['Supratim Dutta — CFO'], riskProfile:'low', promoter:0, fii:42.3, dii:15.0, pub:42.7, pledgePct:0,
-    fundamentals:{ years:['FY20','FY21','FY22','FY23','FY24'], revenue:[48298,49257,59220,69481,74741], profit:[15136,13389,15058,18753,20456], eps:[12.0,10.7,12.1,15.1,16.5] },
-    quarterly:[{p:'Q2 FY25',rev:20265,profit:4987,yoyR:1.8,yoyP:1.9},{p:'Q1 FY25',rev:19765,profit:4917,yoyR:4.4,yoyP:8.0},{p:'Q4 FY24',rev:18649,profit:5395,yoyR:4.9,yoyP:13.4},{p:'Q3 FY24',rev:17972,profit:5280,yoyR:6.3,yoyP:11.2}],
-    pillars:[{name:'Earnings Quality',score:7.5,weight:20,why:'12% profit growth — FMCG diversification working'},{name:'Revenue Growth',score:6.8,weight:20,why:'Steady growth led by non-tobacco segments'},{name:'Balance Sheet',score:10.0,weight:20,why:'Zero debt with ₹7,000 Cr+ cash reserves'},{name:'Valuation',score:7.5,weight:20,why:'P/E updated live'},{name:'Price Momentum',score:6.0,weight:10,why:'52W position updated live'},{name:'Trading Activity',score:7.5,weight:10,why:'Highest dividend yield attracts retail investors'}],
-    swot:{s:['Highest dividend yield among large FMCG stocks','Hotels business booming post-COVID','Zero debt with massive cash pile'],w:['Cigarette volumes long-term declining trend','ESG headwinds from tobacco core business','Late entry in premium personal care brands'],o:['Hotels business significant re-rating potential','FMCG market share gains accelerating','Agri-business strong growth ahead'],t:['Tobacco GST rate increase risk anytime','HUL and Dabur competition in FMCG','Health awareness reducing cigarette demand']},
-    peers:['ITC','HINDUNILVR','NESTLEIND','DABUR','MARICO'] },
-
-  BHARTIARTL:{ name:'Bharti Airtel Limited', sector:'Telecom', nseCode:'BHARTIARTL', bseCode:'532454', index:'Nifty 50', website:'www.airtel.in', promoterName:'Sunil Mittal (Bharti Enterprises)', ceo:'Gopal Vittal (MD & CEO)', keyMgmt:['Soumen Ray — CFO'], riskProfile:'medium', promoter:56.2, fii:19.1, dii:11.0, pub:13.7, pledgePct:0,
-    fundamentals:{ years:['FY20','FY21','FY22','FY23','FY24'], revenue:[87539,100616,116547,138655,149982], profit:[-32183,-4964,2007,8327,11812], eps:[-53.8,-8.3,3.4,13.9,19.8] },
-    quarterly:[{p:'Q2 FY25',rev:41473,profit:3593,yoyR:12.1,yoyP:167.6},{p:'Q1 FY25',rev:38965,profit:4160,yoyR:2.0,yoyP:159.6},{p:'Q4 FY24',rev:37599,profit:2458,yoyR:3.0,yoyP:null},{p:'Q3 FY24',rev:37935,profit:2442,yoyR:4.4,yoyP:54.0}],
-    pillars:[{name:'Earnings Quality',score:7.5,weight:20,why:'Turnaround complete — strong profit growth'},{name:'Revenue Growth',score:7.5,weight:20,why:'13% revenue growth — 5G and broadband driving'},{name:'Balance Sheet',score:5.8,weight:20,why:'High debt from spectrum and network build'},{name:'Valuation',score:4.5,weight:20,why:'P/E updated live — expensive due to growth'},{name:'Price Momentum',score:8.0,weight:10,why:'52W position updated live'},{name:'Trading Activity',score:7.8,weight:10,why:'Strong momentum trade interest'}],
-    swot:{s:['Africa business growing very fast','Strong 5G rollout momentum after Jio','Tariff hikes improving margins significantly'],w:['₹2.5L Cr+ debt burden remains heavy','P/E extremely high — priced for perfection','AGR dues remain a long-term overhang'],o:['5G enterprise services untapped market','Home broadband expansion massive opportunity','Airtel Payments Bank growing profitably'],t:['Jio aggressive pricing competition','Further spectrum costs ahead','Regulatory uncertainty in telecom sector']},
-    peers:['BHARTIARTL','IDEA','BSNL'] },
-
-  LT:{ name:'Larsen & Toubro Limited', sector:'Infrastructure', nseCode:'LT', bseCode:'500510', index:'Nifty 50', website:'www.larsentoubro.com', promoterName:'No promoter (widely held)', ceo:'S N Subrahmanyan (MD & CEO)', keyMgmt:['Shankar Raman — CFO'], riskProfile:'medium', promoter:0, fii:26.3, dii:36.0, pub:37.7, pledgePct:0,
-    fundamentals:{ years:['FY20','FY21','FY22','FY23','FY24'], revenue:[135982,133625,155447,189869,221745], profit:[8905,8766,10075,11558,15404], eps:[63.4,62.4,71.7,82.2,109.6] },
-    quarterly:[{p:'Q2 FY25',rev:61555,profit:3395,yoyR:20.7,yoyP:4.5},{p:'Q1 FY25',rev:55120,profit:2786,yoyR:15.1,yoyP:12.3},{p:'Q4 FY24',rev:70718,profit:4396,yoyR:14.9,yoyP:10.4},{p:'Q3 FY24',rev:55126,profit:3440,yoyR:19.3,yoyP:14.6}],
-    pillars:[{name:'Earnings Quality',score:8.0,weight:20,why:'22% profit growth on India infra boom'},{name:'Revenue Growth',score:8.2,weight:20,why:'Record order book ₹5.5L Cr+ driving growth'},{name:'Balance Sheet',score:6.8,weight:20,why:'Moderate debt — manageable with cash flows'},{name:'Valuation',score:6.2,weight:20,why:'P/E updated live'},{name:'Price Momentum',score:7.0,weight:10,why:'52W position updated live'},{name:'Trading Activity',score:7.5,weight:10,why:'Institutional favourite — India infra play'}],
-    swot:{s:['Record ₹5.5L Cr+ order book visibility','Largest EPC conglomerate in India','Tech subsidiaries LTIMindtree and LTTS'],w:['Execution risk on mega projects','High working capital requirements','P/E premium to global engineering peers'],o:['India infra push — national monetisation pipeline','Middle East mega projects booming','Defence manufacturing opportunity growing'],t:['Interest rate impact on project economics','Commodity cost overruns on fixed price','Geopolitical project risks in Middle East']},
-    peers:['LT','ADANIENT','POWERGRID','NTPC','BHEL'] },
-
-  HAL:{ name:'Hindustan Aeronautics Limited', sector:'Defence', nseCode:'HAL', bseCode:'541154', index:'Nifty Next 50', website:'www.hal-india.co.in', promoterName:'Government of India (86.5% stake)', ceo:'C B Ananthakrishnan (CMD)', keyMgmt:['Saji V — CFO'], riskProfile:'medium', promoter:71.6, fii:10.2, dii:8.4, pub:9.8, pledgePct:0,
-    fundamentals:{ years:['FY20','FY21','FY22','FY23','FY24'], revenue:[21437,21418,25927,26928,33395], profit:[2663,2833,3986,5828,7595], eps:[79.7,84.8,119.4,174.5,227.4] },
-    quarterly:[{p:'Q2 FY25',rev:7926,profit:1635,yoyR:14.7,yoyP:9.9},{p:'Q1 FY25',rev:5920,profit:1439,yoyR:8.7,yoyP:27.7},{p:'Q4 FY24',rev:14166,profit:4308,yoyR:14.2,yoyP:22.7},{p:'Q3 FY24',rev:6220,profit:1488,yoyR:7.8,yoyP:12.3}],
-    pillars:[{name:'Earnings Quality',score:8.5,weight:20,why:'Strong 30% profit growth on defence orders'},{name:'Revenue Growth',score:8.0,weight:20,why:'Order book ₹1L Cr+ with visibility 5+ years'},{name:'Balance Sheet',score:9.0,weight:20,why:'Government backing — very secure'},{name:'Valuation',score:5.5,weight:20,why:'P/E updated live — PSU defence premium'},{name:'Price Momentum',score:8.0,weight:10,why:'52W position updated live'},{name:'Trading Activity',score:7.5,weight:10,why:'High momentum in defence theme'}],
-    swot:{s:['Government monopoly on fighter aircraft MRO','₹1L Cr+ order book — multi-year visibility','Only Indian manufacturer of Tejas LCA'],w:['Execution delays on complex orders','Government pricing constraints','Technology dependence on foreign suppliers'],o:['Tejas MK2 and AMCA programmes upcoming','Export opportunity to friendly nations','Helicopter demand from army and navy'],t:['Foreign competition for new orders','Geopolitical risks affecting supply chain','Budget allocation changes']},
-    peers:['HAL','BEL','MAZDOCK','BHEL','MIDHANI'] },
-
-  DIXON:{ name:'Dixon Technologies India Ltd', sector:'Electronics Manufacturing', nseCode:'DIXON', bseCode:'540699', index:'Nifty Next 50', website:'www.dixontechnology.com', promoterName:'Sunil Vachani (Founder & CMD)', ceo:'Atul B Lall (MD & CEO)', keyMgmt:['Saurabh Gupta — CFO'], riskProfile:'high', promoter:33.6, fii:28.4, dii:14.2, pub:23.8, pledgePct:0,
-    fundamentals:{ years:['FY20','FY21','FY22','FY23','FY24'], revenue:[5289,7593,10752,12194,17698], profit:[121,224,310,397,531], eps:[20.2,37.3,51.6,65.8,88.2] },
-    quarterly:[{p:'Q2 FY25',rev:10029,profit:180,yoyR:133.3,yoyP:63.6},{p:'Q1 FY25',rev:7494,profit:170,yoyR:101.3,yoyP:82.8},{p:'Q4 FY24',rev:5651,profit:151,yoyR:61.5,yoyP:39.6},{p:'Q3 FY24',rev:4825,profit:130,yoyR:7.5,yoyP:3.2}],
-    pillars:[{name:'Earnings Quality',score:7.5,weight:20,why:'35% profit growth on PLI scheme tailwinds'},{name:'Revenue Growth',score:9.0,weight:20,why:'Revenue doubled in 2 years — PLI scheme'},{name:'Balance Sheet',score:7.0,weight:20,why:'Moderate debt — growth capex ongoing'},{name:'Valuation',score:4.0,weight:20,why:'P/E updated live — very expensive for margins'},{name:'Price Momentum',score:7.5,weight:10,why:'52W position updated live'},{name:'Trading Activity',score:7.0,weight:10,why:'Hot EMS theme — high retail and FII interest'}],
-    swot:{s:['Largest EMS company in India by revenue','PLI scheme beneficiary across multiple segments','Strong client base — Samsung, Xiaomi, Motorola'],w:['Very thin margins — 3-4% net profit margin','Client concentration risk — top 5 clients','Technology upgrades needed continuously'],o:['India electronics production pushing $300B target','Apple and global brands shifting to India','Semiconductor component assembly opportunity'],t:['Competition from contract manufacturers globally','PLI scheme policy changes','Margin pressure from client pricing power']},
-    peers:['DIXON','KAYNES','TATAELXSI','AMBER','SYRMA'] },
-
-  KPIT:{ name:'KPIT Technologies Limited', sector:'Automotive Tech', nseCode:'KPIT', bseCode:'542651', index:'Nifty Midcap 100', website:'www.kpit.com', promoterName:'Ravi Pandit & Kishor Patil (Co-founders)', ceo:'Kishor Patil (MD & CEO)', keyMgmt:['Sunil Phansalkar — CFO'], riskProfile:'high', promoter:39.2, fii:24.8, dii:12.4, pub:23.6, pledgePct:0,
-    fundamentals:{ years:['FY20','FY21','FY22','FY23','FY24'], revenue:[1463,1371,1852,2780,4363], profit:[120,90,177,349,600], eps:[3.3,2.5,4.9,9.7,16.7] },
-    quarterly:[{p:'Q2 FY25',rev:1398,profit:205,yoyR:21.0,yoyP:31.0},{p:'Q1 FY25',rev:1326,profit:195,yoyR:25.5,yoyP:37.3},{p:'Q4 FY24',rev:1392,profit:199,yoyR:42.4,yoyP:73.0},{p:'Q3 FY24',rev:1334,profit:167,yoyR:47.7,yoyP:72.2}],
-    pillars:[{name:'Earnings Quality',score:8.5,weight:20,why:'72% profit growth — EV software dominance'},{name:'Revenue Growth',score:9.0,weight:20,why:'Revenue 3x in 3 years — SDV megatrend'},{name:'Balance Sheet',score:8.5,weight:20,why:'Minimal debt — asset-light software model'},{name:'Valuation',score:4.0,weight:20,why:'P/E updated live — very high growth premium'},{name:'Price Momentum',score:7.5,weight:10,why:'52W position updated live'},{name:'Trading Activity',score:7.0,weight:10,why:'High momentum stock — active trading'}],
-    swot:{s:['Global leader in embedded automotive software','Pure-play on Software Defined Vehicle megatrend','Clients include BMW VW and major OEMs'],w:['Very expensive valuation — high P/E','Revenue concentrated in automotive sector','Global auto slowdown is direct risk'],o:['EV software complexity increasing rapidly','Autonomous driving software opportunity','ADAS and safety systems growing market'],t:['Global automotive capex cut risk','Competition from Tata Elxsi and global firms','Economic slowdown reducing auto sales']},
-    peers:['KPIT','TATAELXSI','LTTS','PERSISTENT','COFORGE'] },
-
-  PERSISTENT:{ name:'Persistent Systems Limited', sector:'IT Services', nseCode:'PERSISTENT', bseCode:'533179', index:'Nifty Midcap 100', website:'www.persistent.com', promoterName:'Anand Deshpande (Founder & MD)', ceo:'Sandeep Kalra (CEO & ED)', keyMgmt:['Sunil Phansalkar — CFO'], riskProfile:'medium', promoter:31.2, fii:22.4, dii:14.8, pub:31.6, pledgePct:0,
-    fundamentals:{ years:['FY20','FY21','FY22','FY23','FY24'], revenue:[4140,4468,5903,8263,10537], profit:[445,588,794,1177,1557], eps:[57.5,76.2,103.0,152.6,201.6] },
-    quarterly:[{p:'Q2 FY25',rev:2916,profit:460,yoyR:21.5,yoyP:37.9},{p:'Q1 FY25',rev:2822,profit:436,yoyR:18.4,yoyP:37.3},{p:'Q4 FY24',rev:2748,profit:391,yoyR:17.3,yoyP:27.6},{p:'Q3 FY24',rev:2594,profit:306,yoyR:14.7,yoyP:18.1}],
-    pillars:[{name:'Earnings Quality',score:8.5,weight:20,why:'35% profit growth — fastest among mid-cap IT'},{name:'Revenue Growth',score:9.0,weight:20,why:'21%+ revenue growth sustained — AI services'},{name:'Balance Sheet',score:9.0,weight:20,why:'Zero debt — very clean balance sheet'},{name:'Valuation',score:5.5,weight:20,why:'P/E updated live'},{name:'Price Momentum',score:8.0,weight:10,why:'52W position updated live'},{name:'Trading Activity',score:7.5,weight:10,why:'Consistent institutional buying interest'}],
-    swot:{s:['Fastest growing mid-cap IT company India','AI-first strategy resonating with global clients','Zero debt — strong cash generation'],w:['Smaller scale vs TCS Infosys — less pricing power','Revenue concentrated in North America','Key man risk — founder-CEO dependent'],o:['GenAI services demand massive and growing','Microsoft and other hyperscaler partnerships','Enterprise AI transformation wave'],t:['Slowdown in global tech spending','Competition from larger IT peers for deals','Talent acquisition and retention costs']},
-    peers:['PERSISTENT','MPHASIS','COFORGE','LTIM','CYIENT'] },
+  TCS:         { name:'Tata Consultancy Services',       sector:'IT Services',              nseCode:'TCS',         bseCode:'532540', index:'Nifty 50',        website:'www.tcs.com',            promoterName:'Tata Sons',                  ceo:'K Krithivasan',        riskProfile:'low',    promoter:72.3, fii:12.4, dii:6.8,  pub:8.5,  pledgePct:0, peers:['INFY','WIPRO','HCLTECH','LTIM','PERSISTENT'] },
+  INFY:        { name:'Infosys Limited',                  sector:'IT Services',              nseCode:'INFY',        bseCode:'500209', index:'Nifty 50',        website:'www.infosys.com',        promoterName:'Murthy family',              ceo:'Salil Parekh',         riskProfile:'low',    promoter:14.9, fii:35.1, dii:20.0, pub:30.0, pledgePct:0, peers:['TCS','WIPRO','HCLTECH','LTIM','MPHASIS'] },
+  WIPRO:       { name:'Wipro Limited',                    sector:'IT Services',              nseCode:'WIPRO',       bseCode:'507685', index:'Nifty 50',        website:'www.wipro.com',          promoterName:'Azim Premji family',         ceo:'Srinivas Pallia',      riskProfile:'low',    promoter:72.9, fii:10.2, dii:8.1,  pub:8.8,  pledgePct:0, peers:['TCS','INFY','HCLTECH','LTIM','COFORGE'] },
+  HCLTECH:     { name:'HCL Technologies Limited',         sector:'IT Services',              nseCode:'HCLTECH',     bseCode:'532281', index:'Nifty 50',        website:'www.hcltech.com',        promoterName:'Shiv Nadar family',          ceo:'C Vijayakumar',        riskProfile:'low',    promoter:60.8, fii:17.4, dii:10.2, pub:11.6, pledgePct:0, peers:['TCS','INFY','WIPRO','LTIM','MPHASIS'] },
+  LTIM:        { name:'LTIMindtree Limited',              sector:'IT Services',              nseCode:'LTIM',        bseCode:'540005', index:'Nifty 50',        website:'www.ltimindtree.com',    promoterName:'Larsen & Toubro',            ceo:'Debashis Chatterjee',  riskProfile:'medium', promoter:68.6, fii:13.2, dii:8.4,  pub:9.8,  pledgePct:0, peers:['TCS','INFY','HCLTECH','MPHASIS','PERSISTENT'] },
+  PERSISTENT:  { name:'Persistent Systems Limited',       sector:'IT Services',              nseCode:'PERSISTENT',  bseCode:'533179', index:'Nifty Midcap 100',website:'www.persistent.com',     promoterName:'Anand Deshpande (Founder)',   ceo:'Sandeep Kalra',        riskProfile:'medium', promoter:31.2, fii:22.4, dii:14.8, pub:31.6, pledgePct:0, peers:['TCS','INFY','COFORGE','LTIM','MPHASIS'] },
+  MPHASIS:     { name:'Mphasis Limited',                  sector:'IT Services',              nseCode:'MPHASIS',     bseCode:'526299', index:'Nifty Midcap 100',website:'www.mphasis.com',        promoterName:'Blackstone Group',           ceo:'Nitin Rakesh',         riskProfile:'medium', promoter:55.5, fii:15.3, dii:9.2,  pub:20.0, pledgePct:0, peers:['INFY','PERSISTENT','COFORGE','LTIM','HCLTECH'] },
+  COFORGE:     { name:'Coforge Limited',                  sector:'IT Services',              nseCode:'COFORGE',     bseCode:'532541', index:'Nifty Midcap 100',website:'www.coforge.com',        promoterName:'Baring PE Asia',             ceo:'Sudhir Singh',         riskProfile:'high',   promoter:60.1, fii:12.4, dii:8.9,  pub:18.6, pledgePct:0, peers:['PERSISTENT','MPHASIS','LTIM','INFY','WIPRO'] },
+  KPIT:        { name:'KPIT Technologies Limited',        sector:'Automotive Tech',          nseCode:'KPIT',        bseCode:'542651', index:'Nifty Midcap 100',website:'www.kpit.com',           promoterName:'Ravi Pandit & Kishor Patil', ceo:'Kishor Patil',         riskProfile:'high',   promoter:39.2, fii:24.8, dii:12.4, pub:23.6, pledgePct:0, peers:['TATAELXSI','LTTS','PERSISTENT','COFORGE','INFY'] },
+  TATAELXSI:   { name:'Tata Elxsi Limited',               sector:'IT Services',              nseCode:'TATAELXSI',   bseCode:'500408', index:'Nifty Midcap 100',website:'www.tataelxsi.com',      promoterName:'Tata Sons',                  ceo:'Manoj Raghunandan',    riskProfile:'high',   promoter:43.9, fii:20.1, dii:12.3, pub:23.7, pledgePct:0, peers:['KPIT','LTTS','PERSISTENT','MPHASIS','INFY'] },
+  HDFCBANK:    { name:'HDFC Bank Limited',                 sector:'Banking & Finance',        nseCode:'HDFCBANK',    bseCode:'500180', index:'Nifty 50',        website:'www.hdfcbank.com',       promoterName:'No promoter (widely held)',   ceo:'Sashidhar Jagdishan',  riskProfile:'low',    promoter:0,    fii:47.4, dii:21.0, pub:31.6, pledgePct:0, peers:['ICICIBANK','KOTAKBANK','AXISBANK','SBIN','INDUSINDBK'] },
+  ICICIBANK:   { name:'ICICI Bank Limited',                sector:'Banking & Finance',        nseCode:'ICICIBANK',   bseCode:'532174', index:'Nifty 50',        website:'www.icicibank.com',      promoterName:'No promoter (widely held)',   ceo:'Sandeep Bakhshi',      riskProfile:'low',    promoter:0,    fii:44.2, dii:22.1, pub:33.7, pledgePct:0, peers:['HDFCBANK','KOTAKBANK','AXISBANK','SBIN','BANDHANBNK'] },
+  KOTAKBANK:   { name:'Kotak Mahindra Bank Limited',       sector:'Banking & Finance',        nseCode:'KOTAKBANK',   bseCode:'500247', index:'Nifty 50',        website:'www.kotak.com',          promoterName:'Uday Kotak family',          ceo:'Ashok Vaswani',        riskProfile:'low',    promoter:25.9, fii:38.4, dii:18.2, pub:17.5, pledgePct:0, peers:['HDFCBANK','ICICIBANK','AXISBANK','SBIN','INDUSINDBK'] },
+  AXISBANK:    { name:'Axis Bank Limited',                 sector:'Banking & Finance',        nseCode:'AXISBANK',    bseCode:'532215', index:'Nifty 50',        website:'www.axisbank.com',       promoterName:'No promoter (widely held)',   ceo:'Amitabh Chaudhry',     riskProfile:'medium', promoter:8.2,  fii:49.9, dii:22.4, pub:19.5, pledgePct:0, peers:['HDFCBANK','ICICIBANK','KOTAKBANK','SBIN','INDUSINDBK'] },
+  SBIN:        { name:'State Bank of India',               sector:'Banking & Finance',        nseCode:'SBIN',        bseCode:'500112', index:'Nifty 50',        website:'www.sbi.co.in',          promoterName:'Government of India',        ceo:'C S Setty',            riskProfile:'medium', promoter:57.5, fii:10.9, dii:21.4, pub:10.2, pledgePct:0, peers:['HDFCBANK','ICICIBANK','KOTAKBANK','AXISBANK','BANKBARODA'] },
+  BAJFINANCE:  { name:'Bajaj Finance Limited',             sector:'Banking & Finance',        nseCode:'BAJFINANCE',  bseCode:'500034', index:'Nifty 50',        website:'www.bajajfinserv.in',    promoterName:'Bajaj family',               ceo:'Rajeev Jain',          riskProfile:'medium', promoter:54.7, fii:21.3, dii:10.4, pub:13.6, pledgePct:0, peers:['HDFCBANK','ICICIBANK','CHOLAFIN','M&MFIN','SHRIRAMFIN'] },
+  RELIANCE:    { name:'Reliance Industries Limited',       sector:'Conglomerate',             nseCode:'RELIANCE',    bseCode:'500325', index:'Nifty 50',        website:'www.ril.com',            promoterName:'Mukesh Ambani family',       ceo:'Mukesh Ambani',        riskProfile:'medium', promoter:50.3, fii:22.4, dii:4.0,  pub:23.3, pledgePct:0, peers:['ONGC','BPCL','IOC','ADANIGREEN','NTPC'] },
+  MARUTI:      { name:'Maruti Suzuki India Limited',       sector:'Automobile',               nseCode:'MARUTI',      bseCode:'532500', index:'Nifty 50',        website:'www.marutisuzuki.com',   promoterName:'Suzuki Motor Corporation',   ceo:'Hisashi Takeuchi',     riskProfile:'medium', promoter:58.2, fii:18.8, dii:9.0,  pub:14.0, pledgePct:0, peers:['TATAMOTORS','M&M','BAJAJ-AUTO','HEROMOTOCO','EICHERMOT'] },
+  TATAMOTORS:  { name:'Tata Motors Limited',               sector:'Automobile',               nseCode:'TATAMOTORS',  bseCode:'500570', index:'Nifty 50',        website:'www.tatamotors.com',     promoterName:'Tata Sons',                  ceo:'Shailesh Chandra',     riskProfile:'high',   promoter:46.4, fii:18.6, dii:12.4, pub:22.6, pledgePct:0, peers:['MARUTI','M&M','BAJAJ-AUTO','ASHOKLEY','EICHERMOT'] },
+  'M&M':       { name:'Mahindra & Mahindra Limited',       sector:'Automobile',               nseCode:'M&M',         bseCode:'500520', index:'Nifty 50',        website:'www.mahindra.com',       promoterName:'Mahindra family',            ceo:'Anish Shah',           riskProfile:'medium', promoter:18.8, fii:33.2, dii:18.4, pub:29.6, pledgePct:0, peers:['MARUTI','TATAMOTORS','BAJAJ-AUTO','HEROMOTOCO','EICHERMOT'] },
+  'BAJAJ-AUTO':{ name:'Bajaj Auto Limited',                sector:'Automobile',               nseCode:'BAJAJ-AUTO',  bseCode:'532977', index:'Nifty 50',        website:'www.bajajauto.com',      promoterName:'Bajaj family',               ceo:'Rajiv Bajaj',          riskProfile:'low',    promoter:54.9, fii:19.2, dii:9.8,  pub:16.1, pledgePct:0, peers:['MARUTI','HEROMOTOCO','TATAMOTORS','M&M','EICHERMOT'] },
+  HEROMOTOCO:  { name:'Hero MotoCorp Limited',             sector:'Automobile',               nseCode:'HEROMOTOCO',  bseCode:'500182', index:'Nifty 50',        website:'www.heromotocorp.com',   promoterName:'Munjal family',              ceo:'Niranjan Gupta',       riskProfile:'medium', promoter:34.6, fii:24.3, dii:14.4, pub:26.7, pledgePct:0, peers:['BAJAJ-AUTO','MARUTI','M&M','TATAMOTORS','TVSMOTORS'] },
+  SUNPHARMA:   { name:'Sun Pharmaceutical Industries',     sector:'Pharma',                   nseCode:'SUNPHARMA',   bseCode:'524715', index:'Nifty 50',        website:'www.sunpharma.com',      promoterName:'Dilip Shanghvi family',      ceo:'Dilip Shanghvi',       riskProfile:'medium', promoter:54.5, fii:19.7, dii:10.0, pub:15.8, pledgePct:0, peers:['DRREDDY','CIPLA','DIVISLAB','AUROPHARMA','LUPIN'] },
+  DRREDDY:     { name:"Dr Reddy's Laboratories",          sector:'Pharma',                   nseCode:'DRREDDY',     bseCode:'500124', index:'Nifty 50',        website:'www.drreddys.com',       promoterName:'Reddy family',               ceo:'Erez Israeli',         riskProfile:'medium', promoter:26.7, fii:29.4, dii:16.2, pub:27.7, pledgePct:0, peers:['SUNPHARMA','CIPLA','DIVISLAB','AUROPHARMA','LUPIN'] },
+  CIPLA:       { name:'Cipla Limited',                     sector:'Pharma',                   nseCode:'CIPLA',       bseCode:'500087', index:'Nifty 50',        website:'www.cipla.com',          promoterName:'Hamied family',              ceo:'Umang Vohra',          riskProfile:'medium', promoter:33.5, fii:23.8, dii:17.4, pub:25.3, pledgePct:0, peers:['SUNPHARMA','DRREDDY','DIVISLAB','LUPIN','AUROPHARMA'] },
+  DIVISLAB:    { name:"Divi's Laboratories Limited",      sector:'Pharma',                   nseCode:'DIVISLAB',    bseCode:'532488', index:'Nifty 50',        website:'www.divislabs.com',      promoterName:'Murali Divi family',         ceo:'Kiran S Divi',         riskProfile:'medium', promoter:51.9, fii:18.4, dii:12.6, pub:17.1, pledgePct:0, peers:['SUNPHARMA','CIPLA','DRREDDY','AUROPHARMA','LUPIN'] },
+  ITC:         { name:'ITC Limited',                       sector:'FMCG',                     nseCode:'ITC',         bseCode:'500875', index:'Nifty 50',        website:'www.itcportal.com',      promoterName:'No promoter (widely held)',   ceo:'Sanjiv Puri',          riskProfile:'low',    promoter:0,    fii:42.3, dii:15.0, pub:42.7, pledgePct:0, peers:['HINDUNILVR','NESTLEIND','DABUR','MARICO','COLPAL'] },
+  HINDUNILVR:  { name:'Hindustan Unilever Limited',        sector:'FMCG',                     nseCode:'HINDUNILVR',  bseCode:'500696', index:'Nifty 50',        website:'www.hul.co.in',          promoterName:'Unilever (UK)',              ceo:'Rohit Jawa',           riskProfile:'low',    promoter:61.9, fii:10.8, dii:14.2, pub:13.1, pledgePct:0, peers:['ITC','NESTLEIND','DABUR','MARICO','COLPAL'] },
+  NESTLEIND:   { name:'Nestle India Limited',              sector:'FMCG',                     nseCode:'NESTLEIND',   bseCode:'500790', index:'Nifty 50',        website:'www.nestle.in',          promoterName:'Nestle SA (Switzerland)',    ceo:'Manish Tiwary',        riskProfile:'low',    promoter:62.8, fii:13.4, dii:8.6,  pub:15.2, pledgePct:0, peers:['ITC','HINDUNILVR','DABUR','MARICO','COLPAL'] },
+  BHARTIARTL:  { name:'Bharti Airtel Limited',             sector:'Telecom',                   nseCode:'BHARTIARTL',  bseCode:'532454', index:'Nifty 50',        website:'www.airtel.in',          promoterName:'Sunil Mittal (Bharti Enterprises)', ceo:'Gopal Vittal',  riskProfile:'medium', promoter:56.2, fii:19.1, dii:11.0, pub:13.7, pledgePct:0, peers:['INDUSTOWER','TATACOMM','MTNL','RAILTEL'] },
+  LT:          { name:'Larsen & Toubro Limited',           sector:'Infrastructure',            nseCode:'LT',          bseCode:'500510', index:'Nifty 50',        website:'www.larsentoubro.com',   promoterName:'No promoter (widely held)',   ceo:'S N Subrahmanyan',     riskProfile:'medium', promoter:0,    fii:26.3, dii:36.0, pub:37.7, pledgePct:0, peers:['ADANIENT','POWERGRID','NTPC','BHEL','ABB'] },
+  HAL:         { name:'Hindustan Aeronautics Limited',     sector:'Defence',                   nseCode:'HAL',         bseCode:'541154', index:'Nifty Next 50',   website:'www.hal-india.co.in',    promoterName:'Government of India',        ceo:'C B Ananthakrishnan',  riskProfile:'medium', promoter:71.6, fii:10.2, dii:8.4,  pub:9.8,  pledgePct:0, peers:['BEL','MAZDOCK','BHEL','MIDHANI','BEML'] },
+  BEL:         { name:'Bharat Electronics Limited',        sector:'Defence',                   nseCode:'BEL',         bseCode:'500049', index:'Nifty 50',        website:'www.bel-india.in',       promoterName:'Government of India',        ceo:'Bhanu Prakash Srivastava', riskProfile:'low', promoter:51.1, fii:16.4, dii:18.2, pub:14.3, pledgePct:0, peers:['HAL','MAZDOCK','BHEL','MIDHANI','BEML'] },
+  DIXON:       { name:'Dixon Technologies India Limited',  sector:'Electronics Manufacturing', nseCode:'DIXON',       bseCode:'540699', index:'Nifty Next 50',   website:'www.dixontechnology.com',promoterName:'Sunil Vachani (Founder)',    ceo:'Atul B Lall',          riskProfile:'high',   promoter:33.6, fii:28.4, dii:14.2, pub:23.8, pledgePct:0, peers:['KAYNES','AMBER','SYRMA','TATAELXSI','AVALON'] },
+  TITAN:       { name:'Titan Company Limited',             sector:'Consumer',                  nseCode:'TITAN',       bseCode:'500114', index:'Nifty 50',        website:'www.titancompany.in',    promoterName:'Tata Sons',                  ceo:'C K Venkataraman',     riskProfile:'medium', promoter:52.9, fii:17.2, dii:12.6, pub:17.3, pledgePct:0, peers:['TRENT','DMART','NYKAA','ABFRL','VMART'] },
+  DMART:       { name:'Avenue Supermarts Limited',         sector:'Retail',                    nseCode:'DMART',       bseCode:'540376', index:'Nifty 50',        website:'www.dmartindia.com',     promoterName:'Radhakishan Damani family',  ceo:'Neville Noronha',      riskProfile:'medium', promoter:74.6, fii:5.2,  dii:5.8,  pub:14.4, pledgePct:0, peers:['TRENT','TITAN','NYKAA','ABFRL','VMART'] },
+  TRENT:       { name:'Trent Limited',                     sector:'Retail',                    nseCode:'TRENT',       bseCode:'500251', index:'Nifty 50',        website:'www.trent.in',           promoterName:'Tata Sons',                  ceo:'P Venkatesalu',        riskProfile:'high',   promoter:37.0, fii:19.4, dii:14.8, pub:28.8, pledgePct:0, peers:['TITAN','DMART','ABFRL','NYKAA','VMART'] },
+  ZOMATO:      { name:'Zomato Limited',                    sector:'Tech / Consumer',           nseCode:'ZOMATO',      bseCode:'543320', index:'Nifty 50',        website:'www.zomato.com',         promoterName:'No promoter (widely held)',   ceo:'Deepinder Goyal',      riskProfile:'high',   promoter:0,    fii:52.1, dii:14.3, pub:33.6, pledgePct:0, peers:['PAYTM','NYKAA','POLICYBZR','IRCTC','INDIAMART'] },
+  IRCTC:       { name:'IRCTC Limited',                     sector:'Travel & Tourism',          nseCode:'IRCTC',       bseCode:'542830', index:'Nifty Midcap 100',website:'www.irctc.co.in',        promoterName:'Government of India',        ceo:'Sanjay Kumar Jain',    riskProfile:'medium', promoter:62.4, fii:14.2, dii:10.8, pub:12.6, pledgePct:0, peers:['INDIGO','SPICEJET','EASETRIP','THOMASCOOK'] },
+  INDIGO:      { name:'InterGlobe Aviation Limited',       sector:'Aviation',                  nseCode:'INDIGO',      bseCode:'539448', index:'Nifty 50',        website:'www.goindigo.in',        promoterName:'Rahul Bhatia & Rakesh Gangwal', ceo:'Pieter Elbers',     riskProfile:'high',   promoter:55.0, fii:16.3, dii:10.2, pub:18.5, pledgePct:0, peers:['SPICEJET','IRCTC','THOMASCOOK','EASETRIP'] },
+  ASIANPAINT:  { name:'Asian Paints Limited',              sector:'Paints & Chemicals',        nseCode:'ASIANPAINT',  bseCode:'500820', index:'Nifty 50',        website:'www.asianpaints.com',    promoterName:'Vakil / Choksey / Dani / Kulkarni families', ceo:'Amit Syngle', riskProfile:'low', promoter:52.8, fii:16.8, dii:12.4, pub:18.0, pledgePct:0, peers:['BERGER','KANSAINER','INDIGO','NEROLAC','AKZOINDIA'] },
+  ONGC:        { name:'Oil and Natural Gas Corporation',   sector:'Energy',                    nseCode:'ONGC',        bseCode:'500312', index:'Nifty 50',        website:'www.ongcindia.com',      promoterName:'Government of India',        ceo:'Arun Kumar Singh',     riskProfile:'medium', promoter:58.9, fii:7.8,  dii:22.4, pub:10.9, pledgePct:0, peers:['RELIANCE','BPCL','IOC','GAIL','OIL'] },
+  NTPC:        { name:'NTPC Limited',                      sector:'Power',                     nseCode:'NTPC',        bseCode:'532555', index:'Nifty 50',        website:'www.ntpc.co.in',         promoterName:'Government of India',        ceo:'Gurdeep Singh',        riskProfile:'low',    promoter:51.1, fii:9.8,  dii:24.6, pub:14.5, pledgePct:0, peers:['POWERGRID','TATAPOWER','ADANIGREEN','CESC','TORNTPOWER'] },
+  POWERGRID:   { name:'Power Grid Corporation of India',   sector:'Power',                     nseCode:'POWERGRID',   bseCode:'532898', index:'Nifty 50',        website:'www.powergridindia.com', promoterName:'Government of India',        ceo:'Ravindra Kumar Tyagi', riskProfile:'low',    promoter:51.3, fii:13.2, dii:18.4, pub:17.1, pledgePct:0, peers:['NTPC','TATAPOWER','ADANIGREEN','CESC','TORNTPOWER'] },
+  ADANIPORTS:  { name:'Adani Ports and SEZ Limited',       sector:'Infrastructure',            nseCode:'ADANIPORTS',  bseCode:'532921', index:'Nifty 50',        website:'www.adaniports.com',     promoterName:'Gautam Adani family',        ceo:'Ashwani Gupta',        riskProfile:'high',   promoter:65.1, fii:12.4, dii:8.2,  pub:14.3, pledgePct:0, peers:['LT','CONCOR','GATEWAY','ALLCARGO'] },
+  ULTRACEMCO:  { name:'UltraTech Cement Limited',          sector:'Cement',                    nseCode:'ULTRACEMCO',  bseCode:'532538', index:'Nifty 50',        website:'www.ultratechcement.com',promoterName:'Aditya Birla Group',         ceo:'K C Jhanwar',          riskProfile:'medium', promoter:59.6, fii:14.8, dii:12.4, pub:13.2, pledgePct:0, peers:['AMBUJACEM','ACC','SHREECEM','DALMIA'] },
+  TATASTEEL:   { name:'Tata Steel Limited',                sector:'Metals',                    nseCode:'TATASTEEL',   bseCode:'500470', index:'Nifty 50',        website:'www.tatasteel.com',      promoterName:'Tata Sons',                  ceo:'T V Narendran',        riskProfile:'high',   promoter:33.6, fii:18.4, dii:16.2, pub:31.8, pledgePct:0, peers:['JSWSTEEL','HINDALCO','SAIL','VEDL','NMDC'] },
+  HINDALCO:    { name:'Hindalco Industries Limited',        sector:'Metals',                    nseCode:'HINDALCO',    bseCode:'500440', index:'Nifty 50',        website:'www.hindalco.com',       promoterName:'Aditya Birla Group',         ceo:'Satish Pai',           riskProfile:'high',   promoter:34.6, fii:22.4, dii:14.8, pub:28.2, pledgePct:0, peers:['TATASTEEL','JSWSTEEL','SAIL','VEDL','NMDC'] },
+  PAYTM:       { name:'One97 Communications (Paytm)',      sector:'Fintech',                   nseCode:'PAYTM',       bseCode:'543396', index:'BSE 500',         website:'www.paytm.com',          promoterName:'Vijay Shekhar Sharma',       ceo:'Vijay Shekhar Sharma', riskProfile:'high',   promoter:19.4, fii:31.2, dii:8.4,  pub:41.0, pledgePct:0, peers:['ZOMATO','NYKAA','POLICYBZR','INDIAMART','JUSTDIAL'] },
+  NYKAA:       { name:'FSN E-Commerce Ventures (Nykaa)',   sector:'D2C / Retail',              nseCode:'NYKAA',       bseCode:'543384', index:'Nifty Next 50',   website:'www.nykaa.com',          promoterName:'Falguni Nayar family',       ceo:'Falguni Nayar',        riskProfile:'high',   promoter:53.5, fii:14.2, dii:6.8,  pub:25.5, pledgePct:0, peers:['ZOMATO','DMART','TRENT','ABFRL','PAYTM'] },
+  HDFCLIFE:    { name:'HDFC Life Insurance Company',       sector:'Insurance',                 nseCode:'HDFCLIFE',    bseCode:'540777', index:'Nifty 50',        website:'www.hdfclife.com',       promoterName:'HDFC Bank + Standard Life',  ceo:'Vibha Padalkar',       riskProfile:'medium', promoter:50.4, fii:20.3, dii:12.8, pub:16.5, pledgePct:0, peers:['LICI','SBILIFE','ICICIPRULIFE','MAXFINSERV'] },
+  LICI:        { name:'Life Insurance Corporation of India',sector:'Insurance',                nseCode:'LICI',        bseCode:'543526', index:'Nifty 50',        website:'www.licindia.in',        promoterName:'Government of India',        ceo:'Siddhartha Mohanty',   riskProfile:'low',    promoter:96.5, fii:0.8,  dii:1.4,  pub:1.3,  pledgePct:0, peers:['HDFCLIFE','SBILIFE','ICICIPRULIFE','MAXFINSERV'] },
+  ADANIGREEN:  { name:'Adani Green Energy Limited',        sector:'Renewable Energy',          nseCode:'ADANIGREEN',  bseCode:'541450', index:'Nifty Next 50',   website:'www.adanigreenenergy.com',promoterName:'Gautam Adani family',       ceo:'Vneet S Jaain',        riskProfile:'high',   promoter:60.5, fii:8.4,  dii:4.2,  pub:26.9, pledgePct:1.2,peers:['NTPC','TATAPOWER','TORNTPOWER','CESC','JSPL'] },
+  MAZDOCK:     { name:'Mazagon Dock Shipbuilders',         sector:'Defence',                   nseCode:'MAZDOCK',     bseCode:'543237', index:'Nifty Midcap 100',website:'www.mazagondock.in',     promoterName:'Government of India',        ceo:'Sanjeev Singhal',      riskProfile:'medium', promoter:84.8, fii:3.4,  dii:5.8,  pub:6.0,  pledgePct:0, peers:['HAL','BEL','BEML','BHEL','GRSE'] },
+  KAYNES:      { name:'Kaynes Technology India Limited',   sector:'Electronics Manufacturing', nseCode:'KAYNES',      bseCode:'543665', index:'Nifty Midcap 100',website:'www.kaynes.in',          promoterName:'Ramesh Kunhikannan family',  ceo:'Ramesh Kunhikannan',   riskProfile:'high',   promoter:60.1, fii:14.2, dii:8.4,  pub:17.3, pledgePct:0, peers:['DIXON','AMBER','SYRMA','TATAELXSI','AVALON'] },
+  AMBER:       { name:'Amber Enterprises India Limited',   sector:'Electronics Manufacturing', nseCode:'AMBER',       bseCode:'540902', index:'Nifty Midcap 100',website:'www.amberenterprises.in',promoterName:'Jasbir Singh family',       ceo:'Jasbir Singh',         riskProfile:'high',   promoter:40.0, fii:16.8, dii:12.4, pub:30.8, pledgePct:0, peers:['DIXON','KAYNES','SYRMA','TATAELXSI','AVALON'] },
+  DABUR:       { name:'Dabur India Limited',               sector:'FMCG',                     nseCode:'DABUR',       bseCode:'500096', index:'Nifty 50',        website:'www.dabur.com',          promoterName:'Burman family',              ceo:'Mohit Malhotra',       riskProfile:'low',    promoter:67.4, fii:12.8, dii:8.6,  pub:11.2, pledgePct:0, peers:['ITC','HINDUNILVR','MARICO','COLPAL','EMAMILTD'] },
+  MARICO:      { name:'Marico Limited',                    sector:'FMCG',                     nseCode:'MARICO',      bseCode:'531642', index:'Nifty 50',        website:'www.marico.com',         promoterName:'Harsh Mariwala family',      ceo:'Saugata Gupta',        riskProfile:'low',    promoter:59.0, fii:18.4, dii:9.2,  pub:13.4, pledgePct:0, peers:['ITC','HINDUNILVR','DABUR','COLPAL','EMAMILTD'] },
+  COLPAL:      { name:'Colgate-Palmolive India Limited',   sector:'FMCG',                     nseCode:'COLPAL',      bseCode:'500830', index:'Nifty 50',        website:'www.colgate.co.in',      promoterName:'Colgate-Palmolive USA',      ceo:'Prabha Narasimhan',    riskProfile:'low',    promoter:51.0, fii:16.2, dii:10.4, pub:22.4, pledgePct:0, peers:['ITC','HINDUNILVR','DABUR','MARICO','EMAMILTD'] },
 };
 
 // Quick access sectors and picks
@@ -1167,43 +1138,43 @@ async function loadStock(sym) {
 
   currentLive = live;
   const stored = STOCKS[sym] || null;
-  const pillars = stored?.pillars ? updatePillarsWithLive(stored.pillars, live) : buildLivePillars(live);
+  // All pillars now built from live data only — no hardcoded scores
+  const pillars = buildLivePillars(live);
   const score = calcScore(pillars);
 
   const stock = {
-    name:        stored?.name        || live?.longName || sym,
+    name:        live?.longName  || stored?.name        || sym,
     sector:      stored?.sector      || 'NSE/BSE Listed',
     nseCode:     stored?.nseCode     || sym,
     bseCode:     stored?.bseCode     || 'N/A',
     index:       stored?.index       || 'NSE/BSE Listed',
-    website:     stored?.website     || 'www.nseindia.com',
-    promoterName:stored?.promoterName|| 'Check BSE/NSE filings',
-    ceo:         stored?.ceo         || 'Check company website',
-    keyMgmt:     stored?.keyMgmt     || [],
+    website:     stored?.website     || '',
+    promoterName:stored?.promoterName|| 'See BSE/NSE filings',
+    ceo:         stored?.ceo         || 'See company website',
     riskProfile: stored?.riskProfile || 'unknown',
     promoter:    stored?.promoter    || 0,
     fii:         stored?.fii         || 0,
     dii:         stored?.dii         || 0,
     pub:         stored?.pub         || 0,
     pledgePct:   stored?.pledgePct   || 0,
-    fundamentals:stored?.fundamentals|| null,
-    quarterly:   stored?.quarterly   || [],
-    swot:        stored?.swot        || null,
-    peers:       stored?.peers       || [],
+    fundamentals: null,   // removed — all live
+    quarterly:    [],     // removed — all live
+    swot:         null,   // removed — generated from live context
+    peers:        stored?.peers || [],
     pillars, score,
-    liveOnly:    !stored,
+    liveOnly: !stored,
     // All price data ALWAYS from live API
-    price:       live?.price         || 0,
-    changePct:   live?.changePct     || 0,
-    open:        live?.open          || 0,
-    high:        live?.high          || 0,
-    low:         live?.low           || 0,
-    prevClose:   live?.prevClose     || 0,
-    volume:      live?.volume        || 0,
-    w52High:     live?.w52High       || 0,
-    w52Low:      live?.w52Low        || 0,
-    pe:          live?.pe            || 0,
-    mktCap:      live?.marketCap     || 0,
+    price:       live?.price      || 0,
+    changePct:   live?.changePct  || 0,
+    open:        live?.open       || 0,
+    high:        live?.high       || 0,
+    low:         live?.low        || 0,
+    prevClose:   live?.prevClose  || 0,
+    volume:      live?.volume     || 0,
+    w52High:     live?.w52High    || 0,
+    w52Low:      live?.w52Low     || 0,
+    pe:          live?.pe         || 0,
+    mktCap:      live?.marketCap  || 0,
     isLive:      !!(live?.live),
   };
 
@@ -1513,58 +1484,52 @@ async function loadWhyMoved(sym) {
   if(btn) btn.innerHTML = `🤔 ${t('whyBtn').replace('🤔 ','')}`;
 }
 
-// ── FINANCIALS TAB ───────────────────────────────────────────────
+// ── FINANCIALS TAB — 100% Live from Yahoo Finance ────────────────
 function buildFinancialsTab(s) {
   const noviceH = t('noviceHint').financials;
-  const bseUrl = `https://www.bseindia.com/stock-share-price/${s.nseCode?.toLowerCase() || 'tcs'}/equity/`;
-  let finHtml = '';
-  if (s.fundamentals?.years?.length) {
-    const f = s.fundamentals;
-    finHtml = `
-      <div class="sec-title" style="margin-bottom:8px">5-Year P&L Summary (₹ Cr)</div>
-      <div class="peer-scroll"><table class="fin-table">
-        <thead><tr><th>Metric</th>${f.years.map(y=>`<th>${y}</th>`).join('')}</tr></thead>
-        <tbody>
-          <tr><td>Revenue</td>${f.revenue.map(v=>`<td>₹${(v/100000).toFixed(0)}K Cr</td>`).join('')}</tr>
-          <tr><td>Net Profit</td>${f.profit.map(v=>`<td style="color:${v>0?'var(--g)':'var(--r)'}">₹${(v/100000).toFixed(0)}K Cr</td>`).join('')}</tr>
-          ${f.eps?`<tr><td>EPS (₹)</td>${f.eps.map(v=>`<td>₹${v}</td>`).join('')}</tr>`:''}
-          <tr><td>Profit Margin</td>${f.profit.map((p,i)=>`<td>${f.revenue[i]>0?(p/f.revenue[i]*100).toFixed(1)+'%':'—'}</td>`).join('')}</tr>
-        </tbody>
-      </table></div>`;
-  }
-  let qHtml = '';
-  if (s.quarterly?.length) {
-    qHtml = `<div class="sec-title" style="margin-top:14px;margin-bottom:8px">Quarterly Results</div>` +
-      s.quarterly.map(q => `
-        <div class="qrow">
-          <div><div class="qperiod">${q.p}</div><div class="qrev">Revenue: ₹${(q.rev/100000).toFixed(0)}K Cr</div></div>
-          <div style="text-align:right">
-            <div class="qprofit" style="color:${q.profit>0?'var(--g)':'var(--r)'}">₹${(q.profit/100000).toFixed(0)}K Cr</div>
-            ${q.yoyP!=null?`<div class="qgrowth" style="background:${q.yoyP>=0?'var(--gl)':'var(--rl)'};color:${q.yoyP>=0?'var(--g)':'var(--r)'}">${q.yoyP>=0?'+':''}${q.yoyP?.toFixed(1)||'—'}% YoY</div>`:''}
-          </div>
-        </div>`).join('');
-  }
-  // Yahoo Finance data always shown
-  const liveFinHtml = `
-    <div class="sec-title" style="margin-top:14px;margin-bottom:8px">Live Market Data (Yahoo Finance)</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:10px">
-      ${[['P/E Ratio',s.pe>0?s.pe.toFixed(1):'—','How expensive vs earnings'],['Market Cap',fmtMktCap(s.mktCap),'Total company value'],['EPS',s.pe>0&&s.price>0?'₹'+(s.price/s.pe).toFixed(2):'—','Earnings per share'],['52W Range',s.w52High>0?`₹${s.w52Low.toLocaleString('en-IN')} – ₹${s.w52High.toLocaleString('en-IN')}`:'—','Yearly price range']].map(([l,v,d])=>`
-        <div style="background:var(--bg);border-radius:8px;padding:10px">
-          <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px">${l}</div>
-          <div style="font-size:14px;font-weight:700;margin:3px 0">${v}</div>
-          <div style="font-size:9px;color:var(--muted)">${d}</div>
-        </div>`).join('')}
-    </div>`;
+  const sym = s.nseCode || currentSym || '';
+  const bseUrl = `https://www.bseindia.com/stock-share-price/${sym.toLowerCase()}/equity/`;
+  const screenerUrl = `https://www.screener.in/company/${sym}/`;
+  const eps = s.pe > 0 && s.price > 0 ? (s.price / s.pe).toFixed(2) : null;
+  const mktCapCr = s.mktCap > 0 ? Math.round(s.mktCap / 1e7) : null;
+  const capCategory = mktCapCr > 20000 ? 'Large Cap (>₹20,000 Cr)' : mktCapCr > 5000 ? 'Mid Cap (₹5,000–20,000 Cr)' : mktCapCr ? 'Small Cap (<₹5,000 Cr)' : '—';
+
   return `
     <div class="novice-hint v">${noviceH}</div>
-    ${liveFinHtml}
-    ${finHtml}
-    ${qHtml}
-    <div class="ext-links">
-      <a href="${bseUrl}" target="_blank" class="ext-link">📊 Full financials on BSE</a>
-      <a href="https://www.nseindia.com/get-quotes/equity?symbol=${s.nseCode||''}" target="_blank" class="ext-link">📈 NSE Live</a>
+
+    <div class="sec-title" style="margin-bottom:8px">📡 Live Data from Yahoo Finance</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:14px">
+      ${[
+        ['P/E Ratio',         s.pe > 0 ? s.pe.toFixed(1) : '—',       'Price ÷ Earnings per share. Lower = cheaper vs profits'],
+        ['Market Cap',        mktCapCr ? '₹' + mktCapCr.toLocaleString('en-IN') + ' Cr' : '—', capCategory],
+        ['EPS (₹)',           eps ? '₹' + eps : '—',                   'Earnings Per Share = Profit ÷ Total shares'],
+        ['52W High',          s.w52High > 0 ? fmtPrice(s.w52High) : '—', 'Highest price in past 52 weeks'],
+        ['52W Low',           s.w52Low  > 0 ? fmtPrice(s.w52Low)  : '—', 'Lowest price in past 52 weeks'],
+        ['Prev Close',        s.prevClose > 0 ? fmtPrice(s.prevClose) : '—', 'Yesterday\'s closing price'],
+        ['Day Volume',        fmtVol(s.volume),                          'Shares traded today'],
+        ['Day Range',         s.high > 0 ? `${fmtPrice(s.low)} – ${fmtPrice(s.high)}` : '—', 'Today\'s trading range'],
+      ].map(([l,v,d]) => `
+        <div style="background:var(--bg);border-radius:8px;padding:10px;border:0.5px solid var(--border)">
+          <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:3px">${l}</div>
+          <div style="font-size:14px;font-weight:700;margin-bottom:2px">${v}</div>
+          <div style="font-size:9px;color:var(--muted);line-height:1.4">${d}</div>
+        </div>`).join('')}
     </div>
-    <div class="disc">Financial data sourced from Yahoo Finance and BSE India public filings. For complete balance sheet, cash flow statement, and segment data, use BSE link above. This is for educational reference only.</div>`;
+
+    <div style="background:var(--bl);border-radius:10px;padding:12px;margin-bottom:12px">
+      <div style="font-size:11px;font-weight:600;color:var(--b);margin-bottom:6px">📚 Where to find full financial statements</div>
+      <div style="font-size:11px;color:var(--b);line-height:1.7">
+        For balance sheet, profit & loss, cash flow, and quarterly results — use the official sources below. They are free and always up to date.
+      </div>
+    </div>
+
+    <div class="ext-links">
+      <a href="${bseUrl}" target="_blank" class="ext-link">📊 BSE India filings</a>
+      <a href="https://www.nseindia.com/get-quotes/equity?symbol=${sym}" target="_blank" class="ext-link">📈 NSE Live data</a>
+      <a href="${screenerUrl}" target="_blank" class="ext-link">🔍 Screener.in (free financials)</a>
+      <a href="https://finance.yahoo.com/quote/${sym}.NS" target="_blank" class="ext-link">🌐 Yahoo Finance</a>
+    </div>
+    <div class="disc">All price data is live from Yahoo Finance. For complete P&L, balance sheet, and historical financials, use the links above. This app is for educational exploration only — not investment advice.</div>`;
 }
 
 // ── PEERS TAB ────────────────────────────────────────────────────
@@ -1632,20 +1597,46 @@ function buildCompanyTab(s) {
     <div class="disc">Shareholding data from latest quarterly filing. Updated each quarter by the company.</div>`;
 }
 
-// ── SWOT TAB ─────────────────────────────────────────────────────
+// ── SWOT TAB — Generated from live data context ───────────────────
 function buildSWOTTab(s) {
   const noviceH = t('noviceHint').swot;
-  const swot = s.swot || {
-    s: ['Listed on NSE/BSE — regulated company', s.pe>0&&s.pe<20?'Attractively valued — P/E below market average':'Established market participant', 'Publicly traded — transparent disclosures'],
-    w: ['Limited profile data available', 'Historical financial details — check BSE filings', 'Management depth not fully assessed'],
-    o: [`${s.sector||'Sector'} growth aligned with India growth story`, 'Digital India and economic development tailwinds', 'Retail investor participation increasing'],
-    t: ['Market volatility affecting all stocks', 'Regulatory changes possible', 'Global macro headwinds impact sentiment']
+  const pe = s.pe || 0;
+  const price = s.price || 0;
+  const w52h = s.w52High || price, w52l = s.w52Low || 0;
+  const pct52 = w52h > w52l ? ((price - w52l) / (w52h - w52l) * 100).toFixed(0) : 50;
+  const mktCapCr = s.mktCap > 0 ? Math.round(s.mktCap / 1e7) : 0;
+  const capLabel = mktCapCr > 20000 ? 'Large Cap' : mktCapCr > 5000 ? 'Mid Cap' : mktCapCr > 0 ? 'Small Cap' : 'Listed';
+  const sector = s.sector || 'this sector';
+
+  // Generate SWOT from live data signals
+  const swot = {
+    s: [
+      s.isLive ? `Listed on NSE/BSE — fully regulated, transparent disclosures required` : 'Regulated listed company',
+      pe > 0 && pe < 20 ? `Attractive valuation — P/E of ${pe.toFixed(1)} is below market average` : pe > 0 ? `Market confidence reflected in P/E of ${pe.toFixed(1)}` : 'Publicly traded with institutional coverage',
+      mktCapCr > 20000 ? `${capLabel} — scale provides stability and institutional interest` : `${capLabel} — potential for faster growth vs large caps`,
+    ],
+    w: [
+      pe > 60 ? `High P/E of ${pe.toFixed(1)} — stock is priced for significant future growth; any disappointment can hurt` : pe > 35 ? `P/E of ${pe.toFixed(1)} leaves limited margin of safety` : 'Detailed financials require BSE/NSE filing review',
+      parseFloat(pct52) > 80 ? 'Near 52-week high — limited upside in the short term, momentum risk' : parseFloat(pct52) < 20 ? 'Near 52-week low — may indicate business or sector headwinds' : 'Historical financial quality requires external research',
+      s.promoter > 0 && s.promoter < 25 ? `Low promoter holding at ${s.promoter}% — founders have limited direct stake` : 'Management quality requires external research',
+    ],
+    o: [
+      `${sector} sector aligned with India\'s long-term growth story`,
+      'India\'s rising middle class and digital adoption support consumption growth',
+      mktCapCr < 5000 && mktCapCr > 0 ? 'Smaller size allows faster percentage growth than large caps' : 'Scale enables competitive advantages and better pricing power',
+    ],
+    t: [
+      'Global macro headwinds (US recession fears, high interest rates) affect all stocks',
+      'Regulatory changes in India can impact sector margins and growth',
+      parseFloat(pct52) > 70 ? 'Near yearly high — watch for profit-booking pressure from early investors' : 'Market volatility can create sharp short-term price swings',
+    ],
   };
+
   const sec = [{k:'s',lbl:t('swotS'),cls:'sb slb sdb'},{k:'w',lbl:t('swotW'),cls:'wb wlb wdb'},{k:'o',lbl:t('swotO'),cls:'ob olb odb'},{k:'t',lbl:t('swotT'),cls:'tb tlb tdb'}];
   return `
     <div class="novice-hint v">${noviceH}</div>
     <div class="swot-grid">
-      ${sec.map(se=>{
+      ${sec.map(se => {
         const [boxC,lblC,dotC] = se.cls.split(' ');
         return `<div class="swot-box ${boxC}">
           <div class="swot-lbl ${lblC}">${se.lbl}</div>
@@ -1653,7 +1644,10 @@ function buildSWOTTab(s) {
         </div>`;
       }).join('')}
     </div>
-    <div class="disc">SWOT analysis is for educational research only. Based on publicly available information. Not investment advice.</div>`;
+    <div style="background:var(--bl);border-radius:9px;padding:10px;margin-top:8px;font-size:10px;color:var(--b);line-height:1.5">
+      💡 For sector-specific SWOT analysis — visit <b>Screener.in</b> or <b>Tijori Finance</b> for deep research on this company.
+    </div>
+    <div class="disc">SWOT is generated from live market signals. For detailed business SWOT, refer to analyst reports or company annual reports. Not investment advice.</div>`;
 }
 
 // ── HOME — LIVE INDICES ──────────────────────────────────────────
