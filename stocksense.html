@@ -1,47 +1,96 @@
-const searchInp = document.querySelector('.srch-inp');
-const searchBtn = document.querySelector('.srch-btn');
-const searchDrop = document.querySelector('.srch-drop');
+// --- STOCKSENSE CORE LOGIC V2 ---
+const API_URL = '/api/market';
+let currentStock = null;
 
-// 1. Function to search for symbols as you type
-searchInp.addEventListener('input', async (e) => {
-    const query = e.target.value;
-    if (query.length < 2) {
-        searchDrop.classList.remove('open');
-        return;
-    }
+// 1. Setup Search (Home & Research)
+function setupSearch(inpId, dropId, onSelect) {
+  const inp = document.getElementById(inpId);
+  const drop = document.getElementById(dropId);
+  let debounce;
 
-    const res = await fetch(`${window.location.origin}/api/market?action=search&q=${query}`);
-    const data = await res.json();
-    
-    if (data.results && data.results.length > 0) {
-        searchDrop.innerHTML = data.results.map(s => `
-            <div class="sditem" onclick="selectStock('${s.symbol}')">
-                <span class="sdname">${s.symbol}</span>
-                <span class="sdsect">${s.name}</span>
-            </div>
+  inp.addEventListener('input', () => {
+    clearTimeout(debounce);
+    const q = inp.value.trim();
+    if (q.length < 2) return drop.classList.remove('open');
+
+    debounce = setTimeout(async () => {
+      try {
+        const res = await fetch(`${API_URL}?action=search&q=${q}`);
+        const data = await res.json();
+        drop.innerHTML = data.results.map(s => `
+          <div class="sditem" onclick="handleSelect('${s.symbol}', '${inpId}', '${dropId}')">
+            <span class="sdname">${s.symbol}</span>
+            <span class="sdsect">${s.name}</span>
+          </div>
         `).join('');
-        searchDrop.classList.add('open');
-    }
-});
-
-// 2. Function to fetch and display the selected stock
-async function selectStock(symbol) {
-    searchDrop.classList.remove('open');
-    searchInp.value = symbol;
-    
-    const res = await fetch(`${window.location.origin}/api/market?action=quote&symbol=${symbol}`);
-    const stock = await res.json();
-    
-    if (stock.price) {
-        // This updates the "Dark Horse" or Main Card with the new data
-        const dhSym = document.querySelector('.dh-sym');
-        const dhName = document.querySelector('.dh-name');
-        const dhPrice = document.querySelector('.dh-mv'); // Target the price spot
-        
-        if(dhSym) dhSym.innerText = stock.symbol;
-        if(dhName) dhName.innerText = stock.longName;
-        if(dhPrice) dhPrice.innerText = "₹" + stock.price.toLocaleString('en-IN');
-        
-        alert(`Loaded ${stock.longName}: ₹${stock.price}`);
-    }
+        drop.classList.add('open');
+      } catch (e) { console.error("Search failed"); }
+    }, 300);
+  });
 }
+
+async function handleSelect(sym, inpId, dropId) {
+  document.getElementById(dropId).classList.remove('open');
+  document.getElementById(inpId).value = sym;
+  showPage('research');
+  loadStock(sym);
+}
+
+// 2. Load Stock & Calculate Educational Score
+async function loadStock(sym) {
+  const rCard = document.querySelector('.rcard');
+  rCard.classList.add('v');
+  rCard.innerHTML = '<div class="dh-loading">Fetching live market data...</div>';
+
+  try {
+    const res = await fetch(`${API_URL}?action=quote&symbol=${sym}`);
+    const s = await res.json();
+    currentStock = s;
+
+    // Calculate Scorecard (Accountant Style Logic)
+    let score = 0;
+    if (s.pe > 0 && s.pe < 25) score += 40; // Value
+    if (s.changePct > 0) score += 30;       // Momentum
+    if (s.price > (s.high52 * 0.8)) score += 30; // Strength
+
+    rCard.innerHTML = `
+      <div class="rhead">
+        <div>
+          <div class="rsym">${s.symbol}</div>
+          <div class="rname">${s.name}</div>
+          <div class="rsect">${s.sector}</div>
+        </div>
+        <div class="ring ${score > 70 ? 'rg' : 'ra'}">
+          <div class="rn">${score}</div>
+          <div class="rd">SCORE</div>
+        </div>
+      </div>
+      <div class="pstrip">
+        <div class="pc"><div class="plbl">PRICE</div><div class="pval">₹${s.price.toFixed(2)}</div></div>
+        <div class="pc"><div class="plbl">CHG%</div><div class="pval ${s.changePct >= 0 ? 'up' : 'dn'}">${s.changePct.toFixed(2)}%</div></div>
+        <div class="pc"><div class="plbl">52W H</div><div class="pval">₹${s.high52.toFixed(0)}</div></div>
+        <div class="pc"><div class="plbl">P/E</div><div class="pval">${s.pe.toFixed(1)}</div></div>
+      </div>
+      <div class="tc on">
+        <p class="score-disclaimer"><b>Education Insight:</b> This stock has a score of ${score}/100 based on fundamental weightage. A higher score indicates better alignment with historical growth patterns.</p>
+      </div>
+    `;
+  } catch (e) {
+    rCard.innerHTML = '<div class="dh-loading">Error loading stock. Please try a different symbol.</div>';
+  }
+}
+
+// 3. Navigation
+function showPage(p) {
+  document.querySelectorAll('.page').forEach(pg => pg.classList.remove('act'));
+  document.getElementById(p + 'Page').classList.add('act');
+  document.querySelectorAll('.nitem').forEach(ni => ni.classList.remove('on'));
+  document.querySelector(`[onclick="showPage('${p}')"]`).classList.add('on');
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+  setupSearch('homeSearch', 'homeDrop');
+  setupSearch('resSearch', 'resDrop');
+  showPage('home');
+});
