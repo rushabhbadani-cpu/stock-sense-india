@@ -1,39 +1,63 @@
-// Add this inside your existing handler in api/market.js
-export default async function handler(req, res) {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Content-Type', 'application/json');
+// 1. Identify your elements
+const searchInp = document.querySelector('.srch-inp');
+const searchDrop = document.querySelector('.srch-drop');
 
-    const { action = 'quote', symbol, q } = req.query;
+// 2. SEARCH AS YOU TYPE
+searchInp.addEventListener('input', async (e) => {
+    const query = e.target.value;
+    if (query.length < 2) {
+        searchDrop.classList.remove('open');
+        return;
+    }
 
     try {
-        if (action === 'search') {
-            // This calls Yahoo's search API to find symbols like "RELIANCE.NS"
-            const url = `https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(q)}&quotesCount=5&newsCount=0&listsCount=0`;
-            const r = await httpsGet(url);
-            const results = r.body?.quotes?.map(item => ({
-                symbol: item.symbol,
-                name: item.shortname || item.longname,
-                exch: item.exchDisp
-            })) || [];
-            return res.status(200).json({ results });
+        // We use /api/market directly for Vercel
+        const res = await fetch(`/api/market?action=search&q=${encodeURIComponent(query)}`);
+        const data = await res.json();
+        
+        if (data.results && data.results.length > 0) {
+            searchDrop.innerHTML = data.results.map(s => `
+                <div class="sditem" onclick="window.selectStock('${s.symbol}')">
+                    <span class="sdname">${s.symbol}</span>
+                    <span class="sdsect">${s.name}</span>
+                </div>
+            `).join('');
+            searchDrop.classList.add('open');
         }
-
-        if (action === 'quote') {
-            const data = await trySymbols(symbol || 'TCS', '/v8/finance/chart/{SYM}?interval=1d&range=1d');
-            if (!data) return res.status(404).json({ error: "Not found" });
-            
-            const result = data.data.chart.result[0];
-            const m = result.meta;
-            return res.status(200).json({
-                symbol: data.sym,
-                price: m.regularMarketPrice,
-                change: (m.regularMarketPrice - m.previousClose).toFixed(2),
-                changePct: (((m.regularMarketPrice - m.previousClose) / m.previousClose) * 100).toFixed(2),
-                longName: m.longName || data.sym
-            });
-        }
-        // ... rest of your logic
-    } catch (e) {
-        res.status(500).json({ error: e.message });
+    } catch (err) {
+        console.error("Search failed:", err);
     }
-}
+});
+
+// 3. FETCH DATA (Attached to 'window' so the click works)
+window.selectStock = async function(symbol) {
+    searchDrop.classList.remove('open');
+    searchInp.value = symbol;
+    
+    try {
+        const res = await fetch(`/api/market?action=quote&symbol=${symbol}`);
+        const stock = await res.json();
+        
+        if (stock && stock.price) {
+            // Update the UI elements you already have
+            const dhSym = document.querySelector('.dh-sym');
+            const dhName = document.querySelector('.dh-name');
+            const dhPrice = document.querySelector('.dh-mv'); 
+            
+            if(dhSym) dhSym.innerText = stock.symbol;
+            if(dhName) dhName.innerText = stock.longName;
+            if(dhPrice) dhPrice.innerText = "₹" + stock.price.toLocaleString('en-IN');
+        } else {
+            console.error("Stock data incomplete", stock);
+        }
+    } catch (err) {
+        console.error("Could not load live price:", err);
+    }
+};
+
+// Close dropdown if user clicks outside
+document.addEventListener('click', (e) => {
+    if (!searchInp.contains(e.target) && !searchDrop.contains(e.target)) {
+        searchDrop.classList.remove('open');
+    }
+});
