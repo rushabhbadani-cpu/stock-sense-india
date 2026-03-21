@@ -1,5 +1,10 @@
 {
   "rewrites": [
     { "source": "/", "destination": "/stocksense.html" }
-  ]
+  ],
+  "functions": {
+    "api/market.js": {
+      "maxDuration": 60
+    }
+  }
 }
