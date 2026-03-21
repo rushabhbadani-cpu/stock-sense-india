@@ -1,10 +1,20 @@
-// StockSense India — Market API v13.0 (clean rewrite)
-// KEY ARCHITECTURE: Yahoo /v7/finance/quote bulk endpoint
-// One HTTP call returns all 50 stocks — no per-stock loops, no timeouts
+// StockSense India — Market API v13.1
+// KEY FIX: Session cached server-side for 5 minutes
+// Previously: every API call fetched a fresh session (2 Yahoo round-trips = 2-4s overhead)
+// Now: session fetched once, reused for all requests within 5 minutes
 // Place at: /api/market.js
 
-// ── SESSION ───────────────────────────────────────────────────────
+// ── SESSION CACHE (module-level — persists between warm Vercel invocations) ──
+let _sessionCache = null;
+let _sessionExpiry = 0;
+const SESSION_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
 async function getSession() {
+  // Return cached session if still valid
+  const now = Date.now();
+  if (_sessionCache && now < _sessionExpiry) {
+    return _sessionCache;
+  }
   try {
     const r1 = await fetch('https://fc.yahoo.com', {
       headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
@@ -23,7 +33,9 @@ async function getSession() {
     const crumb = (await r2.text()).trim();
     if (!crumb || crumb.includes('<') || crumb.length < 3) return null;
     console.log('Session OK crumb=' + crumb.substring(0, 8));
-    return { cookie, crumb };
+    _sessionCache  = { cookie, crumb };
+    _sessionExpiry = Date.now() + SESSION_TTL_MS;
+    return _sessionCache;
   } catch (e) {
     console.error('getSession:', e.message);
     return null;
@@ -46,7 +58,7 @@ async function yahooFetch(sym, session, range, interval) {
   });
   if (!res.ok) { console.error('Chart ' + sym + ' HTTP ' + res.status); return null; }
   const json = await res.json();
-  if (json && json.chart && json.chart.error && json.chart.error.code === 'Unauthorized') return null;
+  if (json && json.chart && json.chart.error && json.chart.error.code === 'Unauthorized') { _sessionCache = null; _sessionExpiry = 0; return null; }
   return json;
 }
 
@@ -380,7 +392,8 @@ export default async function handler(req, res) {
       return res.status(200).json({ live: false, error: 'Session failed' });
     }
     var result;
-    if      (action === 'quote')        result = (await getQuote(p.symbol || 'TCS', session))        || { live: false, error: 'No data' };
+    if      (action === 'warmup')       { console.log('Warmup: session pre-fetched'); result = { ok: true, cached: !!_sessionCache }; }
+    else if (action === 'quote')        result = (await getQuote(p.symbol || 'TCS', session))        || { live: false, error: 'No data' };
     else if (action === 'batch')        result = await getBatchQuotes(p.symbols || 'TCS', session);
     else if (action === 'marketscan')   result = await getMarketScan(session);
     else if (action === 'history')      result = await getHistory(p.symbol || 'TCS', p.range || '1y', p.interval || '1wk', session);
