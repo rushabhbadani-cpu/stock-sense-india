@@ -1,6 +1,6 @@
 {
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/market.js" },
-    { "source": "/(.*)", "destination": "/stocksense.html" }
+    { "source": "/api/market", "destination": "/api/market.js" },
+    { "source": "/", "destination": "/stocksense.html" }
   ]
 }
