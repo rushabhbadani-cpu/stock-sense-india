@@ -7,38 +7,35 @@ export default async function handler(req, res) {
     const RAPID_HOST = 'indian-stock-market-data-nse-bse.p.rapidapi.com';
 
     try {
-        // 1. SEARCH: Matches "Reliance" to the correct ID
+        // --- SEARCH ACTION ---
         if (action === 'search') {
             const response = await fetch(`https://${RAPID_HOST}/search?q=${encodeURIComponent(q)}`, {
                 headers: { 'x-rapidapi-key': RAPID_KEY, 'x-rapidapi-host': RAPID_HOST }
             });
             const data = await response.json();
-            // Map the results so the frontend can display them
-            const results = (data || []).map(i => ({
-                symbol: i.symbol || i.scrip_cd, // StocksCy uses symbol or scrip_cd
-                name: i.name || i.symbol
+
+            // FIXED: Handle both Arrays and Objects to prevent .map() errors
+            const rawResults = Array.isArray(data) ? data : (data.results || data.data || []);
+            
+            const results = rawResults.slice(0, 8).map(i => ({
+                symbol: i.symbol || i.scrip_cd || i.identifier,
+                name: i.name || i.companyName || i.symbol
             }));
+            
             return res.status(200).json({ results });
         }
 
-        // 2. QUOTE: Gets the live price
+        // --- QUOTE ACTION ---
         if (action === 'quote') {
-            // Force symbol to Uppercase (APIs are often case-sensitive)
             const cleanSymbol = symbol.toUpperCase();
-            
-            // Try the 'stock-full-info' endpoint which is usually the most reliable
             const response = await fetch(`https://${RAPID_HOST}/stock-full-info?symbol=${encodeURIComponent(cleanSymbol)}`, {
                 headers: { 'x-rapidapi-key': RAPID_KEY, 'x-rapidapi-host': RAPID_HOST }
             });
-            
             const d = await response.json();
 
-            // If the first try fails, we send a clear error for debugging
+            // Check if we got valid price data
             if (!d || (!d.lastPrice && !d.currentPrice)) {
-                return res.status(404).json({ 
-                    error: `Symbol ${cleanSymbol} not recognized by StocksCy.`,
-                    suggestion: "Try searching for the stock first to get the exact ID."
-                });
+                return res.status(404).json({ error: `No price data for ${cleanSymbol}` });
             }
 
             return res.status(200).json({
@@ -51,6 +48,7 @@ export default async function handler(req, res) {
             });
         }
     } catch (err) {
-        return res.status(500).json({ error: 'API Connection Failed', details: err.message });
+        console.error("Build Error:", err.message);
+        return res.status(500).json({ error: 'Data Processing Error', details: err.message });
     }
 }
