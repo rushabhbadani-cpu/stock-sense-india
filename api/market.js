@@ -1,39 +1,45 @@
 export default async function handler(req, res) {
-  // 1. Set Headers for the browser
+  // 1. Set Security & Type Headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Content-Type', 'application/json');
 
   const { action, q, symbol } = req.query;
+  
+  // 2. Your Credentials
   const RAPID_KEY = '06c40cc462msh2a69c4bed748376p121936jsna8eb70935d62';
   const RAPID_HOST = 'yh-finance.p.rapidapi.com';
 
   try {
-    // 2. Handle SEARCH
+    // --- ACTION: SEARCH ---
     if (action === 'search') {
-      const response = await fetch(`https://${RAPID_HOST}/auto-complete?q=${encodeURIComponent(q)}&region=IN`, {
+      const url = `https://${RAPID_HOST}/auto-complete?q=${encodeURIComponent(q)}&region=IN`;
+      const response = await fetch(url, {
+        method: 'GET',
         headers: { 'x-rapidapi-key': RAPID_KEY, 'x-rapidapi-host': RAPID_HOST }
       });
       const data = await response.json();
-      
-      // We map the data so the frontend understands it
-      const results = (data.quotes || []).map(item => ({
-        symbol: item.symbol,
-        name: item.shortname || item.longname || item.symbol
-      }));
-      
-      return res.status(200).json({ results });
+      return res.status(200).json({ results: data.quotes || [] });
     }
 
-    // 3. Handle QUOTE (Stock Details)
+    // --- ACTION: QUOTE (Price Data) ---
     if (action === 'quote') {
-      const sym = symbol.includes('.') ? symbol : `${symbol}.NS`;
-      const response = await fetch(`https://${RAPID_HOST}/stock/v2/get-summary?symbol=${encodeURIComponent(sym)}&region=IN`, {
+      // Ensure Indian stocks have the .NS suffix
+      const cleanSymbol = symbol.includes('.') ? symbol : `${symbol}.NS`;
+      const url = `https://${RAPID_HOST}/stock/v2/get-summary?symbol=${encodeURIComponent(cleanSymbol)}&region=IN`;
+      
+      const response = await fetch(url, {
+        method: 'GET',
         headers: { 'x-rapidapi-key': RAPID_KEY, 'x-rapidapi-host': RAPID_HOST }
       });
+      
       const d = await response.json();
 
-      if (!d.price) return res.status(404).json({ error: 'Data not found' });
+      // Check if price data actually exists in the response
+      if (!d.price) {
+        return res.status(404).json({ error: 'Market data unavailable for this symbol' });
+      }
 
+      // Format the data for your frontend
       const result = {
         symbol: d.symbol,
         name: d.price.longName || d.symbol,
@@ -42,10 +48,15 @@ export default async function handler(req, res) {
         high52: d.summaryDetail?.fiftyTwoWeekHigh?.raw || 0,
         pe: d.summaryDetail?.trailingPE?.raw || 0
       };
-      
+
       return res.status(200).json(result);
     }
+
+    return res.status(400).json({ error: 'Invalid action' });
+
   } catch (err) {
-    return res.status(500).json({ error: 'Connection Error', details: err.message });
+    // This logs the specific error to your Vercel Dashboard
+    console.error("API Error:", err.message);
+    return res.status(500).json({ error: 'Server crashed', details: err.message });
   }
 }
