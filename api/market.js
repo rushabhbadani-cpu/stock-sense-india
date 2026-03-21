@@ -1,96 +1,102 @@
-// StockSense India — Market Proxy v7.0
-// Handles Yahoo Finance cookie+crumb auth (required since 2024)
+// StockSense India — Market Proxy v8.0
+// Vercel serverless — stateless per invocation
 // Place at: /api/market.js
 
-// ── COOKIE + CRUMB SESSION ────────────────────────────────────────
-let _cookie = null;
-let _crumb  = null;
-let _cookieTs = 0;
-const COOKIE_TTL = 25 * 60 * 1000; // refresh every 25 minutes
-
+// ── YAHOO SESSION ─────────────────────────────────────────────────
 async function getSession() {
-  if (_cookie && _crumb && (Date.now() - _cookieTs < COOKIE_TTL)) {
-    return { cookie: _cookie, crumb: _crumb };
-  }
   try {
-    // Step 1 — get cookie from Yahoo Finance consent page
-    const r1 = await fetch('https://finance.yahoo.com/', {
+    // Step 1: hit Yahoo Finance to get cookies
+    const r1 = await fetch('https://fc.yahoo.com', {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.9',
       },
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(6000),
       redirect: 'follow',
     });
-    const setCookie = r1.headers.get('set-cookie') || '';
-    // Extract the A1/A3/A1S cookie Yahoo uses
-    const cookieMatch = setCookie.match(/A1=([^;]+)/);
-    _cookie = cookieMatch ? `A1=${cookieMatch[1]}` : setCookie.split(',').map(c => c.split(';')[0]).join('; ');
+    // Collect all cookies from the response
+    const rawCookie = r1.headers.get('set-cookie') || '';
+    // Parse out individual cookie key=value pairs
+    const cookie = rawCookie.split(',')
+      .map(c => c.trim().split(';')[0])
+      .filter(c => c.includes('='))
+      .join('; ');
 
-    // Step 2 — get crumb using the cookie
-    const r2 = await fetch('https://query1.finance.yahoo.com/v1/test/getcrumb', {
+    // Step 2: get crumb using those cookies
+    const r2 = await fetch('https://query2.finance.yahoo.com/v1/test/getcrumb', {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-        'Cookie': _cookie,
+        'Cookie': cookie,
       },
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(6000),
     });
-    _crumb = await r2.text();
-    _cookieTs = Date.now();
-    console.log('Yahoo session refreshed, crumb:', _crumb?.substring(0, 8));
-    return { cookie: _cookie, crumb: _crumb };
+    const crumb = (await r2.text()).trim();
+    console.log(`Session: crumb="${crumb.substring(0,8)}" cookie_len=${cookie.length}`);
+    if (!crumb || crumb.includes('<') || crumb.length < 3) {
+      console.error('Bad crumb received:', crumb.substring(0, 50));
+      return null;
+    }
+    return { cookie, crumb };
   } catch (e) {
-    console.error('Session error:', e.message);
+    console.error('getSession error:', e.message);
     return null;
   }
 }
 
-async function yahooFetch(symbol, range = '1d', interval = '1d') {
-  const session = await getSession();
-  const crumb = session?.crumb ? `&crumb=${encodeURIComponent(session.crumb)}` : '';
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=${interval}&range=${range}${crumb}`;
+// ── YAHOO FETCH ───────────────────────────────────────────────────
+async function yahooFetch(sym, session, range = '1d', interval = '1d') {
+  const crumbParam = session?.crumb ? `&crumb=${encodeURIComponent(session.crumb)}` : '';
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?interval=${interval}&range=${range}${crumbParam}`;
   const res = await fetch(url, {
     headers: {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
       'Accept': 'application/json',
       'Cookie': session?.cookie || '',
     },
-    signal: AbortSignal.timeout(10000),
+    signal: AbortSignal.timeout(8000),
   });
   if (!res.ok) {
-    console.error(`Yahoo ${symbol} → HTTP ${res.status}`);
+    console.error(`Yahoo ${sym} → HTTP ${res.status}`);
     return null;
   }
-  return res.json();
+  const json = await res.json();
+  // Check for Yahoo auth errors inside the response body
+  if (json?.chart?.error?.code === 'Unauthorized') {
+    console.error(`Yahoo ${sym} → Unauthorized (bad crumb)`);
+    return null;
+  }
+  return json;
+}
+
+function extractMeta(data) {
+  return data?.chart?.result?.[0]?.meta || null;
 }
 
 // ── QUOTE ─────────────────────────────────────────────────────────
-async function getQuote(symbol) {
-  const variants = [`${symbol}.NS`, `${symbol}.BO`, symbol];
-  for (const sym of variants) {
+async function getQuote(symbol, session) {
+  for (const sym of [`${symbol}.NS`, `${symbol}.BO`, symbol]) {
     try {
-      const data = await yahooFetch(sym);
-      if (data?.chart?.result?.[0]) {
-        const m     = data.chart.result[0].meta;
-        const price = m.regularMarketPrice || m.previousClose || 0;
-        const prev  = m.previousClose || price;
-        if (price > 0) return {
-          symbol,
-          price:       +price.toFixed(2),
-          change:      +(price - prev).toFixed(2),
-          changePct:   +((price - prev) / prev * 100).toFixed(2),
-          open:        +(m.regularMarketOpen    || price).toFixed(2),
-          high:        +(m.regularMarketDayHigh || price).toFixed(2),
-          low:         +(m.regularMarketDayLow  || price).toFixed(2),
-          prevClose:   +prev.toFixed(2),
-          volume:      m.regularMarketVolume || 0,
-          w52High:     +(m.fiftyTwoWeekHigh  || price).toFixed(2),
-          w52Low:      +(m.fiftyTwoWeekLow   || 0).toFixed(2),
-          pe:          +(m.trailingPE        || 0).toFixed(2),
-          marketCap:   m.marketCap || 0,
-          longName:    m.longName  || m.shortName || symbol,
-          currency:    m.currency  || 'INR',
+      const data = await yahooFetch(sym, session);
+      const m = extractMeta(data);
+      if (!m) continue;
+      const price = m.regularMarketPrice || m.previousClose || 0;
+      const prev  = m.previousClose || price;
+      if (price > 0) {
+        console.log(`Quote ${sym}: ₹${price}`);
+        return {
+          symbol, price: +price.toFixed(2),
+          change:    +(price - prev).toFixed(2),
+          changePct: +((price - prev) / prev * 100).toFixed(2),
+          open:      +(m.regularMarketOpen    || price).toFixed(2),
+          high:      +(m.regularMarketDayHigh || price).toFixed(2),
+          low:       +(m.regularMarketDayLow  || price).toFixed(2),
+          prevClose: +prev.toFixed(2),
+          volume:    m.regularMarketVolume || 0,
+          w52High:   +(m.fiftyTwoWeekHigh  || price).toFixed(2),
+          w52Low:    +(m.fiftyTwoWeekLow   || 0).toFixed(2),
+          pe:        +(m.trailingPE        || 0).toFixed(2),
+          marketCap: m.marketCap || 0,
+          longName:  m.longName  || m.shortName || symbol,
+          currency:  m.currency  || 'INR',
           source: sym, live: true,
         };
       }
@@ -100,57 +106,50 @@ async function getQuote(symbol) {
 }
 
 // ── HISTORY ───────────────────────────────────────────────────────
-async function getHistory(symbol, range, interval) {
-  const variants = [`${symbol}.NS`, `${symbol}.BO`, symbol];
-  for (const sym of variants) {
+async function getHistory(symbol, range, interval, session) {
+  for (const sym of [`${symbol}.NS`, `${symbol}.BO`, symbol]) {
     try {
-      const data = await yahooFetch(sym, range, interval);
-      if (data?.chart?.result?.[0]) {
-        const r  = data.chart.result[0];
-        const ts = r.timestamp || [];
-        const cl = r.indicators?.quote?.[0]?.close || [];
-        const prices = ts
-          .map((t, i) => ({ date: new Date(t * 1000).toISOString().split('T')[0], close: cl[i] ? +cl[i].toFixed(2) : null }))
-          .filter(p => p.close !== null);
-        if (prices.length) return { prices, live: true, symbol: sym };
-      }
+      const data = await yahooFetch(sym, session, range, interval);
+      const result = data?.chart?.result?.[0];
+      if (!result) continue;
+      const ts = result.timestamp || [];
+      const cl = result.indicators?.quote?.[0]?.close || [];
+      const prices = ts
+        .map((t, i) => ({ date: new Date(t * 1000).toISOString().split('T')[0], close: cl[i] ? +cl[i].toFixed(2) : null }))
+        .filter(p => p.close !== null);
+      if (prices.length) return { prices, live: true, symbol: sym };
     } catch (e) { console.error(`History ${sym}:`, e.message); }
   }
   return { prices: [], live: false };
 }
 
 // ── INDICES ───────────────────────────────────────────────────────
-async function getIndices() {
-  const INDEX_MAP = {
-    '^NSEI':      'NIFTY 50',
-    '^BSESN':     'SENSEX',
-    '^NSEBANK':   'NIFTY BANK',
-    '^CNXIT':     'NIFTY IT',
-    '^CNXPHARMA': 'NIFTY PHARMA',
-    '^CNXAUTO':   'NIFTY AUTO',
-    '^CNXFMCG':   'NIFTY FMCG',
-    '^INDIAVIX':  'INDIA VIX',
+async function getIndices(session) {
+  const MAP = {
+    '^NSEI':'NIFTY 50', '^BSESN':'SENSEX', '^NSEBANK':'NIFTY BANK',
+    '^CNXIT':'NIFTY IT', '^CNXPHARMA':'NIFTY PHARMA',
+    '^CNXAUTO':'NIFTY AUTO', '^CNXFMCG':'NIFTY FMCG', '^INDIAVIX':'INDIA VIX',
   };
   const results = await Promise.all(
-    Object.entries(INDEX_MAP).map(async ([sym, name]) => {
+    Object.entries(MAP).map(async ([sym, name]) => {
       try {
-        const data = await yahooFetch(sym);
-        if (data?.chart?.result?.[0]) {
-          const m     = data.chart.result[0].meta;
-          const price = m.regularMarketPrice || 0;
-          const prev  = m.previousClose      || price;
-          if (price > 0) return { name, symbol: sym, value: +price.toFixed(2), change: +(price-prev).toFixed(2), changePct: +((price-prev)/prev*100).toFixed(2), prevClose: +prev.toFixed(2) };
-        }
+        const data = await yahooFetch(sym, session);
+        const m = extractMeta(data);
+        if (!m) return null;
+        const price = m.regularMarketPrice || 0;
+        const prev  = m.previousClose      || price;
+        if (price > 0) return { name, symbol: sym, value: +price.toFixed(2), change: +(price-prev).toFixed(2), changePct: +((price-prev)/prev*100).toFixed(2), prevClose: +prev.toFixed(2) };
       } catch (e) { console.error(`Index ${sym}:`, e.message); }
       return null;
     })
   );
   const indices = results.filter(Boolean);
+  console.log(`Indices: ${indices.length} loaded`);
   return { indices, live: indices.length > 0 };
 }
 
 // ── COMMODITIES ───────────────────────────────────────────────────
-async function getCommodities() {
+async function getCommodities(session) {
   const COMM = [
     { sym:'GC=F',  label:'Gold',      icon:'🥇', unit:'USD/oz',    impact:'Safe haven — rises in uncertainty' },
     { sym:'SI=F',  label:'Silver',    icon:'🥈', unit:'USD/oz',    impact:'Industrial + safe haven demand' },
@@ -166,13 +165,12 @@ async function getCommodities() {
   const results = await Promise.all(
     COMM.map(async (c) => {
       try {
-        const data = await yahooFetch(c.sym);
-        if (data?.chart?.result?.[0]) {
-          const m = data.chart.result[0].meta;
-          const price = m.regularMarketPrice || 0;
-          const prev  = m.previousClose      || price;
-          if (price > 0) return { ...c, price: +price.toFixed(2), changePct: +((price-prev)/prev*100).toFixed(2) };
-        }
+        const data = await yahooFetch(c.sym, session);
+        const m = extractMeta(data);
+        if (!m) return null;
+        const price = m.regularMarketPrice || 0;
+        const prev  = m.previousClose      || price;
+        if (price > 0) return { ...c, price: +price.toFixed(2), changePct: +((price-prev)/prev*100).toFixed(2) };
       } catch (e) { console.error(`Commodity ${c.sym}:`, e.message); }
       return null;
     })
@@ -182,7 +180,7 @@ async function getCommodities() {
 }
 
 // ── FOREX ─────────────────────────────────────────────────────────
-async function getForex() {
+async function getForex(session) {
   const PAIRS = [
     { sym:'INR=X',    label:'USD/INR', flag:'🇺🇸', sub:'US Dollar',       impact:'IT exports gain when rupee weakens' },
     { sym:'AEDINR=X', label:'AED/INR', flag:'🇦🇪', sub:'UAE Dirham',       impact:'Key for Indian expat remittances' },
@@ -196,13 +194,12 @@ async function getForex() {
   const results = await Promise.all(
     PAIRS.map(async (p) => {
       try {
-        const data = await yahooFetch(p.sym);
-        if (data?.chart?.result?.[0]) {
-          const m    = data.chart.result[0].meta;
-          const rate = m.regularMarketPrice || 0;
-          const prev = m.previousClose      || rate;
-          if (rate > 0) return { ...p, rate: +rate.toFixed(4), changePct: +((rate-prev)/prev*100).toFixed(2) };
-        }
+        const data = await yahooFetch(p.sym, session);
+        const m = extractMeta(data);
+        if (!m) return null;
+        const rate = m.regularMarketPrice || 0;
+        const prev = m.previousClose      || rate;
+        if (rate > 0) return { ...p, rate: +rate.toFixed(4), changePct: +((rate-prev)/prev*100).toFixed(2) };
       } catch (e) { console.error(`Forex ${p.sym}:`, e.message); }
       return null;
     })
@@ -260,17 +257,26 @@ export default async function handler(req, res) {
   const action = p.action  || 'quote';
 
   try {
+    // Get a fresh session for every handler invocation
+    // (Vercel functions are stateless — variables don't persist between calls)
+    const session = action !== 'news' ? await getSession() : null;
+    if (action !== 'news' && !session) {
+      console.error('Could not establish Yahoo session');
+      return res.status(200).json({ live: false, error: 'Could not connect to data source' });
+    }
+
     let result;
-    if      (action === 'quote')       result = (await getQuote(p.symbol || 'TCS')) || { live:false, error:'No data', symbol:p.symbol };
-    else if (action === 'history')     result = await getHistory(p.symbol || 'TCS', p.range || '1y', p.interval || '1wk');
-    else if (action === 'indices')     result = await getIndices();
-    else if (action === 'commodities') result = await getCommodities();
-    else if (action === 'forex')       result = await getForex();
+    if      (action === 'quote')       result = (await getQuote(p.symbol || 'TCS', session)) || { live:false, error:'No data', symbol:p.symbol };
+    else if (action === 'history')     result = await getHistory(p.symbol || 'TCS', p.range || '1y', p.interval || '1wk', session);
+    else if (action === 'indices')     result = await getIndices(session);
+    else if (action === 'commodities') result = await getCommodities(session);
+    else if (action === 'forex')       result = await getForex(session);
     else if (action === 'news')        result = await getNews(p.q);
     else                               result = { error: 'Unknown action' };
+
     return res.status(200).json(result);
   } catch (e) {
-    console.error('Handler error:', e);
+    console.error('Handler error:', e.message);
     return res.status(200).json({ live:false, error: e.message });
   }
 }
