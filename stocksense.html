@@ -2796,80 +2796,384 @@ function renderMF(cat, el) {
 // ── LEARN ─────────────────────────────────────────────────────────
 const LEARN_DATA = {
   en: [
-    { cat: 'What is the stock market?', sub: 'Start here if you are completely new', items: [
-      { q: 'What is a share or stock?', a: 'A share is a small piece of ownership in a company. When you buy one share of TCS, you own a tiny part of that company. If the company grows and earns more profit, your share becomes more valuable.' },
-      { q: 'What is the NSE and BSE?', a: 'NSE (National Stock Exchange) and BSE (Bombay Stock Exchange) are the two main stock exchanges in India. They are like marketplaces where buyers and sellers trade shares. NSE is more active for trading. BSE is the oldest.' },
-      { q: 'How do stock prices change?', a: 'Stock prices change every second based on supply and demand. If more people want to buy a stock than sell it, the price goes up. If more people want to sell, the price goes down. News, earnings, and global events all affect demand.' },
-      { q: 'What is a demat account?', a: 'A demat account holds your shares in digital form — like a bank account holds money. To buy shares in India, you need a demat account opened with a broker like Zerodha, Groww, or Angel One.' },
+    // ── CHAPTER 1: MARKET BASICS ─────────────────────────────────
+    { cat: '📖 Chapter 1: Stock Market Basics', sub: 'Start here if you are completely new to investing', icon:'📖', items: [
+      { q: 'What is a share or stock?',
+        a: 'A share is a small piece of ownership in a company. When you buy one share of TCS, you become a part-owner of that company — no matter how small your share is. If the company grows and earns more profit, your share becomes more valuable. If it struggles, the share price falls. You make money in two ways: the price going up (capital gain), or the company paying you a portion of its profits (dividend).' },
+      { q: 'What is the NSE and BSE?',
+        a: 'NSE (National Stock Exchange) and BSE (Bombay Stock Exchange) are the two stock exchanges in India — like organised marketplaces where buyers and sellers meet to trade shares. BSE, founded in 1875, is Asia\'s oldest exchange. NSE, founded in 1992, handles most of India\'s trading volume today. Nifty 50 is NSE\'s index of 50 large companies. Sensex is BSE\'s index of 30 companies. Both track the overall market direction.' },
+      { q: 'How does a stock price move?',
+        a: 'Stock prices change every second based purely on supply and demand. If 1,000 people want to buy HDFC Bank shares and only 100 want to sell, the price rises until buyers and sellers agree. If a company announces bad results, many people want to sell — price falls. Key things that move prices: quarterly earnings results, RBI interest rate decisions, global events (US Fed, oil prices, wars), management changes, new product launches, and general market sentiment.' },
+      { q: 'What is a demat account and how do I start?',
+        a: 'A demat account holds your shares digitally — like a bank account holds money. Without one, you cannot buy or sell shares. To start: (1) Choose a broker — Zerodha, Groww, Angel One, or HDFC Securities are popular. (2) Complete KYC with Aadhaar and PAN. (3) Open a demat + trading account (usually the same process). (4) Add money to your trading account. (5) Search any stock and place a buy order. The whole process takes 1-2 days. There is no minimum amount required to start.' },
+      { q: 'What is Nifty 50 and why does everyone talk about it?',
+        a: 'Nifty 50 is a single number that represents how India\'s 50 largest companies are performing together. Think of it as the pulse of the Indian economy. When Nifty rises, it means most large companies are doing well — investors are buying. When it falls, they are selling. It is calculated using market capitalisation — larger companies like Reliance and TCS have more influence on the number than smaller ones. If Nifty is at 22,000 and rises to 22,220, that is a 1% rise for the day.' },
+      { q: 'What is SEBI and why does it matter?',
+        a: 'SEBI (Securities and Exchange Board of India) is the regulator — like RBI for banks. It protects investors from fraud, ensures companies disclose accurate information, and sets rules for how markets operate. Because of SEBI, every listed company must publish quarterly results, shareholding patterns, and major developments. This transparency is what makes stock market investing safer than informal investments. If a company lies to investors, SEBI can fine them heavily or even ban promoters.' },
     ]},
-    { cat: 'Understanding stock data', sub: 'Learn to read the numbers', items: [
-      { q: 'What is P/E Ratio?', a: 'P/E (Price to Earnings) Ratio shows how much you are paying for ₹1 of company earnings. A P/E of 25 means you pay ₹25 for every ₹1 the company earns. Lower P/E = potentially cheaper. Higher P/E = market expects high growth. Compare within the same sector.' },
-      { q: 'What is Market Capitalisation?', a: 'Market cap = Share price × Total shares. It shows the total value of a company. TCS at ₹900 with 370 crore shares = ₹3.33 lakh crore market cap. Large cap = above ₹20,000 Cr. Mid cap = ₹5,000–20,000 Cr. Small cap = below ₹5,000 Cr.' },
-      { q: 'What is EPS?', a: 'EPS stands for Earnings Per Share. It is the company\'s net profit divided by total number of shares. EPS of ₹100 means the company earned ₹100 per share last year. Rising EPS year after year is a sign of a growing business.' },
-      { q: 'What is 52-week high and low?', a: 'The 52-week high is the highest price the stock reached in the past year. The 52-week low is the lowest. If a stock is near its 52-week high, it has strong momentum. Near the low might mean it is undervalued or struggling.' },
-      { q: 'What is ROE?', a: 'Return on Equity (ROE) measures how efficiently a company uses its shareholders\' money to generate profit. ROE of 20% means for every ₹100 of shareholder money, the company earns ₹20 profit. Above 15% is generally considered good.' },
-      { q: 'What is Promoter Holding?', a: 'Promoters are the founders or controlling owners of a company. High promoter holding (above 50%) generally means the founders are confident in the business. Very low promoter holding can be a risk signal.' },
+
+    // ── CHAPTER 2: READING STOCK DATA ────────────────────────────
+    { cat: '📊 Chapter 2: Reading Stock Data', sub: 'Understand every number you see in StockSense', icon:'📊', items: [
+      { q: 'P/E Ratio — the most important number',
+        a: 'P/E (Price to Earnings) answers: "How much am I paying for ₹1 of this company\'s profit?" If TCS earns ₹100 per share annually and trades at ₹3,500, the P/E is 35 — you pay ₹35 for every ₹1 of earnings. Lower P/E = cheaper relative to earnings. But P/E must always be compared within the same sector. IT companies trade at 25-35x P/E. Banks trade at 10-18x. FMCG at 40-60x. Comparing TCS\'s P/E with SBI\'s is meaningless. Also: very low P/E can mean the company is cheap — or in serious trouble. Always investigate why.' },
+      { q: 'EPS — how much the company actually earns per share',
+        a: 'EPS (Earnings Per Share) = Total Net Profit ÷ Total Shares Outstanding. If Infosys earns ₹26,000 crore profit and has 415 crore shares, EPS = ₹62.65 per share. Rising EPS year after year is one of the strongest signs of a healthy business. Declining EPS despite rising revenue can mean costs are growing faster than sales — a red flag. EPS is used to calculate P/E: if price is ₹1,567 and EPS is ₹62.65, P/E = 25.' },
+      { q: 'Market Capitalisation — understanding company size',
+        a: 'Market Cap = Share Price × Total Shares. This tells you the total value the market places on the entire company today. Large Cap (above ₹20,000 Cr): Stable, lower risk, includes Nifty 50 companies. Mid Cap (₹5,000–20,000 Cr): More growth potential, more volatility. Small Cap (below ₹5,000 Cr): Highest growth potential, highest risk. Example: Reliance at ₹2,800 per share with 676 crore shares = ₹18.9 lakh crore market cap. Size matters for stability — large caps rarely go to zero, small caps can.' },
+      { q: 'ROE — how efficiently a company uses your money',
+        a: 'Return on Equity = (Net Profit ÷ Shareholders Equity) × 100. This measures how much profit the company generates from the money shareholders have invested. ROE of 20% means: for every ₹100 of shareholder capital, the company earns ₹20 profit annually. Consistently high ROE (above 15-20%) is a hallmark of great businesses. Examples: Asian Paints ROE ~55%, HDFC Bank ~16%, TCS ~50%. Compare ROE within sectors. Banks look like low ROE but their equity base is calculated differently.' },
+      { q: 'Debt to Equity — is the company borrowing too much?',
+        a: 'Debt/Equity = Total Debt ÷ Shareholders Equity. This shows how much debt a company uses versus its own capital. D/E of 0.5 means ₹50 borrowed for every ₹100 of own money — manageable. D/E above 2 in most sectors is a warning sign — heavy interest payments eat into profits. But context matters: banks and NBFCs naturally have high D/E (they borrow to lend). Infrastructure companies need debt for projects. IT companies ideally have near-zero debt. Always compare D/E within the same sector.' },
+      { q: '52-week High and Low — what the range tells you',
+        a: 'The 52W high is the highest price in the past year. The 52W low is the lowest. Where the current price sits within this range tells you a lot. Near 52W high (above 80% of range): Strong momentum — the stock is attracting buyers. Can also mean it is expensive. Near 52W low (below 20% of range): Either a buying opportunity because it is undervalued, or a falling knife because the business is struggling. Always check why it is near the low before concluding it is cheap. StockSense shows your 52W position on every stock page.' },
+      { q: 'Promoter Holding — do the founders believe in the company?',
+        a: 'Promoters are the founders or original controlling owners. High promoter holding (above 50%) generally signals confidence — they have kept their own money in the company. Very low promoter holding (below 15%) is worth investigating — why have founders reduced their stake? Pledged promoter shares are a serious red flag: promoters have borrowed money using their shares as collateral. If the stock falls, lenders force-sell those shares, which pushes the price down further — a dangerous spiral. Check pledge % in the Company tab of any stock in StockSense.' },
+      { q: 'FII and DII — who is actually buying?',
+        a: 'FII (Foreign Institutional Investors): Global funds like Blackrock, Vanguard, and sovereign wealth funds. High FII holding means international confidence. But when FIIs sell (called FII outflow), prices can fall sharply even for good companies — they manage global portfolios and sell Indian stocks to raise cash elsewhere. DII (Domestic Institutional Investors): Indian mutual funds, insurance companies (LIC), pension funds. DII buying often cushions FII selling. When you hear "DII buying offset FII selling today" — that means domestic funds absorbed the selling pressure and prevented a bigger fall.' },
     ]},
-    { cat: 'Sectors explained', sub: 'Understand India\'s market segments', items: [
-      { q: 'What is the IT sector?', a: 'IT sector companies (TCS, Infosys, Wipro) provide software services to global companies. They earn in USD and pay costs in INR, so rupee weakness helps them. They usually have zero or very low debt and generate strong cash.' },
-      { q: 'What is the Banking sector?', a: 'Banks earn money from the difference between interest they charge on loans and interest they pay on deposits (Net Interest Margin). Key metrics: NPA (bad loans), NIM, CASA ratio. High NPA is dangerous.' },
-      { q: 'What is the Pharma sector?', a: 'Pharma companies make medicines. Indian pharma is strong in generics — cheaper versions of branded medicines. USFDA approval is crucial for exports to the USA. Watch for USFDA warnings as they can severely impact stock price.' },
-      { q: 'What are cyclical vs defensive stocks?', a: 'Cyclical stocks (auto, real estate) perform well when the economy grows and poorly in downturns. Defensive stocks (pharma, FMCG, utilities) stay stable even in tough times. A mix of both reduces portfolio risk.' },
+
+    // ── CHAPTER 3: CANDLESTICK CHARTS ────────────────────────────
+    { cat: '🕯️ Chapter 3: Candlestick Charts', sub: 'Read price action and market psychology from charts', icon:'🕯️', items: [
+      { q: 'What is a candlestick and how do I read it?',
+        a: 'A candlestick shows four prices for a time period: Open, High, Low, Close. The body (thick rectangle) shows the range between Open and Close. The wicks (thin lines) show High and Low. Green/white candle: price CLOSED HIGHER than it opened — buyers won. Red/black candle: price CLOSED LOWER than it opened — sellers won. A tall green body with small wicks = strong bullish day. A tall red body with small wicks = strong bearish day. The longer the wick relative to the body, the more the price was rejected at that extreme.' },
+      { q: 'Doji — the market is confused',
+        a: 'A Doji has a very small body (open and close are nearly equal) with visible wicks on both sides. It means buyers pushed price up, sellers pushed it back down, and they ended up almost where they started. Doji = indecision. The market does not know which direction to go. A Doji after a strong uptrend is a warning — buying momentum may be exhausting. A Doji after a strong downtrend suggests selling pressure may be ending. It is not a signal by itself — always look at what comes next. One Doji in isolation means little.' },
+      { q: 'Hammer — potential reversal from a downtrend',
+        a: 'A Hammer has a small body at the TOP of the candle and a long lower wick (at least 2x the body length). It forms after a downtrend. What it tells you: Sellers pushed the price down hard during the day, but buyers came in strongly and pushed it back up near the open. The long lower wick = sellers tried to dominate but failed. A green Hammer (closed above open) is stronger than a red one. Confirmation rule: wait for the next candle to also close higher before acting on it. Never act on a single candle pattern alone.' },
+      { q: 'Shooting Star — potential reversal from an uptrend',
+        a: 'The Shooting Star is the opposite of a Hammer. Small body at the BOTTOM, long upper wick. It forms after an uptrend. What it tells you: Buyers pushed price up hard during the day, but sellers came in and pushed it back down near the open. The long upper wick = buyers tried to push higher but were rejected. It signals that buying momentum may be exhausting. A red Shooting Star (closed below open) is stronger. Same confirmation rule applies — wait for the next candle to close lower.' },
+      { q: 'Bullish Engulfing — strong reversal signal',
+        a: 'A two-candle pattern: First candle is RED (bearish). Second candle is GREEN and its body COMPLETELY COVERS the first candle\'s body. This means: the selling of the previous day was completely overwhelmed by buying the next day. It is one of the more reliable reversal signals. Stronger when it appears after a sustained downtrend, at a support level, and with higher volume on the green candle. The bigger the green candle relative to the red, the stronger the signal.' },
+      { q: 'Bearish Engulfing — sellers take control',
+        a: 'Opposite of Bullish Engulfing. First candle is GREEN. Second candle is RED and completely covers the first. The buying of the previous day was overwhelmed by selling. Stronger when it appears after an uptrend, at a resistance level (a price where the stock has struggled before), and with higher volume on the red candle. This is a signal to watch for potential weakness — not an instruction to sell immediately.' },
+      { q: 'Morning Star — three-candle bottom reversal',
+        a: 'Three candles: (1) Large red candle — sellers in control. (2) Small candle (can be red or green, often a Doji) — indecision, selling exhausting. (3) Large green candle that closes above the midpoint of candle 1 — buyers take over. Morning Star signals a potential bottom. It is considered one of the more reliable bullish reversal patterns because it shows a clear transition from seller dominance to buyer dominance over three sessions. Volume should ideally increase on the third candle.' },
+      { q: 'Evening Star — three-candle top reversal',
+        a: 'Opposite of Morning Star. Three candles: (1) Large green candle — buyers in control. (2) Small candle with a gap up — buying momentum slowing. (3) Large red candle that closes below the midpoint of candle 1 — sellers take over. Evening Star signals a potential top after an uptrend. The gap between candle 1 and 2 makes the pattern stronger (though gaps are less common in Indian markets than US markets). Volume increasing on the red third candle adds conviction.' },
+      { q: 'Support and Resistance — why prices bounce at certain levels',
+        a: 'Support is a price level where a stock has repeatedly stopped falling and bounced back up. Resistance is a price where it has repeatedly stopped rising and turned back down. Why do these levels work? Because of memory — large institutional investors remember where they bought or sold. When a stock returns to that level, they act the same way again. Example: if HDFC Bank has bounced from ₹1,600 three times, that is strong support. If it breaks below ₹1,600 with volume, that support becomes resistance. These are the most practical concepts in technical analysis.' },
+      { q: 'Volume — the truth behind every price move',
+        a: 'Price tells you what happened. Volume tells you how much conviction was behind it. High volume on an up day = strong buying — institutions are accumulating. High volume on a down day = strong selling — distribution happening. Price rises on low volume = weak move, likely to reverse. Price rises on high volume = genuine breakout, more reliable. The StockSense volume chart below the price chart shows you exactly this. Rule of thumb: do not trust a price breakout unless volume is at least 1.5x the average. Volume is the one thing that cannot be faked.' },
     ]},
-    { cat: 'Investing basics', sub: 'How to think about investing', items: [
-      { q: 'What is SIP?', a: 'SIP (Systematic Investment Plan) means investing a fixed amount regularly — monthly or quarterly. Instead of trying to time the market, SIP averages out your cost over time. ₹5,000 per month for 10 years at 12% annual return = approximately ₹11.6 lakh.' },
-      { q: 'What is diversification?', a: 'Diversification means spreading your money across different sectors and stocks. If one sector falls (like IT during a slowdown), other sectors (like pharma) may hold steady. "Do not put all your eggs in one basket."' },
-      { q: 'What is the difference between investing and trading?', a: 'Investing = buying shares for years, benefiting from company growth and dividends. Trading = buying and selling within days or weeks, profiting from price movements. Investing is generally lower risk. Trading requires deep knowledge and time.' },
-      { q: 'What is a Bull market vs Bear market?', a: 'A bull market is when markets are rising — positive sentiment, growing economy. A bear market is when markets fall 20%+ from recent highs — negative sentiment, recession fears. India has been in a general bull market since 2003 with short bear phases.' },
+
+    // ── CHAPTER 4: HOW TO PICK A COMPANY ─────────────────────────
+    { cat: '🔍 Chapter 4: How to Pick a Good Company', sub: 'A step-by-step framework for evaluating any stock', icon:'🔍', items: [
+      { q: 'Step 1 — Understand the business first',
+        a: 'Before looking at a single number, ask: do I understand what this company does and how it makes money? Warren Buffett calls this the "circle of competence." If you cannot explain to a 10-year-old how the company earns revenue, do not invest. Questions to answer: Who are their customers? Who are their competitors? What would make people stop buying from them? Can a new company easily copy their business? A business you understand protects you from being fooled by complex financial engineering.' },
+      { q: 'Step 2 — Check revenue and profit trend (5 years)',
+        a: 'Open the Financials tab in StockSense and look at the annual income statement. You want to see: Revenue growing consistently every year — 10-15%+ for growth companies. Net profit growing as fast or faster than revenue — this means margins are expanding. EPS growing in line with profit. Red flags: Revenue growing but profit flat or falling (costs rising faster than sales). Profit growing but revenue flat (cost-cutting only, not real growth). Inconsistent numbers — up one year, down the next, up again.' },
+      { q: 'Step 3 — Check the balance sheet health',
+        a: 'A company with strong earnings but weak balance sheet can collapse. Check: Debt/Equity — low debt is better (except banks/NBFCs). Current ratio above 1.5 — can pay short-term bills. Cash and equivalents — does it have a cash buffer? Interest coverage ratio (EBIT ÷ Interest) — should be above 3. The best businesses generate so much cash they do not need debt. TCS, Infosys, Asian Paints — near-zero debt, sitting on thousands of crores of cash. High debt companies are fine in good times, dangerous when business slows.' },
+      { q: 'Step 4 — Evaluate management quality',
+        a: 'Numbers can be manipulated. Management quality is harder to fake over 10 years. Signs of good management: Promoter holds significant stake (skin in the game). Low or zero pledged shares. Company does what it says — compares guidance to actual results. CEO communication is honest — acknowledges problems, not just celebrates wins. Related party transactions are minimal and disclosed. Signs of poor management: Frequent unexplained auditor changes. Promoter continuously selling shares. Inconsistency between investor presentations and actual results. High management turnover.' },
+      { q: 'Step 5 — Check competitive advantage (moat)',
+        a: 'A moat is what stops competitors from taking the company\'s customers. Without a moat, profits get competed away. Types of moats: Brand (Asian Paints — nobody switches paint brand on price alone). Switching cost (TCS — replacing an IT vendor costs crores and years). Network effect (NSE — more traders use it because more traders use it). Cost advantage (DMART — buys in such bulk competitors cannot match prices). Regulatory licence (LICI — insurance licence is hard to get). Government contracts (HAL, BEL — only PSU approved for defence). Ask: why would a customer NOT switch to a competitor?' },
+      { q: 'Step 6 — Valuation — are you paying a fair price?',
+        a: 'A great company at the wrong price is a bad investment. Three simple valuation checks: P/E vs sector average — is it reasonable? PEG ratio (P/E ÷ earnings growth rate) — below 1 is often good value. Price to Book — for banks, below 2x is reasonable. Remember: paying 50x P/E for a company growing 40% annually can be cheaper than paying 15x for a company growing 5%. Growth matters. But never pay 100x P/E hoping for future growth that has not happened yet. The market can stay irrational longer than you can stay solvent.' },
+      { q: 'Step 7 — Red flags that should stop you immediately',
+        a: 'Any one of these is enough reason to step back and investigate deeply: Promoter pledge above 30% of their holding. Auditor has resigned unexpectedly. Frequent related party transactions at unusual prices. Revenue growing but cash flow from operations is declining (profit may not be real). Company changes its accounting policy unexpectedly. Promoter selling large quantities regularly. Very high receivables growing faster than revenue (customers not paying). Negative free cash flow for 3+ years in a mature business. These are not automatic sell signals — but every one requires a very good explanation.' },
+    ]},
+
+    // ── CHAPTER 5: STATISTICAL MODELS ────────────────────────────
+    { cat: '📈 Chapter 5: Statistics & Probability in Markets', sub: 'How StockSense models work and what confidence levels mean', icon:'📈', items: [
+      { q: 'Why statistics and not predictions?',
+        a: 'Nobody can predict the stock market with certainty. Anyone who claims they can is either lying or selling something. What statistics CAN do is tell you what has happened historically in similar situations. If a specific price pattern has preceded a price rise 65 out of 100 times in the past decade, that is useful information — even though it tells you nothing certain about the 101st time. StockSense uses this approach. Every model output says "historically this has happened X% of the time" — not "this will happen." The difference is honesty.' },
+      { q: 'What is a confidence level and how should I use it?',
+        a: 'Confidence level in StockSense means: in historical data, when these same conditions were present, the stated outcome occurred this percentage of times. 80% confidence = occurred 80 times out of 100 historically. 50% confidence = basically coin flip, no useful signal. 65-70% = moderate signal worth noting. Above 75% = stronger historical tendency, but still not a guarantee. Important: high confidence does not mean "definitely will happen." Markets change. What worked in 2015-2020 may not work in 2025-2030. Use confidence levels as one input among many, never as the only reason to act.' },
+      { q: 'Linear Regression model — what is it measuring?',
+        a: 'Linear regression draws a straight trend line through a year of weekly price data. If the line slopes upward, the trend over the year has been positive. If downward, negative. The model also checks where the current price sits relative to this trend line — above trend (momentum), below trend (potential mean reversion). What it does NOT capture: sudden shocks (earnings surprise, regulatory change), sector rotation, global events. It is purely a mathematical description of past price direction. Think of it as asking: "where has this stock generally been heading?"' },
+      { q: 'Moving Average Signal — what are MAs telling you?',
+        a: 'A moving average smooths out daily noise by averaging price over a period. The 20-day MA averages the last 20 closing prices. The 50-day MA averages 50 days. When the shorter MA (20-day) is above the longer MA (50-day): short-term momentum is stronger than medium-term — bullish signal. When 20-day crosses below 50-day (called "death cross"): short-term momentum weakening — bearish signal. Limitation: MAs are lagging indicators. They tell you what has happened, not what will happen. In sideways markets, they generate false signals repeatedly.' },
+      { q: 'RSI — Relative Strength Index explained simply',
+        a: 'RSI is a number between 0 and 100 that measures how fast prices have been changing. Above 70: the stock has risen too fast recently — potentially overbought. Sellers may take profit. Below 30: the stock has fallen too fast — potentially oversold. Buyers may step in. Between 30-70: neutral zone, no extreme signal. Critical misunderstanding: RSI above 70 does NOT mean "sell." Strong stocks can stay overbought for months during bull runs. RSI is most useful at extremes combined with other signals. An RSI of 85 in a bull market means "be careful" not "definitely sell."' },
+      { q: 'Price targets — Bear case, Base case, Bull case',
+        a: 'StockSense shows three price scenarios based on historical volatility and current position in the 52-week range. Bear case: what the price might reach if negative scenario plays out (based on historical maximum drawdown from this position). Base case: continuation of current trend (simple extrapolation). Bull case: what the price might reach if positive momentum continues (based on historical rallies from similar positions). These are statistical ranges, not analyst targets. They are calculated from price history only — they do not factor in earnings, management, or news. Use them to understand the range of possibilities, not as targets.' },
+    ]},
+
+    // ── CHAPTER 6: FINANCIAL RATIOS COMPLETE GUIDE ───────────────
+    { cat: '📐 Chapter 6: Financial Ratios — Complete Guide', sub: 'Every ratio that matters, what it means, what is good', icon:'📐', items: [
+      { q: 'Profitability ratios — is the business making real money?',
+        a: 'Gross Profit Margin = (Revenue − Cost of Goods) ÷ Revenue. Shows basic business economics. Software companies 70%+, manufacturing 20-40%. Operating Profit Margin (EBIT Margin): profit before interest and tax. Net Profit Margin: final profit after everything. Trend matters more than absolute level — rising margins = improving efficiency. EBITDA Margin: operating profit before depreciation. Useful for comparing capital-heavy businesses. Example: Reliance Net Margin ~6% looks low, but on ₹9 lakh crore revenue, that is ₹54,000 crore profit. Context always matters.' },
+      { q: 'Valuation ratios — am I paying too much?',
+        a: 'P/E (Price/Earnings): covered in Chapter 2. P/B (Price/Book): price relative to net assets. Below 1 means buying ₹1 of assets for less than ₹1 — rare but can signal undervaluation or serious trouble. EV/EBITDA (Enterprise Value to EBITDA): better than P/E for comparing companies with different debt levels. Below 10x is often considered reasonable. PEG (P/E to Growth): P/E divided by annual earnings growth rate. PEG below 1 often means growth is underpriced. PEG above 2 means you are paying heavily for expected growth. Dividend Yield: annual dividend ÷ share price. A 3%+ dividend yield provides income even if price stagnates.' },
+      { q: 'Efficiency ratios — how well does the company use its assets?',
+        a: 'Asset Turnover = Revenue ÷ Total Assets. How much revenue generated per rupee of assets. Retail (DMART) is high. Manufacturing is medium. Capital-intensive (steel, cement) is low. Inventory Turnover = Revenue ÷ Inventory. How quickly goods are sold. Very high = efficient (DMART). Very low = goods sitting unsold — bad sign. Receivables Days (DSO): how many days customers take to pay. Rising DSO in a growth story is a red flag — revenue may not be real cash. Working Capital Cycle: how efficiently the company converts inputs to cash. Negative working capital (like DMART) is actually a sign of strength — they get paid before they pay suppliers.' },
+      { q: 'Liquidity ratios — can the company pay its bills?',
+        a: 'Current Ratio = Current Assets ÷ Current Liabilities. Above 2 = comfortable. Between 1-2 = manageable. Below 1 = potential liquidity problem — cannot pay short-term debts from short-term assets. Quick Ratio (Acid Test): same as current ratio but excludes inventory (which may not sell quickly). Above 1 is healthy. Cash Ratio: cash and equivalents only ÷ current liabilities. The most conservative measure. A company with Cash Ratio above 0.5 is rarely in immediate distress. Low liquidity ratios are not always fatal — some businesses intentionally run lean. But in a slowdown, low liquidity can become a crisis quickly.' },
+      { q: 'Common mistakes people make with ratios',
+        a: 'Comparing across sectors: a bank\'s D/E of 10 is normal; a software company\'s D/E of 10 is a crisis. Always compare within sector. Single year snapshot: one great year hides 5 bad years. Look at 5-year trends. Ignoring cash flow: profit can be manipulated through accounting; cash cannot. A company with high profit but negative cash flow from operations is a red flag. Ignoring debt when valuing: P/E does not capture debt. A company with P/E of 10 but ₹10,000 crore debt may be more expensive than a P/E of 15 with zero debt. Treating low P/E as automatic value: sometimes it is cheap for a very good reason — the business is genuinely declining.' },
+    ]},
+
+    // ── CHAPTER 7: COMMON MISTAKES ───────────────────────────────
+    { cat: '⚠️ Chapter 7: Common Investor Mistakes', sub: 'Learn from others so you do not pay the expensive tuition yourself', icon:'⚠️', items: [
+      { q: 'Buying on tips without research',
+        a: 'The most expensive mistake in Indian retail investing. A friend, a WhatsApp group, a YouTube channel recommends a stock. You buy without reading a single financial statement. The tip-giver either does not know what they are doing, or worse, already holds the stock and needs more buyers to push the price up. Rule: never buy any stock you cannot explain in two sentences — what the company does and why it should grow. If you cannot explain it, you cannot evaluate new information when it arrives.' },
+      { q: 'Averaging down on a falling stock without knowing why it fell',
+        a: 'Averaging down means buying more of a stock as its price falls to lower your average cost. Sometimes this is correct. Often it is catastrophic. The critical question is WHY did it fall. If the fundamentals are intact and the fall is general market panic — averaging down makes sense. If the fall is because of a genuine business problem (fraud revealed, key customer lost, regulatory ban) — averaging down is throwing good money after bad. Before averaging down, always check: has anything changed in the business itself?' },
+      { q: 'Selling winners too early and holding losers too long',
+        a: 'This is the most documented bias in all of investing — called the disposition effect. Our brains want to "lock in" profits (sell winners early to feel the satisfaction of a gain) and "avoid regret" (hold losers hoping they come back so we never have to admit we were wrong). This is backwards. Winners that are fundamentally strong should be held. Losers with deteriorating fundamentals should be cut. The right question is always: if I did not own this stock, would I buy it today at the current price? If no, sell. If yes, hold or add.' },
+      { q: 'Ignoring interest rates and macroeconomics',
+        a: 'Individual stock picking without understanding the macro environment is like sailing without checking the weather. When RBI raises interest rates, borrowing costs rise for companies and home-buyers — bad for real estate and auto companies. High inflation hurts FMCG margins. A weak rupee helps IT exporters (earn in USD) and hurts oil companies (import costs in USD rise). US Federal Reserve decisions move FII flows into and out of India. You do not need to be an economist. But knowing the direction of interest rates and the health of the global economy gives essential context to everything else.' },
+      { q: 'Confusing short-term price movement with business quality',
+        a: 'A great business can have its stock fall 30% in a market correction. A terrible business can have its stock double in a momentum rally. Price and quality diverge constantly in the short term. They converge over 5-10 years. This is why short-term thinking destroys wealth. Infosys fell 50% from its 2000 peak to 2003. Anyone who confused that price fall with business decline and sold lost out on 30x returns over the next 20 years. Evaluate the business every quarter. React to business changes. Ignore short-term price noise unless you understand exactly why it is happening.' },
+      { q: 'Not understanding what you own — the biggest risk of all',
+        a: 'When a company you own announces something unexpected — a new acquisition, a change in regulation, a key executive leaving — your first reaction reveals everything. If you understand the business deeply, you can evaluate the news quickly and decide whether it changes your long-term view. If you do not understand it, you panic. Panic leads to selling at exactly the wrong time. The solution is simple: own fewer companies but understand them deeply. Ten stocks you understand well will outperform fifty stocks you bought on tips. The stock market rewards knowledge and patience above everything else.' },
     ]},
   ],
+
+  // ── HINDI ─────────────────────────────────────────────────────
   hi: [
-    { cat: 'शेयर बाज़ार क्या है?', sub: 'यहाँ से शुरू करें', items: [
-      { q: 'शेयर या स्टॉक क्या होता है?', a: 'शेयर किसी कंपनी में छोटी सी हिस्सेदारी होती है। जब आप TCS का एक शेयर खरीदते हैं, तो आप उस कंपनी के एक छोटे से मालिक बन जाते हैं। अगर कंपनी बढ़ती है और ज़्यादा मुनाफ़ा कमाती है, तो आपका शेयर भी ज़्यादा मूल्यवान हो जाता है।' },
-      { q: 'NSE और BSE क्या हैं?', a: 'NSE (नेशनल स्टॉक एक्सचेंज) और BSE (बॉम्बे स्टॉक एक्सचेंज) भारत के दो मुख्य शेयर बाज़ार हैं। ये वो जगह हैं जहाँ खरीदार और विक्रेता शेयर का लेन-देन करते हैं।' },
-      { q: 'शेयर की कीमत कैसे बदलती है?', a: 'शेयर की कीमत हर सेकंड मांग और आपूर्ति के आधार पर बदलती है। अगर ज़्यादा लोग खरीदना चाहते हैं, कीमत बढ़ती है। अगर ज़्यादा लोग बेचना चाहते हैं, कीमत घटती है।' },
+    { cat: '📖 अध्याय 1: शेयर बाज़ार की बुनियाद', sub: 'बिल्कुल नए लोगों के लिए — यहाँ से शुरू करें', items: [
+      { q: 'शेयर या स्टॉक क्या होता है?',
+        a: 'शेयर किसी कंपनी में छोटी सी हिस्सेदारी है। जब आप TCS का एक शेयर खरीदते हैं, आप उस कंपनी के छोटे से मालिक बन जाते हैं। कंपनी अगर बढ़ती है तो शेयर की कीमत बढ़ती है — यह आपका फ़ायदा है। पैसे दो तरह से बनते हैं: कीमत बढ़ने से (कैपिटल गेन), या कंपनी द्वारा हर साल दिया जाने वाला हिस्सा (डिविडेंड)।' },
+      { q: 'NSE और BSE में क्या फ़र्क है?',
+        a: 'दोनों भारत के शेयर बाज़ार हैं — जहाँ खरीदार और बेचने वाले मिलते हैं। BSE (बॉम्बे स्टॉक एक्सचेंज) 1875 में बनी, एशिया की सबसे पुरानी एक्सचेंज है। NSE (नेशनल स्टॉक एक्सचेंज) 1992 में बनी और आज ज़्यादातर ट्रेडिंग यहीं होती है। Nifty 50 NSE का सूचकांक है जो 50 बड़ी कंपनियों को ट्रैक करता है। Sensex BSE का 30 कंपनियों का सूचकांक है।' },
+      { q: 'शेयर की कीमत कैसे बदलती है?',
+        a: 'कीमत हर सेकंड मांग और आपूर्ति से बदलती है। अगर 1,000 लोग HDFC Bank खरीदना चाहते हैं और सिर्फ 100 बेचना चाहते हैं — कीमत बढ़ेगी। कीमत प्रभावित करने वाली चीज़ें: तिमाही नतीजे, RBI के ब्याज दर के फ़ैसले, वैश्विक घटनाएँ (अमेरिका का Federal Reserve, तेल की कीमत, युद्ध), नई नियुक्तियाँ, और बाज़ार का माहौल।' },
+      { q: 'Nifty 50 क्या है और हर कोई इसी की बात क्यों करता है?',
+        a: 'Nifty 50 एक नंबर है जो भारत की 50 सबसे बड़ी कंपनियों का प्रदर्शन दिखाता है। यह भारतीय अर्थव्यवस्था की नब्ज़ है। जब Nifty बढ़ता है तो बड़ी कंपनियाँ अच्छा कर रही हैं। जब गिरता है तो निवेशक बेच रहे हैं। Nifty 22,000 से 22,220 — यह 1% की बढ़त है।' },
+      { q: 'SEBI क्या है और यह क्यों ज़रूरी है?',
+        a: 'SEBI (सिक्योरिटीज़ एंड एक्सचेंज बोर्ड ऑफ़ इंडिया) शेयर बाज़ार का नियामक है — जैसे बैंकों के लिए RBI है। SEBI की वजह से हर लिस्टेड कंपनी को तिमाही नतीजे, शेयरहोल्डिंग पैटर्न और बड़ी घटनाएँ बताना ज़रूरी है। अगर कोई कंपनी झूठ बोले तो SEBI भारी जुर्माना लगा सकती है।' },
     ]},
-    { cat: 'शेयर डेटा समझें', sub: 'संख्याएं पढ़ना सीखें', items: [
-      { q: 'P/E अनुपात क्या होता है?', a: 'P/E (प्राइस टू अर्निंग्स) बताता है कि आप कंपनी की ₹1 कमाई के लिए कितना दे रहे हैं। P/E 25 का मतलब है ₹1 कमाई के लिए ₹25 चुका रहे हैं। कम P/E = सस्ता हो सकता है। ज़्यादा P/E = बाज़ार को ज़्यादा विकास की उम्मीद।' },
-      { q: 'EPS क्या होता है?', a: 'EPS यानी प्रति शेयर आय। यह कंपनी का कुल मुनाफ़ा कुल शेयरों से भाग देने पर मिलता है। EPS ₹100 का मतलब है कि कंपनी ने पिछले साल हर शेयर पर ₹100 कमाए।' },
-      { q: 'ROE क्या है?', a: 'ROE (रिटर्न ऑन इक्विटी) बताता है कि कंपनी शेयरधारकों के पैसे का कितना कुशलता से उपयोग करती है। 20% ROE का मतलब है ₹100 पर ₹20 मुनाफ़ा। 15% से ज़्यादा को आमतौर पर अच्छा माना जाता है।' },
+    { cat: '📊 अध्याय 2: शेयर डेटा पढ़ना सीखें', sub: 'StockSense में दिखने वाले हर नंबर को समझें', items: [
+      { q: 'P/E अनुपात — सबसे ज़रूरी नंबर',
+        a: 'P/E (प्राइस टू अर्निंग्स) बताता है: आप कंपनी की ₹1 कमाई के लिए कितना चुका रहे हैं? TCS अगर साल में ₹100 प्रति शेयर कमाती है और कीमत ₹3,500 है — P/E = 35। यानी ₹1 कमाई के लिए ₹35। कम P/E = सस्ता हो सकता है। लेकिन P/E की तुलना हमेशा एक ही सेक्टर में करें। IT का P/E 25-35, बैंकों का 10-18, FMCG का 40-60 — अलग-अलग सेक्टर की तुलना बेमानी है।' },
+      { q: 'EPS — कंपनी प्रति शेयर कितना कमाती है',
+        a: 'EPS = कुल मुनाफ़ा ÷ कुल शेयरों की संख्या। Infosys अगर ₹26,000 करोड़ कमाती है और 415 करोड़ शेयर हैं — EPS = ₹62.65। हर साल बढ़ता EPS एक स्वस्थ व्यापार की निशानी है। EPS से ही P/E निकलता है: कीमत ÷ EPS = P/E।' },
+      { q: 'मार्केट कैप — कंपनी का साइज़ समझें',
+        a: 'मार्केट कैप = शेयर की कीमत × कुल शेयर। Large Cap (₹20,000 Cr से ऊपर): स्थिर, कम जोखिम — Nifty 50 कंपनियाँ। Mid Cap (₹5,000-20,000 Cr): ज़्यादा विकास की संभावना, ज़्यादा उतार-चढ़ाव। Small Cap (₹5,000 Cr से नीचे): सबसे ज़्यादा विकास की संभावना, सबसे ज़्यादा जोखिम।' },
+      { q: 'ROE — कंपनी आपके पैसे का कितना अच्छा उपयोग करती है',
+        a: 'ROE = (शुद्ध मुनाफ़ा ÷ शेयरधारकों की इक्विटी) × 100। 20% ROE का मतलब — ₹100 शेयरधारक के पैसे पर ₹20 मुनाफ़ा। लगातार 15-20% से ऊपर ROE एक बेहतरीन कंपनी की पहचान है। Asian Paints का ROE ~55%, TCS का ~50% — यही उनकी क्वालिटी की वजह है।' },
+      { q: 'प्रमोटर होल्डिंग और प्लेज — क्या संस्थापक भरोसा करते हैं?',
+        a: 'प्रमोटर कंपनी के संस्थापक या नियंत्रक मालिक हैं। उच्च प्रमोटर होल्डिंग (50% से ऊपर) — संस्थापकों का विश्वास दिखाती है। बहुत कम होल्डिंग (15% से नीचे) — क्यों घटाई? यह जांचना ज़रूरी है। प्लेज्ड शेयर सबसे बड़ा खतरा: प्रमोटर ने शेयर गिरवी रखकर कर्ज़ लिया है। शेयर गिरे तो बैंक ज़बरदस्ती बेचते हैं — और कीमत और गिरती है। StockSense के Company Tab में प्लेज % देखें।' },
+    ]},
+    { cat: '🕯️ अध्याय 3: कैंडलस्टिक चार्ट', sub: 'चार्ट से बाज़ार की मनोवृत्ति पढ़ें', items: [
+      { q: 'कैंडलस्टिक क्या होती है?',
+        a: 'एक कैंडलस्टिक चार चीज़ें दिखाती है: खुलने की कीमत (Open), बंद होने की कीमत (Close), सबसे ऊँची कीमत (High), सबसे नीची कीमत (Low)। हरी/सफ़ेद कैंडल: Close > Open — खरीदार जीते। लाल/काली कैंडल: Close < Open — बेचने वाले जीते। लंबी बॉडी = मज़बूत दिन। लंबी विक (पतली रेखा) = उस दिशा में प्रयास हुआ पर वापस आ गया।' },
+      { q: 'Doji — बाज़ार दुविधा में है',
+        a: 'Doji में बहुत छोटी बॉडी होती है (Open और Close लगभग बराबर) और दोनों तरफ़ विक। इसका मतलब है — खरीदार और बेचने वाले दोनों ने कोशिश की और दोनों हारे। बाज़ार अनिश्चित है। तेज़ी के बाद Doji = तेज़ी थकी हो सकती है। मंदी के बाद Doji = मंदी कमज़ोर हो सकती है। अकेला Doji कोई संकेत नहीं — अगली कैंडल देखें।' },
+      { q: 'Hammer — मंदी के बाद पलटाव का संकेत',
+        a: 'Hammer में छोटी बॉडी ऊपर और लंबी निचली विक। मंदी के बाद बनती है। संदेश: बेचने वालों ने कीमत नीचे धकेली लेकिन खरीदार वापस लाए। लंबी विक = बेचने वाले हारे। हरा Hammer ज़्यादा मज़बूत। पुष्टि ज़रूरी: अगली कैंडल भी ऊपर बंद हो तभी भरोसेमंद।' },
+      { q: 'Bullish Engulfing — मज़बूत पलटाव',
+        a: 'दो कैंडल: पहली लाल (मंदी), दूसरी हरी जो पूरी पहली कैंडल की बॉडी को ढक ले। मतलब: पहले दिन की सारी बिकवाली दूसरे दिन खरीदारी से पट गई। लंबे मंदी के दौर के बाद, सपोर्ट लेवल पर, ज़्यादा वॉल्यूम के साथ — यह एक भरोसेमंद संकेत है।' },
+      { q: 'Support और Resistance — कीमत कुछ जगहों पर क्यों रुकती है?',
+        a: 'Support: वह कीमत जहाँ बार-बार गिरावट रुकी और वापसी हुई। Resistance: वह कीमत जहाँ बार-बार बढ़त रुकी। यह काम करता है क्योंकि बड़े निवेशकों को याद रहता है — जहाँ उन्होंने खरीदा/बेचा। जब कीमत वापस आती है तो वो वैसे ही काम करते हैं। Support टूटे = वह Support अब Resistance बन जाता है।' },
+    ]},
+    { cat: '🔍 अध्याय 4: अच्छी कंपनी कैसे चुनें', sub: 'किसी भी स्टॉक को परखने का तरीका', items: [
+      { q: 'पहला कदम — पहले बिज़नेस समझें',
+        a: 'कोई भी नंबर देखने से पहले पूछें: क्या मैं समझता हूँ यह कंपनी पैसे कैसे कमाती है? अगर एक 10 साल के बच्चे को नहीं समझा सकते — निवेश मत करो। सवाल: इनके ग्राहक कौन हैं? प्रतिस्पर्धी कौन हैं? ग्राहक उनसे क्यों खरीदते हैं? नई कंपनी इनका काम क्यों नहीं कर सकती? जो बिज़नेस आप समझते हैं, उसमें बुरी खबर आने पर आप घबराते नहीं।' },
+      { q: 'दूसरा कदम — 5 साल का Revenue और Profit देखें',
+        a: 'StockSense के Financials Tab में Annual Income Statement खोलें। Revenue हर साल बढ़ रहा हो — 10-15%+। Net Profit Revenue जितना या उससे तेज़ बढ़े — मार्जिन सुधर रहे हैं। खतरे के संकेत: Revenue बढ़ रहा है पर Profit नहीं — खर्च बेकाबू हैं। Profit बढ़ रहा है पर Revenue नहीं — केवल खर्च काटे, असली विकास नहीं।' },
+      { q: 'तीसरा कदम — कर्ज़ जाँचें',
+        a: 'अच्छी कमाई पर भी कमज़ोर बैलेंस शीट वाली कंपनी डूब सकती है। D/E (Debt to Equity) कम हो — IT कंपनियों में लगभग शून्य होना चाहिए। Current Ratio 1.5 से ऊपर — छोटे कर्ज़ चुका सके। TCS, Infosys, Asian Paints — शून्य कर्ज़, हज़ारों करोड़ कैश। कर्ज़ वाली कंपनियाँ अच्छे दौर में ठीक हैं, मंदी में खतरनाक।' },
+      { q: 'चौथा कदम — Red Flags जो तुरंत रोक दें',
+        a: '30% से ज़्यादा प्रमोटर प्लेज। अचानक ऑडिटर का इस्तीफ़ा। प्रमोटर लगातार शेयर बेच रहे हैं। Revenue बढ़ रहा है पर Operations से Cash Flow घट रहा है। बार-बार अकाउंटिंग नीति बदलना। Receivables Revenue से तेज़ बढ़ रहे हैं। ये अपने आप में "बेचो" का संकेत नहीं — लेकिन हर एक के लिए अच्छी वजह चाहिए।' },
+    ]},
+    { cat: '⚠️ अध्याय 5: आम निवेशक गलतियाँ', sub: 'दूसरों की गलतियों से सीखें', items: [
+      { q: 'टिप पर बिना रिसर्च खरीदना',
+        a: 'भारतीय रिटेल निवेश में सबसे महँगी गलती। WhatsApp ग्रुप, YouTube चैनल, दोस्त ने बताया — आपने एक भी financial statement पढ़े बिना खरीद लिया। टिप देने वाला या तो खुद नहीं जानता, या पहले से खरीद चुका है और आपको खरीदवाकर कीमत ऊपर ले जाना चाहता है। नियम: जो कंपनी दो वाक्यों में नहीं समझा सकते — मत खरीदो।' },
+      { q: 'जीतने वाले जल्दी बेचना, हारने वाले रोक रखना',
+        a: 'यह सबसे documented निवेश bias है। दिमाग मुनाफ़ा "लॉक" करना चाहता है (विजेता जल्दी बेचो) और नुकसान "avoid" करना चाहता है (हारने वाला रखो, शायद वापस आए)। यह उल्टा है। मज़बूत fundamentals वाले विजेता रखो। बिगड़ते fundamentals वाले हारने वाले बेचो। सही सवाल: अगर मेरे पास यह शेयर नहीं होता, तो क्या मैं आज इस कीमत पर खरीदता? अगर नहीं — बेचो।' },
     ]},
   ],
+
+  // ── GUJARATI ──────────────────────────────────────────────────
   gu: [
-    { cat: 'શેર બજાર શું છે?', sub: 'અહીંથી શરૂ કરો', items: [
-      { q: 'શેર અથવા સ્ટૉક શું છે?', a: 'શેર એ કોઈ કંપનીમાં નાની માલિકી છે. જ્યારે તમે TCS નો એક શેર ખરીદો, ત્યારે તમે તે કંપનીના નાના માલિક બનો. જો કંપની વધે અને વધુ નફો કરે, તો તમારો શેર પણ વધુ મૂલ્યવાન બને.' },
-      { q: 'NSE અને BSE શું છે?', a: 'NSE (નેશનલ સ્ટૉક એક્સચેન્જ) અને BSE (બૉમ્બે સ્ટૉક એક્સચેન્જ) ભારતના બે મુખ્ય શેર બજારો છે. ત્યાં ખરીદારો અને વેચાણકર્તાઓ શેર ટ્રેડ કરે છે.' },
-      { q: 'P/E રેશિઓ શું છે?', a: 'P/E (Price to Earnings) બતાવે છે કે તમે કંપનીની ₹1 કમાણી માટે કેટલું ચૂકવો છો. P/E 25 = ₹1 કમાણી માટે ₹25. ઓછો P/E = સસ્તું હોઈ શકે. વધારે P/E = વૃદ્ધિ અપેક્ષિત.' },
+    { cat: '📖 પ્રકરણ 1: શેર બજારની સમજ', sub: 'સ્ટૉક માર્કેટ નવા શીખો — અહીંથી શરૂ કરો', items: [
+      { q: 'શેર અથવા સ્ટૉક શું છે?',
+        a: 'શેર એ કોઈ કંપનીમાં નાની માલિકી છે. TCS નો એક શેર ખરીદો — તમે તે કંપનીના નાના ભાગીદાર બનો. કંપની વધે તો શેર મોંઘો, ઘટે તો સસ્તો. પૈસા બે રીતે: ભાવ વધે (Capital Gain), અથવા કંપની દર વર્ષે ભાગ આપે (Dividend).' },
+      { q: 'NSE અને BSE માં શો ફ઼ર્ક છે?',
+        a: 'BSE (Bombay Stock Exchange) 1875 માં સ્થપાઈ — એશિયાની સૌથી જૂની. NSE (National Stock Exchange) 1992 માં — આજ ત્યાં સૌથી વધુ ટ્રેડ. Nifty 50 = NSE ના 50 મોટી કંપનીઓ નો સૂચકાંક. Sensex = BSE ના 30 કંપનીઓ. બંને ભારતના બજારનો ચહેરો છે.' },
+      { q: 'Nifty 50 શું છે?',
+        a: 'Nifty 50 એ એક આંક છે — ભારતની 50 સૌથી મોટી કંપનીઓ એકસાથે કેવી ચાલી રહી છે તે દર્શાવે. Nifty ઊંચો = ધંધો સારો, રોકાણકારો ખુશ. Nifty નીચો = ચિંતા. Nifty 22,000 થી 22,220 = 1% વૃદ્ધિ.' },
+      { q: 'ડિમેટ ખાતું શું છે અને કેવી રીતે ખોલવું?',
+        a: 'ડિમેટ ખાતામાં તમારા શેર ડિજિટલ રૂપે રાખવામાં આવે — જેમ બૅન્ક ખાતામાં પૈસા. વગર ડિમેટ ખાતે, શેર ખરીદ-વેચ ન થઈ શકે. Zerodha, Groww, Angel One — આ brokers પાસે ખોલો. Aadhaar + PAN થી KYC. 1-2 દિવસ. કોઈ minimum amount નહીં.' },
+    ]},
+    { cat: '📊 પ્રકરણ 2: નંબર સમજો', sub: 'StockSense માં દેખાતો દરેક આંક શો કહે છે', items: [
+      { q: 'P/E Ratio — સૌથી મહત્ત્વનો આંક',
+        a: 'P/E = ભાવ ÷ પ્રતિ શેર આવક. TCS ₹100 કમાય ને ભાવ ₹3,500 = P/E 35. મતલબ: ₹1 કમાણી માટે ₹35. ઓછો P/E = સસ્તું? — ક્યારેક. વધારે P/E = growth અપેક્ષિત. P/E ની સરખામણી એ જ sector ની અંદર. IT = 25-35, Banks = 10-18, FMCG = 40-60.' },
+      { q: 'EPS — કંપની પ્રતિ શેર શું કમાય?',
+        a: 'EPS = કુલ ચોખ્ખો નફો ÷ કુલ શેર. Infosys ₹26,000 કરોડ નફો ÷ 415 કરોડ શેર = EPS ₹62.65. દર વર્ષે વધતો EPS = ધંધો સ્વસ્થ. EPS ઘટે = ચેતવણી.' },
+      { q: 'ROE — શૅરહોલ્ડરના પૈસા ઉપર કેટલો ફ઼ાયદો?',
+        a: 'ROE = (ચોખ્ખો નફો ÷ Equity) × 100. 20% ROE = ₹100 ઉપર ₹20 નફો. 15-20% ઉપર = સારી કંપની. Asian Paints ROE ~55%, TCS ~50% — આ value creation ની નિશાની.' },
+      { q: 'Promoter Holding — સ્થાપકો ભરોસો રાખે છે?',
+        a: 'Promoters = સ્થાપક અથવા controlling owners. 50% ઉપર Promoter Holding = ભરોસો. 15% નીચે = શા માટે ઘટ્યો? Pledged shares = promoter એ ઉધાર માટે shares ગીરો મૂક્યા. ભાવ ઘટે = બૅન્ક force-sell — ભાવ વધુ ઘટે. Company Tab માં pledge % જુઓ.' },
+    ]},
+    { cat: '🕯️ પ્રકરણ 3: Candlestick Charts', sub: 'ભાવ ચળવળ પાછળ ની મનોવૃત્તિ વાંચો', items: [
+      { q: 'Candlestick શું છે?',
+        a: 'Candlestick ચાર ભાવ દર્શાવે: Open, Close, High, Low. લીલી/સફ઼ેદ candle: Close > Open — ખરીદારો જીત્યા. લાલ/કાળી candle: Close < Open — વેચનારા જીત્યા. ઊંચી body = મજ઼બૂત દિવસ. લાંબી wick = ત્યાં ભાવ ગયો પણ પાછો ફ઼ર્યો.' },
+      { q: 'Hammer — ઘટાડા પછી ફ઼ેરબદલ',
+        a: 'Hammer: ઉપર નાની body, નીચે લાંબી wick. ઘટાડા પછી બને. Sellers ભાવ નીચે ઠેલ્યો, Buyers પાછા ઉપર લાવ્યા. Confirmation: next candle પણ ઉપર બંધ. એકલો Hammer = incomplete signal.' },
+      { q: 'Support અને Resistance',
+        a: 'Support = ભાવ જ્યાં વારંવાર ઘટ્યા પછી ઊંચો ગયો. Resistance = ભાવ જ્યાં વારંવાર ઊંચો ગયા પછી ઘટ્યો. Institutional investors ને યાદ — ત્યાં ફ઼રી exit/entry. Support તૂટ્યો = Resistance બને. Technical analysis માં સૌથી practical concept.' },
+    ]},
+    { cat: '🔍 પ્રકરણ 4: સારી કંપની કેવી રીતે પસંદ કરો', sub: 'StepByStep ફ઼્રેમવર્ક', items: [
+      { q: 'Step 1 — ધંધો સમજો',
+        a: 'કોઈ આંક જોતા પહેલા: શું હું સમજું છું આ કંપની પૈસા કેવી રીતે કમાય? 10 વર્ષના છોકરાને સમજાવી ન શકો = invest ન કરો. સવાલ: ગ્રાહક કોણ? competitor કોણ? ગ્રાહક switch ક્યારે ન કરે? ધંધો સમઝ્યો = ખરાબ news આવ્યે ગભરાટ નહીં.' },
+      { q: 'Step 2 — 5 વર્ષ Revenue + Profit',
+        a: 'Financials Tab: Revenue દર વર્ષ 10-15%+ વધે. Net Profit Revenue જેટલો / વધારે ઝડપ. Red flags: Revenue વધ્યો, Profit નહીં (ખર્ચ અઢળક). Profit વધ્યો, Revenue નહીં (ઘટાડા, growth નહીં).' },
+      { q: 'Red Flags — તરત રોકો',
+        a: 'Promoter Pledge 30%+. Auditor ના unexpected resignation. Promoter continuously shares વેચે. Revenue વધ્યો, Operations Cash Flow ઘટ્યો. Receivables, Revenue થી ઝડ઼પ. Accounting policy change. આ automatic sell signal નહીં — પણ strong justification જોઈએ.' },
+    ]},
+    { cat: '⚠️ પ્રકરણ 5: સામાન્ય ભૂલો', sub: 'બીજાઓ ની ભૂલ પરથી શીખો', items: [
+      { q: 'Tips ઉપર, research વગ઼ર ખરીદવું',
+        a: 'ભારતીય retail investing ની સૌથી મોંઘી ભૂલ. WhatsApp, YouTube, મિત્ર — financial statement ન વાંચ્યા. Tip આપનાર ક્યાં તો ખ઼ુદ નથી જ઼ાણતો, ક્યાં તો પહેલા ખ઼રીદ્યો ને ભાવ ઊંચો કરાવવો. Rule: 2 sentences માં ન સમઝ઼ાય = ન ખ઼રીદો.' },
+      { q: 'ઘટતો ભાવ "Averaging Down" — ક્યારે? ક્યારે ન?',
+        a: 'Averaging down = ભાવ ઘટ્યે વધ઼ારે ખ઼રીદો. ક્યારેક સાચું. ઘણ઼ી વ઼ારે ખ઼ોટ. Key question: ભાવ ઘટ઼્યો કેમ? Market panic = ઠ઼ીક. Business trouble = good money after bad. Average down પ઼હ઼ેલ઼ા: Business fundamentals ઠ઼ીક છ઼ે?' },
     ]},
   ],
 };
 
+// ── LEARN — Rich UI with progress tracking ───────────────────────
+let learnProgress = JSON.parse(localStorage.getItem('ss_learn') || '{}');
+
 function buildLearn() {
   const el = document.getElementById('learnContent'); if(!el) return;
   const data = LEARN_DATA[lang] || LEARN_DATA.en;
-  el.innerHTML = data.map((cat, ci) => `
-    <div class="learn-card">
-      <div class="learn-cat-hdr">
-        <div class="learn-cat-title">${cat.cat}</div>
-        <div class="learn-cat-sub">${cat.sub}</div>
+  const totalQ = data.reduce((s, c) => s + c.items.length, 0);
+  const doneQ  = Object.keys(learnProgress).length;
+  const pct    = totalQ > 0 ? Math.round(doneQ / totalQ * 100) : 0;
+
+  // Chapter colours and difficulty
+  const META = [
+    { color:'#1a5fa8', bg:'#eaf1fb', diff:'Beginner',    icon:'📖' },
+    { color:'#1a7c4a', bg:'#e8f5ee', diff:'Beginner',    icon:'📊' },
+    { color:'#d4870a', bg:'#fef7e6', diff:'Intermediate', icon:'🕯️' },
+    { color:'#6b21a8', bg:'#f3e8ff', diff:'Intermediate', icon:'🔍' },
+    { color:'#0e7490', bg:'#e0f7fa', diff:'Intermediate', icon:'📈' },
+    { color:'#c0392b', bg:'#fdf0ee', diff:'Advanced',    icon:'📐' },
+    { color:'#374151', bg:'#f3f4f6', diff:'All levels',  icon:'⚠️' },
+  ];
+
+  el.innerHTML = `
+    <!-- Progress header -->
+    <div style="background:var(--card);border-radius:14px;padding:16px;margin-bottom:16px;box-shadow:var(--shadow);border:0.5px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div>
+          <div style="font-size:15px;font-weight:700;font-family:'DM Serif Display',serif">Your Learning Journey</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">${doneQ} of ${totalQ} lessons completed</div>
+        </div>
+        <div style="font-size:24px;font-weight:700;color:var(--gm)">${pct}%</div>
       </div>
-      ${cat.items.map((item, ii) => `
-        <div class="learn-item" onclick="toggleLearn(${ci},${ii})">
-          <div class="learn-itop">
-            <div class="learn-q">${item.q}</div>
-            <div class="learn-arr" id="larr-${ci}-${ii}">›</div>
+      <div style="height:8px;background:var(--border);border-radius:4px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:linear-gradient(to right,var(--gm),#4ade80);border-radius:4px;transition:width 0.8s ease"></div>
+      </div>
+      ${doneQ > 0 ? `<div style="font-size:10px;color:var(--gm);margin-top:6px;font-weight:600">✅ Great progress! Keep going — every lesson makes you a better investor.</div>` : `<div style="font-size:10px;color:var(--muted);margin-top:6px">Tap any lesson to start learning. Each one takes 2-3 minutes.</div>`}
+      ${doneQ > 0 ? `<div style="text-align:right;margin-top:4px"><span onclick="resetLearnProgress()" style="font-size:10px;color:var(--muted);cursor:pointer;text-decoration:underline">Reset progress</span></div>` : ''}
+    </div>
+
+    <!-- Chapter cards -->
+    ${data.map((cat, ci) => {
+      const m = META[ci] || META[0];
+      const done = cat.items.filter((_, ii) => learnProgress[`${ci}-${ii}`]).length;
+      const catPct = Math.round(done / cat.items.length * 100);
+      return `
+      <div class="learn-card" style="margin-bottom:14px">
+        <div class="learn-cat-hdr" style="background:${m.bg};padding:14px 15px 12px;cursor:pointer" onclick="toggleChapter(${ci})">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div style="flex:1">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+                <div style="font-size:20px">${m.icon}</div>
+                <div>
+                  <div class="learn-cat-title" style="color:${m.color}">${cat.cat}</div>
+                  <div class="learn-cat-sub">${cat.sub}</div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+                <div style="font-size:9px;font-weight:700;background:${m.color}22;color:${m.color};border-radius:4px;padding:2px 8px">${m.diff}</div>
+                <div style="font-size:9px;color:var(--muted)">${cat.items.length} lessons</div>
+                ${done > 0 ? `<div style="font-size:9px;font-weight:600;color:${m.color}">${done}/${cat.items.length} done</div>` : ''}
+              </div>
+            </div>
+            <div style="text-align:right;flex-shrink:0">
+              <div style="font-size:18px;font-weight:700;color:${m.color}">${catPct}%</div>
+              <div style="font-size:18px;color:${m.color};transition:transform 0.2s" id="chev-${ci}">›</div>
+            </div>
           </div>
-          <div class="learn-a" id="la-${ci}-${ii}">${item.a}</div>
-        </div>`).join('')}
-    </div>`).join('');
+          <div style="height:4px;background:rgba(0,0,0,0.08);border-radius:2px;margin-top:8px;overflow:hidden">
+            <div style="height:100%;width:${catPct}%;background:${m.color};border-radius:2px;transition:width 0.6s"></div>
+          </div>
+        </div>
+        <div id="chapter-${ci}" style="display:none">
+          ${cat.items.map((item, ii) => {
+            const done = !!learnProgress[`${ci}-${ii}`];
+            return `
+            <div class="learn-item" id="litem-${ci}-${ii}" onclick="toggleLearn(${ci},${ii})"
+              style="border-left:3px solid ${done ? m.color : 'transparent'};transition:border-color 0.3s">
+              <div class="learn-itop">
+                <div style="display:flex;align-items:center;gap:8px;flex:1">
+                  <div style="font-size:14px;flex-shrink:0">${done ? '✅' : '○'}</div>
+                  <div class="learn-q">${item.q}</div>
+                </div>
+                <div class="learn-arr" id="larr-${ci}-${ii}" style="color:${m.color}">›</div>
+              </div>
+              <div class="learn-a" id="la-${ci}-${ii}" style="border-left:none;padding-left:22px">${formatLearnAnswer(item.a)}</div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+    }).join('')}
+
+    <div style="text-align:center;padding:16px;color:var(--muted);font-size:11px;line-height:1.6">
+      📚 All content is original educational material written for StockSense.<br>
+      ⚠️ This is for learning purposes only — not investment advice.
+    </div>`;
+}
+
+function formatLearnAnswer(text) {
+  // Make answers more readable — bold key terms, add visual structure
+  return text
+    .replace(/\b(P\/E|ROE|EPS|RSI|MACD|SIP|NPA|NIM|EBITDA|P\/B|D\/E|CAGR|FII|DII|IPO|NFO|NSE|BSE|SEBI|RBI|Nifty|Sensex)\b/g, '<b>$1</b>')
+    .replace(/₹[\d,]+(\s*(Cr|L|K|lakh|crore))?/g, '<span style="color:var(--gm);font-weight:600">$&</span>')
+    .replace(/(\d+)%/g, '<span style="font-weight:600">$1%</span>')
+    .replace(/\b(Bullish|Bearish|bullish|bearish)\b/g, '<span style="font-weight:600">$1</span>')
+    .replace(/Rule: ([^.]+)\./g, '<div style="background:var(--al);border-left:3px solid var(--a);padding:6px 10px;border-radius:0 6px 6px 0;margin:6px 0;font-size:10px;font-weight:600;color:var(--a)">📌 Rule: $1.</div>')
+    .replace(/Real example: ([^.]+\.)/g, '<div style="background:var(--bl);border-left:3px solid var(--b);padding:6px 10px;border-radius:0 6px 6px 0;margin:6px 0;font-size:10px;color:var(--b)">💡 Example: $1</div>')
+    .replace(/Example: ([^.]+\.)/g, '<div style="background:var(--bl);border-left:3px solid var(--b);padding:6px 10px;border-radius:0 6px 6px 0;margin:6px 0;font-size:10px;color:var(--b)">💡 Example: $1</div>');
+}
+
+function toggleChapter(ci) {
+  const panel = document.getElementById(`chapter-${ci}`);
+  const chev  = document.getElementById(`chev-${ci}`);
+  if (!panel) return;
+  const open = panel.style.display === 'none' || panel.style.display === '';
+  panel.style.display = open ? 'block' : 'none';
+  if (chev) chev.style.transform = open ? 'rotate(90deg)' : 'rotate(0deg)';
 }
 
 function toggleLearn(ci, ii) {
-  const ans = document.getElementById(`la-${ci}-${ii}`);
-  const arr = document.getElementById(`larr-${ci}-${ii}`);
+  const ans  = document.getElementById(`la-${ci}-${ii}`);
+  const arr  = document.getElementById(`larr-${ci}-${ii}`);
+  const item = document.getElementById(`litem-${ci}-${ii}`);
   if (!ans) return;
   const open = ans.classList.toggle('open');
   if (arr) arr.classList.toggle('open', open);
+
+  // Mark as read when opened
+  if (open && !learnProgress[`${ci}-${ii}`]) {
+    learnProgress[`${ci}-${ii}`] = true;
+    localStorage.setItem('ss_learn', JSON.stringify(learnProgress));
+    // Update the checkbox icon
+    const ico = item?.querySelector('.learn-itop div');
+    if (ico) ico.textContent = '✅';
+    if (item) item.style.borderLeftColor = 'inherit';
+    // Refresh the progress bar without full rebuild
+    const pBar = document.querySelector('#learnContent .learn-card:first-child div[style*="gradient"]');
+    // Simple: just update the top progress number
+    const data = LEARN_DATA[lang] || LEARN_DATA.en;
+    const totalQ = data.reduce((s, c) => s + c.items.length, 0);
+    const doneQ = Object.keys(learnProgress).length;
+    const pct = Math.round(doneQ / totalQ * 100);
+    const progNum = document.querySelector('#learnContent .learn-card:first-child [style*="24px"]');
+    if (progNum) progNum.textContent = pct + '%';
+  }
+}
+
+function resetLearnProgress() {
+  if (!confirm('Reset all learning progress?')) return;
+  learnProgress = {};
+  localStorage.removeItem('ss_learn');
+  buildLearn();
 }
 
 // ── RESEARCH OVERLAY ──────────────────────────────────────────────
