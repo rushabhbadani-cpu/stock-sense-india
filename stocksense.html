@@ -341,7 +341,42 @@ button{font-family:"DM Sans",sans-serif;cursor:pointer}
 .mf-ml{font-size:9px;color:var(--muted);margin-bottom:2px;text-transform:uppercase;letter-spacing:0.4px}
 .mf-mv{font-size:13px;font-weight:700}
 
-/* LEARN */
+/* ── ONBOARDING TOUR ──────────────────────────────────────────── */
+.tour-overlay{position:fixed;inset:0;z-index:1000;pointer-events:none}
+.tour-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:1001;transition:opacity 0.3s}
+.tour-spotlight{position:fixed;z-index:1002;border-radius:14px;box-shadow:0 0 0 4000px rgba(0,0,0,0.72);transition:all 0.4s cubic-bezier(0.4,0,0.2,1);pointer-events:none}
+.tour-card{position:fixed;z-index:1003;background:#fff;border-radius:16px;padding:18px 18px 14px;max-width:300px;min-width:240px;box-shadow:0 8px 40px rgba(0,0,0,0.35);pointer-events:all;transition:all 0.4s cubic-bezier(0.4,0,0.2,1)}
+.tour-card::before{content:'';position:absolute;width:12px;height:12px;background:#fff;transform:rotate(45deg)}
+.tour-arrow-bottom::before{bottom:-6px;left:50%;margin-left:-6px}
+.tour-arrow-top::before{top:-6px;left:50%;margin-left:-6px}
+.tour-arrow-left::before{left:-6px;top:50%;margin-top:-6px}
+.tour-step{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.tour-step-ico{font-size:26px;flex-shrink:0}
+.tour-step-title{font-size:15px;font-weight:700;font-family:"DM Serif Display",serif;color:#1a1a18;line-height:1.2}
+.tour-step-sub{font-size:11px;color:#6b6b65;margin-top:3px;line-height:1.5}
+.tour-step-desc{font-size:12px;color:#1a1a18;line-height:1.6;margin-bottom:12px}
+.tour-footer{display:flex;justify-content:space-between;align-items:center}
+.tour-dots{display:flex;gap:5px}
+.tour-dot{width:6px;height:6px;border-radius:50%;background:var(--border);transition:all 0.2s}
+.tour-dot.on{background:var(--gm);width:18px;border-radius:3px}
+.tour-next{background:var(--gm);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer;font-family:"DM Sans",sans-serif;transition:all 0.15s}
+.tour-next:hover{background:#248a58}
+.tour-skip{font-size:11px;color:var(--muted);cursor:pointer;padding:4px;text-decoration:underline}
+.tour-welcome{position:fixed;inset:0;z-index:1010;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;padding:20px}
+.tour-welcome-card{background:#fff;border-radius:20px;padding:28px 24px;max-width:340px;width:100%;text-align:center;animation:slideup 0.4s ease}
+.tour-welcome-card .wico{font-size:52px;margin-bottom:12px}
+.tour-welcome-card h2{font-family:"DM Serif Display",serif;font-size:22px;margin-bottom:8px}
+.tour-welcome-card p{font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:20px}
+.tour-start-btn{width:100%;background:var(--gm);color:#fff;border:none;border-radius:12px;padding:14px;font-size:14px;font-weight:700;font-family:"DM Sans",sans-serif;cursor:pointer;margin-bottom:10px}
+.tour-skip-all{font-size:12px;color:var(--muted);cursor:pointer;text-decoration:underline;display:block}
+.fb-opt{padding:10px 13px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;font-size:13px;transition:all 0.15s;background:var(--bg)}
+.fb-opt:hover{border-color:var(--gm);background:var(--gl)}
+.fb-opt.on{border-color:var(--gm);background:var(--gl);font-weight:600;color:var(--g)}
+.fb-star{font-size:30px;cursor:pointer;opacity:0.25;transition:all 0.1s;user-select:none}
+.fb-star.on{opacity:1;color:var(--a)}
+.fb-chip{padding:6px 13px;border-radius:20px;border:1.5px solid var(--border);font-size:12px;cursor:pointer;transition:all 0.15s;background:var(--bg);color:var(--muted)}
+.fb-chip.on{background:var(--b);border-color:var(--b);color:#fff;font-weight:600}
+
 .learn-card{background:var(--card);border-radius:14px;overflow:hidden;box-shadow:var(--shadow);margin-bottom:12px}
 .learn-cat-hdr{padding:13px 15px 10px;border-bottom:1px solid var(--border)}
 .learn-cat-title{font-size:13px;font-weight:600}
@@ -639,7 +674,241 @@ body:not(.novice-mode) .novice-only{display:none!important}
   <div class="pw" id="learnContent"></div>
 </div>
 
-</div><!-- end main -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- FEEDBACK PAGE                                               -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="page" id="page-feedback">
+  <div class="pw">
+    <!-- Beta banner -->
+    <div style="background:linear-gradient(135deg,#1a1a18,#2d2d2a);border-radius:14px;padding:18px 16px;margin-bottom:14px;text-align:center">
+      <div style="font-size:28px;margin-bottom:8px">🚀</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:18px;color:#fff;margin-bottom:6px">StockSense Beta</div>
+      <div style="font-size:12px;color:rgba(255,255,255,0.55);line-height:1.6;margin-bottom:12px">You are one of our first users.<br>Your feedback shapes everything we build next.</div>
+      <button onclick="resetTour()" style="background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.2);border-radius:8px;padding:7px 16px;font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">👆 Replay App Tour</button>
+    </div>
+
+    <!-- Progress bar -->
+    <div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:16px">
+      <div id="fbProgress" style="height:100%;background:var(--gm);border-radius:2px;transition:width 0.4s;width:0%"></div>
+    </div>
+
+    <!-- Q1: Who are you -->
+    <div class="card">
+      <div class="sec-title">About You</div>
+      <div style="margin-bottom:16px">
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px">1. How would you describe yourself?</div>
+        <div id="fb1" style="display:flex;flex-direction:column;gap:7px">
+          <div class="fb-opt" onclick="fbOpt('fb1',this,'Complete beginner — new to markets')">Complete beginner — new to markets</div>
+          <div class="fb-opt" onclick="fbOpt('fb1',this,'Some knowledge — follow markets casually')">Some knowledge — follow markets casually</div>
+          <div class="fb-opt" onclick="fbOpt('fb1',this,'Intermediate — have invested before')">Intermediate — have invested before</div>
+          <div class="fb-opt" onclick="fbOpt('fb1',this,'Experienced investor or trader')">Experienced investor or trader</div>
+        </div>
+      </div>
+      <div style="margin-bottom:8px">
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px">2. Which city are you from?</div>
+        <input class="port-inp" id="fb2" type="text" placeholder="e.g. Surat, Ahmedabad, Mumbai, Delhi…" oninput="fbProgress()" style="margin:0">
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px">3. Which device are you using?</div>
+        <div id="fb3" style="display:flex;flex-direction:column;gap:7px">
+          <div class="fb-opt" onclick="fbOpt('fb3',this,'Mobile — Android')">Mobile — Android</div>
+          <div class="fb-opt" onclick="fbOpt('fb3',this,'Mobile — iPhone')">Mobile — iPhone</div>
+          <div class="fb-opt" onclick="fbOpt('fb3',this,'Laptop or Desktop')">Laptop or Desktop</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q4-6: Ratings -->
+    <div class="card">
+      <div class="sec-title">Your Experience</div>
+      <div style="margin-bottom:16px">
+        <div style="font-size:13px;font-weight:600;margin-bottom:10px">4. Overall rating for StockSense</div>
+        <div id="fb4" style="display:flex;gap:10px">
+          <span class="fb-star" onclick="fbStars('fb4',1)">★</span>
+          <span class="fb-star" onclick="fbStars('fb4',2)">★</span>
+          <span class="fb-star" onclick="fbStars('fb4',3)">★</span>
+          <span class="fb-star" onclick="fbStars('fb4',4)">★</span>
+          <span class="fb-star" onclick="fbStars('fb4',5)">★</span>
+        </div>
+        <div id="fb4-lbl" style="font-size:11px;color:var(--muted);margin-top:5px;height:16px"></div>
+      </div>
+      <div style="margin-bottom:16px">
+        <div style="font-size:13px;font-weight:600;margin-bottom:10px">5. How easy was the app to use?</div>
+        <div id="fb5" style="display:flex;gap:10px">
+          <span class="fb-star" onclick="fbStars('fb5',1)">★</span>
+          <span class="fb-star" onclick="fbStars('fb5',2)">★</span>
+          <span class="fb-star" onclick="fbStars('fb5',3)">★</span>
+          <span class="fb-star" onclick="fbStars('fb5',4)">★</span>
+          <span class="fb-star" onclick="fbStars('fb5',5)">★</span>
+        </div>
+        <div id="fb5-lbl" style="font-size:11px;color:var(--muted);margin-top:5px;height:16px"></div>
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px">6. How fast did data load?</div>
+        <div id="fb6" style="display:flex;flex-direction:column;gap:7px">
+          <div class="fb-opt" onclick="fbOpt('fb6',this,'Very fast — under 5 seconds')">Very fast — under 5 seconds</div>
+          <div class="fb-opt" onclick="fbOpt('fb6',this,'OK — 5 to 15 seconds')">OK — 5 to 15 seconds</div>
+          <div class="fb-opt" onclick="fbOpt('fb6',this,'Slow — 15 to 30 seconds')">Slow — 15 to 30 seconds</div>
+          <div class="fb-opt" onclick="fbOpt('fb6',this,'Very slow — over 30 seconds')">Very slow — over 30 seconds</div>
+          <div class="fb-opt" onclick="fbOpt('fb6',this,'Data did not load')">Data did not load</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q7-9: Features -->
+    <div class="card">
+      <div class="sec-title">Features</div>
+      <div style="margin-bottom:16px">
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px">7. Which features did you use? (tap all that apply)</div>
+        <div id="fb7" style="display:flex;flex-wrap:wrap;gap:7px">
+          <div class="fb-chip" onclick="fbChip('fb7',this,'Market Mood')">Market Mood</div>
+          <div class="fb-chip" onclick="fbChip('fb7',this,'Dark Horse')">Dark Horse</div>
+          <div class="fb-chip" onclick="fbChip('fb7',this,'Top Movers')">Top Movers</div>
+          <div class="fb-chip" onclick="fbChip('fb7',this,'Heatmap')">Heatmap</div>
+          <div class="fb-chip" onclick="fbChip('fb7',this,'News')">News</div>
+          <div class="fb-chip" onclick="fbChip('fb7',this,'Commodities')">Commodities</div>
+          <div class="fb-chip" onclick="fbChip('fb7',this,'Forex')">Forex</div>
+          <div class="fb-chip" onclick="fbChip('fb7',this,'Stock Research')">Stock Research</div>
+          <div class="fb-chip" onclick="fbChip('fb7',this,'Price Charts')">Price Charts</div>
+          <div class="fb-chip" onclick="fbChip('fb7',this,'Financial Ratios')">Financial Ratios</div>
+          <div class="fb-chip" onclick="fbChip('fb7',this,'Peer Comparison')">Peer Comparison</div>
+          <div class="fb-chip" onclick="fbChip('fb7',this,'Learn')">Learn</div>
+          <div class="fb-chip" onclick="fbChip('fb7',this,'Watchlist')">Watchlist</div>
+          <div class="fb-chip" onclick="fbChip('fb7',this,'Portfolio')">Portfolio</div>
+          <div class="fb-chip" onclick="fbChip('fb7',this,'Mutual Funds')">Mutual Funds</div>
+        </div>
+      </div>
+      <div style="margin-bottom:14px">
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px">8. Most useful feature?</div>
+        <textarea class="port-inp" id="fb8" placeholder="What stood out most…" style="margin:0;min-height:60px;resize:none" oninput="fbProgress()"></textarea>
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px">9. What was confusing or broken?</div>
+        <textarea class="port-inp" id="fb9" placeholder="Be honest — it helps us fix things fast…" style="margin:0;min-height:60px;resize:none" oninput="fbProgress()"></textarea>
+      </div>
+    </div>
+
+    <!-- Q10-12: Learning -->
+    <div class="card">
+      <div class="sec-title">Learning Content</div>
+      <div style="margin-bottom:16px">
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px">10. Did you check the Learn section?</div>
+        <div id="fb10" style="display:flex;flex-direction:column;gap:7px">
+          <div class="fb-opt" onclick="fbOpt('fb10',this,'Yes — very helpful')">Yes — very helpful</div>
+          <div class="fb-opt" onclick="fbOpt('fb10',this,'Yes — needs improvement')">Yes — needs improvement</div>
+          <div class="fb-opt" onclick="fbOpt('fb10',this,'No — did not find it')">No — did not find it</div>
+          <div class="fb-opt" onclick="fbOpt('fb10',this,'No — not interested')">No — not interested</div>
+        </div>
+      </div>
+      <div style="margin-bottom:14px">
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px">11. What topic do you want to learn most?</div>
+        <div id="fb11" style="display:flex;flex-wrap:wrap;gap:7px">
+          <div class="fb-chip" onclick="fbChip('fb11',this,'How to pick a stock')">How to pick a stock</div>
+          <div class="fb-chip" onclick="fbChip('fb11',this,'Candlestick charts')">Candlestick charts</div>
+          <div class="fb-chip" onclick="fbChip('fb11',this,'Reading financials')">Reading financials</div>
+          <div class="fb-chip" onclick="fbChip('fb11',this,'Mutual funds and SIP')">Mutual funds and SIP</div>
+          <div class="fb-chip" onclick="fbChip('fb11',this,'F&O basics')">F&O basics</div>
+          <div class="fb-chip" onclick="fbChip('fb11',this,'Sector analysis')">Sector analysis</div>
+          <div class="fb-chip" onclick="fbChip('fb11',this,'Tax on investments')">Tax on investments</div>
+          <div class="fb-chip" onclick="fbChip('fb11',this,'Portfolio building')">Portfolio building</div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px">12. Preferred language for learning?</div>
+        <div id="fb12" style="display:flex;flex-direction:column;gap:7px">
+          <div class="fb-opt" onclick="fbOpt('fb12',this,'English')">English</div>
+          <div class="fb-opt" onclick="fbOpt('fb12',this,'Hindi — हिन्दी')">Hindi — हिन्दी</div>
+          <div class="fb-opt" onclick="fbOpt('fb12',this,'Gujarati — ગુજરાતી')">Gujarati — ગુજરાતી</div>
+          <div class="fb-opt" onclick="fbOpt('fb12',this,'Other')">Other language</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q13-14: Data accuracy -->
+    <div class="card">
+      <div class="sec-title">Data Accuracy</div>
+      <div style="margin-bottom:14px">
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px">13. Did prices match Zerodha / Groww?</div>
+        <div id="fb13" style="display:flex;flex-direction:column;gap:7px">
+          <div class="fb-opt" onclick="fbOpt('fb13',this,'Yes — looked accurate')">Yes — looked accurate</div>
+          <div class="fb-opt" onclick="fbOpt('fb13',this,'Minor difference — within 0.5%')">Minor difference — within 0.5%</div>
+          <div class="fb-opt" onclick="fbOpt('fb13',this,'Noticeable difference')">Noticeable difference</div>
+          <div class="fb-opt" onclick="fbOpt('fb13',this,'Did not check')">Did not check</div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px">14. Any wrong data? Mention the stock:</div>
+        <textarea class="port-inp" id="fb14" placeholder="e.g. MRF showed ₹127,535 but Groww showed ₹127,855…" style="margin:0;min-height:60px;resize:none" oninput="fbProgress()"></textarea>
+      </div>
+    </div>
+
+    <!-- Q15-17: Open -->
+    <div class="card">
+      <div class="sec-title">Open Feedback</div>
+      <div style="margin-bottom:14px">
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px">15. The ONE thing you would fix first?</div>
+        <textarea class="port-inp" id="fb15" placeholder="Your most important suggestion…" style="margin:0;min-height:60px;resize:none" oninput="fbProgress()"></textarea>
+      </div>
+      <div style="margin-bottom:14px">
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px">16. Would you recommend StockSense to a friend?</div>
+        <div id="fb16" style="display:flex;flex-direction:column;gap:7px">
+          <div class="fb-opt" onclick="fbOpt('fb16',this,'Definitely yes')">Definitely yes</div>
+          <div class="fb-opt" onclick="fbOpt('fb16',this,'Probably yes')">Probably yes</div>
+          <div class="fb-opt" onclick="fbOpt('fb16',this,'Not sure')">Not sure</div>
+          <div class="fb-opt" onclick="fbOpt('fb16',this,'Probably not')">Probably not</div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px">17. Any other feedback or ideas?</div>
+        <textarea class="port-inp" id="fb17" placeholder="Tell us anything — we read every single response…" style="margin:0;min-height:80px;resize:none" oninput="fbProgress()"></textarea>
+      </div>
+    </div>
+
+    <!-- Submit -->
+    <button onclick="submitFeedback()" id="fbSubmitBtn" style="width:100%;background:var(--gm);color:#fff;border:none;border-radius:12px;padding:16px;font-size:15px;font-weight:700;font-family:'DM Sans',sans-serif;cursor:pointer;margin-bottom:12px">
+      Send Feedback via WhatsApp 🙏
+    </button>
+
+    <div id="fbSuccess" style="display:none;background:var(--gl);border-radius:12px;padding:20px;text-align:center;margin-bottom:12px">
+      <div style="font-size:36px;margin-bottom:8px">🙏</div>
+      <div style="font-size:16px;font-weight:700;font-family:'DM Serif Display',serif;margin-bottom:6px">Thank you!</div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.6">WhatsApp opened with your feedback pre-filled.<br>Just tap <b>Send</b> to submit.</div>
+    </div>
+
+    <div class="disc">Your feedback is sent directly via WhatsApp. Anonymous unless you share your contact. Educational app only — not SEBI registered investment advice.</div>
+  </div>
+</div>
+
+<!-- ── ONBOARDING TOUR ─────────────────────────────────────────── -->
+<div id="tourWelcome" class="tour-welcome" style="display:none">
+  <div class="tour-welcome-card">
+    <div class="wico">👋</div>
+    <h2>Welcome to StockSense!</h2>
+    <p>India's free stock market learning app. Live data, real stock analysis, and plain-language education — all in one place.</p>
+    <p style="font-size:12px;color:var(--g);font-weight:600;margin-bottom:20px">Let us show you around — takes 30 seconds.</p>
+    <button class="tour-start-btn" onclick="startTour()">Show me around 🚀</button>
+    <span class="tour-skip-all" onclick="endTour()">Skip — I will explore myself</span>
+  </div>
+</div>
+
+<div id="tourSpotlight" class="tour-spotlight" style="display:none"></div>
+<div id="tourCard" class="tour-card" style="display:none">
+  <div class="tour-step">
+    <div class="tour-step-ico" id="tourIco">🏠</div>
+    <div>
+      <div class="tour-step-title" id="tourTitle">Home</div>
+      <div class="tour-step-sub" id="tourSub"></div>
+    </div>
+  </div>
+  <div class="tour-step-desc" id="tourDesc"></div>
+  <div class="tour-footer">
+    <div class="tour-dots" id="tourDots"></div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <span class="tour-skip" onclick="endTour()">Skip</span>
+      <button class="tour-next" id="tourNextBtn" onclick="tourNext()">Next →</button>
+    </div>
+  </div>
+</div>
 
 <!-- BOTTOM NAV -->
 <div class="bnav">
@@ -647,8 +916,8 @@ body:not(.novice-mode) .novice-only{display:none!important}
   <div class="nitem" id="nav-research" onclick="showPage('research')"><div class="nico">🔍</div><div class="nlbl" id="nlResearch">Research</div></div>
   <div class="nitem" id="nav-watchlist" onclick="showPage('watchlist')"><div class="nico">⭐</div><div class="nlbl" id="nlWatchlist">Watchlist</div></div>
   <div class="nitem" id="nav-portfolio" onclick="showPage('portfolio')"><div class="nico">📊</div><div class="nlbl" id="nlPortfolio">Portfolio</div></div>
-  <div class="nitem" id="nav-mf" onclick="showPage('mf')"><div class="nico">📈</div><div class="nlbl" id="nlMF">MF Funds</div></div>
   <div class="nitem" id="nav-learn" onclick="showPage('learn')"><div class="nico">📚</div><div class="nlbl" id="nlLearn">Learn</div></div>
+  <div class="nitem" id="nav-feedback" onclick="showPage('feedback')"><div class="nico">💬</div><div class="nlbl">Feedback</div></div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
@@ -3210,7 +3479,153 @@ function showTheme(nameEnc, repsStr, newsEnc) {
   });
 }
 
-// ── INIT ──────────────────────────────────────────────────────────
+// ── FEEDBACK ──────────────────────────────────────────────────────
+const fbAnswers = {};
+
+function fbOpt(qid, el, value) {
+  document.querySelectorAll('#' + qid + ' .fb-opt').forEach(o => o.classList.remove('on'));
+  el.classList.add('on');
+  fbAnswers[qid] = value;
+  fbProgress();
+}
+
+function fbChip(qid, el, value) {
+  el.classList.toggle('on');
+  if (!fbAnswers[qid]) fbAnswers[qid] = [];
+  const arr = fbAnswers[qid];
+  if (el.classList.contains('on')) { if (!arr.includes(value)) arr.push(value); }
+  else { const i = arr.indexOf(value); if (i > -1) arr.splice(i, 1); }
+  fbProgress();
+}
+
+const FB_STAR_LABELS = ['','Needs a lot of work','Fair — some good parts','Good — I like it','Very good — almost there','Excellent — love it!'];
+function fbStars(qid, num) {
+  document.querySelectorAll('#' + qid + ' .fb-star').forEach((s, i) => s.classList.toggle('on', i < num));
+  const lbl = document.getElementById(qid + '-lbl');
+  if (lbl) lbl.textContent = FB_STAR_LABELS[num];
+  fbAnswers[qid] = num + ' stars — ' + FB_STAR_LABELS[num];
+  fbProgress();
+}
+
+function fbProgress() {
+  let filled = 0, total = 17;
+  for (let i = 1; i <= total; i++) {
+    const qid = 'fb' + i;
+    const el  = document.getElementById(qid);
+    if (!el) continue;
+    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+      if (el.value.trim().length > 0) filled++;
+    } else if (fbAnswers[qid]) {
+      if (Array.isArray(fbAnswers[qid]) ? fbAnswers[qid].length > 0 : true) filled++;
+    }
+  }
+  const bar = document.getElementById('fbProgress');
+  if (bar) bar.style.width = Math.round((filled / total) * 100) + '%';
+}
+
+function submitFeedback() {
+  // Collect text inputs
+  for (let i = 1; i <= 17; i++) {
+    const el = document.getElementById('fb' + i);
+    if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') && el.value.trim()) {
+      fbAnswers['fb' + i] = el.value.trim();
+    }
+  }
+  const lines = [
+    '📊 *StockSense Beta Feedback*',
+    '',
+    '1. User type: '      + (fbAnswers.fb1  || '—'),
+    '2. City: '           + (fbAnswers.fb2  || '—'),
+    '3. Device: '         + (fbAnswers.fb3  || '—'),
+    '4. Overall rating: ' + (fbAnswers.fb4  || '—'),
+    '5. Ease of use: '    + (fbAnswers.fb5  || '—'),
+    '6. Load speed: '     + (fbAnswers.fb6  || '—'),
+    '7. Features used: '  + (Array.isArray(fbAnswers.fb7) ? fbAnswers.fb7.join(', ') : '—'),
+    '8. Most useful: '    + (fbAnswers.fb8  || '—'),
+    '9. Confusing/broken: '+ (fbAnswers.fb9 || '—'),
+    '10. Learn section: ' + (fbAnswers.fb10 || '—'),
+    '11. Want to learn: ' + (Array.isArray(fbAnswers.fb11) ? fbAnswers.fb11.join(', ') : '—'),
+    '12. Language pref: ' + (fbAnswers.fb12 || '—'),
+    '13. Price accuracy: '+ (fbAnswers.fb13 || '—'),
+    '14. Wrong data: '    + (fbAnswers.fb14 || '—'),
+    '15. Fix first: '     + (fbAnswers.fb15 || '—'),
+    '16. Recommend: '     + (fbAnswers.fb16 || '—'),
+    '17. Other feedback: '+ (fbAnswers.fb17 || '—'),
+  ];
+  const msg = lines.join('\n');
+  const btn = document.getElementById('fbSubmitBtn');
+  if (btn) { btn.textContent = '✅ Submitted!'; btn.disabled = true; btn.style.background = 'var(--g)'; }
+  const success = document.getElementById('fbSuccess');
+  if (success) success.style.display = 'block';
+  const bar = document.getElementById('fbProgress');
+  if (bar) bar.style.width = '100%';
+  window.open('https://wa.me/917878477979?text=' + encodeURIComponent(msg));
+}
+
+// ── ONBOARDING TOUR ───────────────────────────────────────────────
+const TOUR_STEPS = [
+  { targetId:'nav-home',     ico:'🏠', title:'Home',      sub:'Your market dashboard',    desc:'Start here every day. See market mood, live Nifty & Sensex values, top moving stocks, sector heatmap, and live news — all updated in real time.', position:'top' },
+  { targetId:'nav-research', ico:'🔍', title:'Research',  sub:'Analyse any stock',        desc:'Search any NSE or BSE stock — TCS, ZOMATO, HDFC Bank, anything. Get live price, charts, P&L, financial ratios, peer comparison, and data-driven insights.', position:'top' },
+  { targetId:'nav-watchlist',ico:'⭐', title:'Watchlist', sub:'Stocks you are watching',  desc:'Tap the ☆ star on any stock research page to save it here. See live prices for all your saved stocks in one place.', position:'top' },
+  { targetId:'nav-portfolio',ico:'📊', title:'Portfolio', sub:'Track what you own',       desc:'Add stocks you have bought with quantity and buy price. See your live profit or loss, and run a stress test to see how your portfolio handles interest rate changes.', position:'top' },
+  { targetId:'nav-learn',    ico:'📚', title:'Learn',     sub:'85 free lessons',          desc:'Complete stock market education in English, हिन्दी, and ગુજરાતી. Covers basics, candlestick charts, how to pick a company, financial ratios, and common investor mistakes.', position:'top' },
+  { targetId:'nav-feedback', ico:'💬', title:'Feedback',  sub:'You are a beta user!',     desc:'This app is in beta and your opinion shapes what gets built next. Takes 2 minutes. Feedback goes directly to the developer via WhatsApp. Every response is read personally.', position:'top', isLast:true },
+];
+let tourStep = 0;
+
+function initTour() {
+  if (localStorage.getItem('ss_tour_done')) return;
+  setTimeout(() => { const w = document.getElementById('tourWelcome'); if (w) w.style.display = 'flex'; }, 1500);
+}
+
+function startTour() {
+  const w = document.getElementById('tourWelcome'); if (w) w.style.display = 'none';
+  tourStep = 0; showTourStep(0);
+}
+
+function showTourStep(idx) {
+  const step = TOUR_STEPS[idx]; if (!step) { endTour(); return; }
+  const target = document.getElementById(step.targetId); if (!target) { tourStep++; showTourStep(tourStep); return; }
+  const rect = target.getBoundingClientRect();
+  const pad  = 7;
+
+  const spot = document.getElementById('tourSpotlight');
+  spot.style.cssText = 'display:block;left:' + (rect.left-pad) + 'px;top:' + (rect.top-pad) + 'px;width:' + (rect.width+pad*2) + 'px;height:' + (rect.height+pad*2) + 'px';
+
+  document.getElementById('tourIco').textContent   = step.ico;
+  document.getElementById('tourTitle').textContent = step.title;
+  document.getElementById('tourSub').textContent   = step.sub;
+  document.getElementById('tourDesc').textContent  = step.desc;
+  document.getElementById('tourNextBtn').textContent = step.isLast ? 'Done ✓' : 'Next →';
+  document.getElementById('tourDots').innerHTML = TOUR_STEPS.map((_,i) => '<div class="tour-dot' + (i===idx?' on':'') + '"></div>').join('');
+
+  const card = document.getElementById('tourCard');
+  card.style.display = 'block';
+  card.className = 'tour-card tour-arrow-bottom';
+
+  requestAnimationFrame(() => {
+    const cw = card.offsetWidth, ch = card.offsetHeight, vw = window.innerWidth;
+    let left = rect.left + rect.width/2 - cw/2;
+    left = Math.max(10, Math.min(left, vw - cw - 10));
+    const top = Math.max(10, rect.top - ch - 18);
+    card.style.left = left + 'px';
+    card.style.top  = top  + 'px';
+    const arrowX = Math.max(16, Math.min(rect.left + rect.width/2 - left, cw - 16));
+    let as = document.getElementById('tour-arrow-style');
+    if (!as) { as = document.createElement('style'); as.id = 'tour-arrow-style'; document.head.appendChild(as); }
+    as.textContent = '.tour-arrow-bottom::before{left:' + arrowX + 'px!important;margin-left:0!important}';
+  });
+}
+
+function tourNext() { tourStep++; if (tourStep >= TOUR_STEPS.length) endTour(); else showTourStep(tourStep); }
+
+function endTour() {
+  localStorage.setItem('ss_tour_done','1');
+  ['tourWelcome','tourSpotlight','tourCard'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+}
+
+function resetTour() { localStorage.removeItem('ss_tour_done'); tourStep = 0; const w = document.getElementById('tourWelcome'); if (w) w.style.display = 'flex'; }
+
 document.addEventListener('DOMContentLoaded', () => {
   setupSearch('homeSearch', 'homeDrop', sym => { showPage('research'); loadStock(sym); });
   setupSearch('resSearch', 'resDrop', sym => loadStock(sym));
@@ -3233,6 +3648,9 @@ document.addEventListener('DOMContentLoaded', () => {
   loadMovers();
   loadDarkHorse();
   setTimeout(() => { if (document.getElementById('ht-today')?.classList.contains('on')) loadNews(); }, 500);
+
+  // Show onboarding tour for first-time users
+  initTour();
 });
 
 </script>
