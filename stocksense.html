@@ -843,6 +843,21 @@ body:not(.novice-mode) .novice-only{display:none!important}
       </div>
       <div class="card" id="moversList"><div class="shimmer" style="height:180px"></div></div>
       <div class="disc" id="moverDisc">⚠️ Educational analysis only. Not investment advice.</div>
+
+      <!-- GLOBAL MARKETS on Home -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin:4px 0 10px">
+        <div class="sec-title" style="margin:0">🌍 Global Markets</div>
+        <div style="font-size:10px;color:var(--muted)">Live from US, Asia, Europe</div>
+      </div>
+      <div class="idx-grid" id="globalIdxHome">
+        <div class="idx-card shimmer" style="height:80px"></div>
+        <div class="idx-card shimmer" style="height:80px"></div>
+        <div class="idx-card shimmer" style="height:80px"></div>
+        <div class="idx-card shimmer" style="height:80px"></div>
+      </div>
+      <div style="background:var(--bl);border-radius:var(--r8);padding:9px 12px;margin-bottom:14px;font-size:10px;color:var(--b);line-height:1.6">
+        📖 When S&P 500 falls sharply, FIIs sell Indian stocks to raise cash — Nifty follows. A strong Nasdaq usually lifts Indian IT stocks since their clients are US tech companies.
+      </div>
     </div>
   </div>
 
@@ -3078,11 +3093,14 @@ async function loadIndices() {
   if (grid) {
     const show = data.indices.filter(i => i.name !== 'INDIA VIX').slice(0,6);
     grid.innerHTML = show.map(idx => {
-      const up = idx.changePct >= 0;
+      const up  = idx.changePct >= 0;
+      const pct = idx.changePct != null ? (up?'+':'')+idx.changePct.toFixed(2)+'%' : '—';
+      const abs = idx.change   != null ? (up?'+':'')+idx.change.toFixed(0) : '';
       return `<div class="idx-card">
         <div class="idx-name">${idx.name}</div>
         <div class="idx-val">${idx.value?.toLocaleString('en-IN',{maximumFractionDigits:0})}</div>
-        <div class="idx-chg ${up?'up':'dn'}">${up?'▲':'▼'} ${Math.abs(idx.changePct).toFixed(2)}%</div>
+        <div class="idx-chg ${up?'up':'dn'}">${up?'▲':'▼'} ${Math.abs(idx.changePct||0).toFixed(2)}%</div>
+        ${abs ? `<div style="font-size:9px;color:${up?'var(--g)':'var(--r)'};font-weight:600;margin-top:1px">${abs} pts</div>` : ''}
       </div>`;
     }).join('');
   }
@@ -3100,30 +3118,50 @@ async function loadIndices() {
 
 async function loadGlobalIndices() {
   const globalSyms = [
-    { sym: '^GSPC',  name: 'S&P 500',  flag: '🇺🇸', note: 'US large caps' },
-    { sym: '^IXIC',  name: 'Nasdaq',   flag: '🇺🇸', note: 'US tech' },
-    { sym: '^N225',  name: 'Nikkei',   flag: '🇯🇵', note: 'Japan' },
-    { sym: '^HSI',   name: 'Hang Seng',flag: '🇭🇰', note: 'Hong Kong' },
-    { sym: '^FTSE',  name: 'FTSE 100', flag: '🇬🇧', note: 'UK' },
-    { sym: '^DJI',   name: 'Dow Jones',flag: '🇺🇸', note: 'US blue chips' },
+    { sym: '^GSPC',  name: 'S&P 500',   flag: '🇺🇸', note: 'US large caps' },
+    { sym: '^IXIC',  name: 'Nasdaq',    flag: '🇺🇸', note: 'US tech' },
+    { sym: '^DJI',   name: 'Dow Jones', flag: '🇺🇸', note: 'US blue chips' },
+    { sym: '^N225',  name: 'Nikkei',    flag: '🇯🇵', note: 'Japan' },
+    { sym: '^HSI',   name: 'Hang Seng', flag: '🇭🇰', note: 'Hong Kong' },
+    { sym: '^FTSE',  name: 'FTSE 100',  flag: '🇬🇧', note: 'UK' },
   ];
-  const symsStr = globalSyms.map(g => g.sym).join(',');
-  const data = await api('batch', { symbols: symsStr });
-  const grid = document.getElementById('globalIdxGrid');
-  if (!grid) return;
-  if (!data?.quotes) { grid.innerHTML = '<div style="color:var(--muted);font-size:11px;padding:10px">Global data unavailable</div>'; return; }
 
-  grid.innerHTML = globalSyms.map(g => {
-    const q  = data.quotes[g.sym];
-    if (!q) return '';
-    const up = q.changePct >= 0;
-    return `<div class="idx-card">
+  const grid = document.getElementById('globalIdxGrid');
+  const homeGrid = document.getElementById('globalIdxHome'); // also update home tab if present
+  if (!grid && !homeGrid) return;
+
+  // Show loading shimmer
+  const shimmer = globalSyms.map(() => '<div class="idx-card shimmer" style="height:80px"></div>').join('');
+  if (grid) grid.innerHTML = shimmer;
+  if (homeGrid) homeGrid.innerHTML = shimmer;
+
+  // Fetch each global index individually — batch doesn't work for ^ symbols
+  const results = await Promise.all(
+    globalSyms.map(g => api('quote', { symbol: g.sym }).then(q => ({ ...g, q })))
+  );
+
+  const renderCard = (g) => {
+    const q  = g.q;
+    if (!q || !q.price) return `<div class="idx-card" style="opacity:0.5">
       <div class="idx-name">${g.flag} ${g.name}</div>
-      <div style="font-size:9px;color:var(--muted);margin-bottom:2px">${g.note}</div>
-      <div class="idx-val" style="font-size:14px">${q.price?.toLocaleString('en-US',{maximumFractionDigits:0})}</div>
-      <div class="idx-chg ${up?'up':'dn'}">${up?'▲':'▼'} ${Math.abs(q.changePct).toFixed(2)}%</div>
+      <div style="font-size:9px;color:var(--muted);margin-bottom:4px">${g.note}</div>
+      <div class="idx-val" style="font-size:13px">—</div>
+      <div class="idx-chg" style="color:var(--muted)">Unavailable</div>
     </div>`;
-  }).join('');
+    const up  = (q.changePct || 0) >= 0;
+    const pct = q.changePct != null ? (up?'▲':'▼') + ' ' + Math.abs(q.changePct).toFixed(2) + '%' : '—';
+    const abs = q.change != null ? (up?'+':'-') + '₹' + Math.abs(q.change).toFixed(0) : '';
+    return `<div class="idx-card" onclick="void(0)" style="cursor:default">
+      <div class="idx-name">${g.flag} ${g.name}</div>
+      <div style="font-size:9px;color:var(--muted);margin-bottom:4px">${g.note}</div>
+      <div class="idx-val" style="font-size:14px">${q.price?.toLocaleString('en-US',{maximumFractionDigits:0})}</div>
+      <div class="idx-chg ${up?'up':'dn'}">${pct}</div>
+    </div>`;
+  };
+
+  const html = results.map(renderCard).join('');
+  if (grid)     grid.innerHTML     = html;
+  if (homeGrid) homeGrid.innerHTML = html;
 }
 
 function updateTicker(indices) {
@@ -5167,6 +5205,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadIndices();
   loadMovers();
   loadDarkHorse();
+  loadGlobalIndices(); // load global markets on home immediately
   setTimeout(() => { if (document.getElementById('ht-today')?.classList.contains('on')) loadNews(); }, 500);
 
   // Run default screener scan
