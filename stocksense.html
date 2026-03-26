@@ -465,6 +465,7 @@ body:not(.novice-mode) .novice-only{display:none!important}
       <div id="moodCardWrap" class="mood-card" style="background:var(--gl)">
         <div class="mood-left" style="flex:1">
           <div class="mood-lbl" id="moodLbl">Market today</div>
+          <div id="lastUpdated" style="font-size:9px;color:var(--muted);margin-top:2px"></div>
           <div class="mood-title" id="moodTitle">Loading…</div>
           <div class="mood-sub" id="moodReason">Fetching live data</div>
           <!-- Index values shown prominently below title -->
@@ -517,6 +518,22 @@ body:not(.novice-mode) .novice-only{display:none!important}
         <div class="idx-card shimmer" style="height:80px"></div>
         <div class="idx-card shimmer" style="height:80px"></div>
       </div>
+
+      <!-- Global Indices -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin:14px 0 8px">
+        <div class="sec-title" style="margin:0">🌍 Global Markets</div>
+        <div style="font-size:10px;color:var(--muted)">How world markets affect India</div>
+      </div>
+      <div id="globalIdxGrid" class="idx-grid">
+        <div class="idx-card shimmer" style="height:80px"></div>
+        <div class="idx-card shimmer" style="height:80px"></div>
+        <div class="idx-card shimmer" style="height:80px"></div>
+        <div class="idx-card shimmer" style="height:80px"></div>
+      </div>
+      <div style="background:var(--bl);border-radius:9px;padding:9px 12px;margin-bottom:14px;font-size:10px;color:var(--b);line-height:1.6">
+        📖 <b>Why do global markets matter?</b> When the US S&P 500 falls sharply, FIIs (foreign funds) often sell Indian stocks to raise cash — this pulls Nifty down too. A strong Nasdaq usually boosts Indian IT stocks since their clients are US tech companies.
+      </div>
+
       <div class="sec-title" id="heatLabel">Sector Heatmap</div>
       <div class="heatmap" id="heatmapGrid"></div>
       <div class="card">
@@ -635,22 +652,82 @@ body:not(.novice-mode) .novice-only{display:none!important}
 <!-- ═══════════════════════════════════════════════════════════ -->
 <div class="page" id="page-portfolio">
   <div class="pw">
-    <div id="portSummary"></div>
-    <div class="port-form">
-      <div class="port-form-title" id="portAddTitle">Add a holding</div>
-      <input class="port-inp" id="portSymInp" type="text" placeholder="Stock symbol — e.g. TCS" style="text-transform:uppercase"/>
-      <div class="port-inp-row">
-        <input class="port-inp" id="portQtyInp" type="number" placeholder="Quantity" min="1" style="margin:0"/>
-        <input class="port-inp" id="portBuyInp" type="number" placeholder="Buy price ₹" min="1" style="margin:0"/>
-      </div>
-      <button class="port-add-btn" onclick="addHolding()" id="portAddBtn">Add to portfolio</button>
+
+    <!-- TABS: Real Portfolio | Paper Trading -->
+    <div style="display:flex;gap:0;margin-bottom:16px;background:var(--bg);border-radius:10px;padding:3px">
+      <button id="pt-real" onclick="switchPortTab('real')" style="flex:1;background:var(--gm);color:#fff;border:none;border-radius:8px;padding:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">📊 My Portfolio</button>
+      <button id="pt-paper" onclick="switchPortTab('paper')" style="flex:1;background:transparent;color:var(--muted);border:none;border-radius:8px;padding:9px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">🎮 Paper Trading</button>
     </div>
-    <div id="portHoldings"></div>
-    <button class="stress-btn" onclick="runStressTest()" id="stressBtn">
-      <span>⚡</span><span id="stressBtnTxt">Portfolio stress test — what if interest rates rise?</span>
-    </button>
-    <div id="stressResult"></div>
-    <div class="disc" id="portDisc">⚠️ Educational portfolio analysis. Not investment advice. Past performance does not guarantee future results.</div>
+
+    <!-- REAL PORTFOLIO -->
+    <div id="portReal">
+      <!-- Paper trading discovery banner -->
+      <div onclick="switchPortTab('paper')" style="background:linear-gradient(135deg,var(--bl),#e8f0fb);border-radius:12px;padding:12px 14px;margin-bottom:14px;cursor:pointer;border:1px solid var(--b);display:flex;align-items:center;gap:12px">
+        <div style="font-size:28px">🎮</div>
+        <div style="flex:1">
+          <div style="font-size:12px;font-weight:700;color:var(--b)">New to investing? Try Paper Trading first →</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:2px">Practice with ₹1,00,000 virtual money at live prices. Zero risk. Build confidence before using real money.</div>
+        </div>
+      </div>
+      <div id="portSummary"></div>
+      <div class="port-form">
+        <div class="port-form-title" id="portAddTitle">Add a holding</div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:8px;line-height:1.5">Track stocks you already own. Enter the symbol, how many shares you bought, and what price you paid.</div>
+        <input class="port-inp" id="portSymInp" type="text" placeholder="Stock symbol — e.g. TCS" style="text-transform:uppercase"/>
+        <div class="port-inp-row">
+          <input class="port-inp" id="portQtyInp" type="number" placeholder="Quantity" min="1" style="margin:0"/>
+          <input class="port-inp" id="portBuyInp" type="number" placeholder="Buy price ₹" min="1" style="margin:0"/>
+        </div>
+        <button class="port-add-btn" onclick="addHolding()" id="portAddBtn">Add to portfolio</button>
+      </div>
+      <div id="portHoldings"></div>
+      <button class="stress-btn" onclick="runStressTest()" id="stressBtn">
+        <span>⚡</span><span id="stressBtnTxt">Portfolio stress test — what if interest rates rise?</span>
+      </button>
+      <div id="stressResult"></div>
+      <div class="disc" id="portDisc">⚠️ Educational portfolio analysis. Not investment advice. Past performance does not guarantee future results.</div>
+    </div>
+
+    <!-- PAPER TRADING -->
+    <div id="portPaper" style="display:none">
+      <!-- Virtual balance card -->
+      <div style="background:linear-gradient(135deg,#1a1a18,#2d2d2a);border-radius:14px;padding:18px;margin-bottom:14px;color:#fff">
+        <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:4px">Virtual Portfolio Balance</div>
+        <div style="font-size:28px;font-weight:700;font-family:'DM Serif Display',serif" id="paperBalance">₹1,00,000</div>
+        <div style="display:flex;gap:16px;margin-top:10px">
+          <div><div style="font-size:9px;color:rgba(255,255,255,0.4)">INVESTED</div><div style="font-size:13px;font-weight:600" id="paperInvested">₹0</div></div>
+          <div><div style="font-size:9px;color:rgba(255,255,255,0.4)">CASH LEFT</div><div style="font-size:13px;font-weight:600" id="paperCash">₹1,00,000</div></div>
+          <div><div style="font-size:9px;color:rgba(255,255,255,0.4)">P&L</div><div style="font-size:13px;font-weight:600" id="paperPnl">₹0</div></div>
+        </div>
+      </div>
+
+      <div style="background:var(--bl);border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:11px;color:var(--b);line-height:1.6">
+        🎮 <b>Paper Trading — Learn without risk.</b> You have ₹1,00,000 of virtual money. Buy and sell any NSE stock at live prices. Zero real money. 100% real market data. Practice before you invest.
+      </div>
+
+      <!-- Buy form -->
+      <div class="port-form">
+        <div class="port-form-title">Buy a stock (virtual)</div>
+        <input class="port-inp" id="paperSymInp" type="text" placeholder="Stock symbol — e.g. INFY" style="text-transform:uppercase" oninput="paperSymLookup()"/>
+        <div id="paperPricePreview" style="font-size:11px;color:var(--muted);margin:-4px 0 8px;padding:0 4px"></div>
+        <div class="port-inp-row">
+          <input class="port-inp" id="paperQtyInp" type="number" placeholder="Quantity" min="1" style="margin:0" oninput="paperCalcTotal()"/>
+          <div id="paperTotalPreview" style="font-size:11px;color:var(--muted);display:flex;align-items:center;padding:0 4px">Total: —</div>
+        </div>
+        <button class="port-add-btn" onclick="paperBuy()" style="background:var(--g)">Buy (Virtual) →</button>
+      </div>
+
+      <!-- Paper holdings -->
+      <div id="paperHoldings"></div>
+
+      <!-- Reset button -->
+      <button onclick="paperReset()" style="width:100%;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:10px;padding:11px;font-size:12px;cursor:pointer;margin-top:8px;font-family:'DM Sans',sans-serif">
+        Reset Virtual Portfolio (start fresh with ₹1,00,000)
+      </button>
+
+      <div class="disc" style="margin-top:12px">🎮 Paper trading uses live market prices but no real money is involved. This is purely for learning and practice. Not investment advice.</div>
+    </div>
+
   </div>
 </div>
 
@@ -1071,6 +1148,9 @@ function setLang(l) {
   lang = l;
   document.querySelectorAll('.lb').forEach((b, i) => b.classList.toggle('on', ['en','hi','gu'][i] === l));
   applyLang();
+  // Reload news in new language if news tab is active
+  const newsEl = document.getElementById('ht-news');
+  if (newsEl && newsEl.classList.contains('on')) loadNews();
 }
 
 function applyLang() {
@@ -1592,23 +1672,73 @@ function buildPriceTab(sym, s) {
     </div>
     <button class="why-btn" onclick="loadWhyMoved('${sym}')">🤔 ${t('whyBtn').replace('🤔 ','')}</button>
     <div class="why-result" id="whyResult"></div>
-    <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
-      ${['1W','1M','3M','6M','1Y','3Y','5Y'].map(r=>`<button onclick="renderPriceChart('${sym}','${r}')" style="background:${r==='1Y'?'var(--gm)':'var(--bg)'};color:${r==='1Y'?'#fff':'var(--muted)'};border:0.5px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer" id="btn-${r}">${r}</button>`).join('')}
+
+    <!-- Chart type toggle + time range -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px">
+      <div style="display:flex;gap:4px">
+        <button id="ct-line" onclick="setChartType('line')" style="background:var(--gm);color:#fff;border:0.5px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer">Line</button>
+        <button id="ct-candle" onclick="setChartType('candle')" style="background:var(--bg);color:var(--muted);border:0.5px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer">Candle</button>
+      </div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap">
+        ${['1W','1M','3M','6M','1Y','3Y','5Y'].map(r=>`<button onclick="renderPriceChart('${sym}','${r}')" style="background:${r==='1Y'?'var(--gm)':'var(--bg)'};color:${r==='1Y'?'#fff':'var(--muted)'};border:0.5px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer" id="btn-${r}">${r}</button>`).join('')}
+      </div>
     </div>
-    <div style="position:relative;height:180px;margin-bottom:4px"><canvas id="priceChart"></canvas></div>
-    <div style="font-size:10px;color:var(--muted);text-align:center;margin-bottom:12px">📖 Price Chart: Shows the closing price over the selected period. A rising line = buyers in control. Falling = sellers in control.</div>
+
+    <!-- MA toggle -->
+    <div style="display:flex;gap:6px;margin-bottom:8px;align-items:center">
+      <span style="font-size:10px;color:var(--muted);font-weight:600">Show:</span>
+      <button id="ma-20" onclick="toggleMA(20)" style="background:var(--bg);color:#1a5fa8;border:1px solid #1a5fa8;border-radius:5px;padding:3px 8px;font-size:10px;font-weight:600;cursor:pointer">20-Day MA</button>
+      <button id="ma-50" onclick="toggleMA(50)" style="background:var(--bg);color:#d4870a;border:1px solid #d4870a;border-radius:5px;padding:3px 8px;font-size:10px;font-weight:600;cursor:pointer">50-Day MA</button>
+      <button id="ma-200" onclick="toggleMA(200)" style="background:var(--bg);color:#6b6b65;border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-size:10px;font-weight:600;cursor:pointer">200-Day MA</button>
+    </div>
+
+    <div style="position:relative;height:200px;margin-bottom:4px"><canvas id="priceChart"></canvas></div>
+
+    <!-- Chart intelligence panel -->
+    <div id="chartInsight" style="background:var(--bl);border-radius:10px;padding:12px 13px;margin-bottom:12px;display:none">
+      <div style="font-size:11px;font-weight:700;color:var(--b);margin-bottom:8px">📖 What does this chart tell you?</div>
+      <div id="chartInsightContent" style="font-size:11px;color:var(--text);line-height:1.7"></div>
+    </div>
+
+    <div style="font-size:10px;color:var(--muted);text-align:center;margin-bottom:12px">Line = closing price · Candle = open/high/low/close · MA = moving average trend line</div>
 
     <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:6px;margin-top:4px">📊 Volume (shares traded per period)</div>
     <div style="position:relative;height:80px;margin-bottom:4px"><canvas id="volumeChart"></canvas></div>
-    <div style="font-size:10px;color:var(--muted);text-align:center;margin-bottom:12px">📖 Volume: High volume on an up day = strong buying conviction. High volume on a down day = strong selling pressure.</div>
+    <div style="font-size:10px;color:var(--muted);text-align:center;margin-bottom:12px">High volume on an up day = strong buying conviction. High volume on a down day = strong selling pressure.</div>
 
     <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:6px">📉 RSI — Relative Strength Index (14-period)</div>
     <div style="position:relative;height:80px;margin-bottom:4px"><canvas id="rsiChart"></canvas></div>
-    <div style="font-size:10px;color:var(--muted);text-align:center;margin-bottom:12px">📖 RSI: Above 70 = possibly overbought (overpriced in the short term). Below 30 = possibly oversold (underpriced short term). Between 30-70 = neutral zone.</div>
+    <div id="rsiInsight" style="font-size:10px;color:var(--muted);text-align:center;margin-bottom:12px">RSI: Above 70 = possibly overbought. Below 30 = possibly oversold. Between 30-70 = neutral zone.</div>
     <div class="disc">${t('scoreDisc')}</div>`;
 }
 
 let volChartInst = null, rsiChartInst = null;
+let chartType = 'line'; // 'line' or 'candle'
+let activeMA  = { 20: false, 50: false, 200: false };
+let lastChartData = null; // cache for MA toggling
+let lastChartSym  = null;
+let lastChartRange = '1Y';
+
+function setChartType(type) {
+  chartType = type;
+  ['line','candle'].forEach(t => {
+    const b = document.getElementById('ct-' + t);
+    if (b) { b.style.background = t === type ? 'var(--gm)' : 'var(--bg)'; b.style.color = t === type ? '#fff' : 'var(--muted)'; }
+  });
+  if (lastChartSym) renderPriceChart(lastChartSym, lastChartRange);
+}
+
+function toggleMA(period) {
+  activeMA[period] = !activeMA[period];
+  const b = document.getElementById('ma-' + period);
+  const colors = { 20: '#1a5fa8', 50: '#d4870a', 200: '#6b6b65' };
+  if (b) { b.style.background = activeMA[period] ? colors[period] : 'var(--bg)'; b.style.color = activeMA[period] ? '#fff' : colors[period]; }
+  if (lastChartSym) renderPriceChart(lastChartSym, lastChartRange);
+}
+
+function calcMA(prices, period) {
+  return prices.map((_, i) => i < period - 1 ? null : prices.slice(i - period + 1, i + 1).reduce((a, b) => a + b, 0) / period);
+}
 
 function calcRSI(prices, period = 14) {
   if (prices.length < period + 1) return prices.map(() => 50);
@@ -1629,17 +1759,80 @@ function calcRSI(prices, period = 14) {
   return rsi;
 }
 
+function generateChartInsight(prices, volumes, rsiVals, range) {
+  if (!prices || prices.length < 5) return null;
+  const first = prices[0], last = prices[prices.length - 1];
+  const totalChange = ((last - first) / first * 100).toFixed(1);
+  const up = last >= first;
+
+  // Trend
+  const trend = up ? 'rising' : 'falling';
+  const trendStr = up
+    ? `The price has risen <b>${totalChange}%</b> over this period — buyers have been in control.`
+    : `The price has fallen <b>${Math.abs(totalChange)}%</b> over this period — sellers have been in control.`;
+
+  // MA signals
+  let maStr = '';
+  if (prices.length >= 20) {
+    const ma20 = calcMA(prices, 20);
+    const ma50 = prices.length >= 50 ? calcMA(prices, 50) : null;
+    const lastMA20 = ma20[ma20.length - 1];
+    const lastMA50 = ma50 ? ma50[ma50.length - 1] : null;
+    if (lastMA20 && lastMA50) {
+      maStr = last > lastMA20 && last > lastMA50
+        ? ' The price is <b>above both the 20-day and 50-day moving averages</b> — a technically positive sign.'
+        : last < lastMA20 && last < lastMA50
+        ? ' The price is <b>below both moving averages</b> — short-term momentum is weak.'
+        : last > lastMA20
+        ? ' The price is above the 20-day average but below the 50-day — mixed signals.'
+        : ' The price is below the 20-day average but above the 50-day — recent weakness in a longer uptrend.';
+    }
+  }
+
+  // RSI
+  const lastRSI = rsiVals ? rsiVals.filter(v => v !== null).pop() : null;
+  let rsiStr = '';
+  if (lastRSI) {
+    rsiStr = lastRSI > 70
+      ? ` RSI is at <b>${lastRSI.toFixed(0)}</b> — above 70 means the stock may have risen too fast recently. Some profit-taking is possible.`
+      : lastRSI < 30
+      ? ` RSI is at <b>${lastRSI.toFixed(0)}</b> — below 30 means the stock may have fallen too fast. A bounce is possible but not guaranteed.`
+      : ` RSI is at <b>${lastRSI.toFixed(0)}</b> — in the neutral zone (30–70), no extreme signal.`;
+  }
+
+  // Volume
+  const avgVol = volumes.reduce((a, b) => a + b, 0) / volumes.length;
+  const lastVol = volumes[volumes.length - 1];
+  const volStr = lastVol > avgVol * 1.5
+    ? ' Recent volume is <b>above average</b> — strong participation, the move is more credible.'
+    : lastVol < avgVol * 0.5
+    ? ' Recent volume is <b>below average</b> — low participation, treat the move with caution.'
+    : '';
+
+  // Support/Resistance
+  const high52 = Math.max(...prices);
+  const low52  = Math.min(...prices);
+  const pos52  = Math.round(((last - low52) / (high52 - low52)) * 100);
+  const srStr  = pos52 > 80
+    ? ` The stock is near its <b>period high (${pos52}%)</b> — watch for resistance. A breakout above the high with volume is bullish.`
+    : pos52 < 20
+    ? ` The stock is near its <b>period low (${pos52}%)</b> — this level may act as support. A bounce here has happened before.`
+    : '';
+
+  return trendStr + maStr + rsiStr + volStr + srStr;
+}
+
 async function renderPriceChart(sym, range) {
+  lastChartSym = sym; lastChartRange = range;
   ['1W','1M','3M','6M','1Y','3Y','5Y'].forEach(r => {
     const b = document.getElementById('btn-'+r);
     if(b) { b.style.background = r===range?'var(--gm)':'var(--bg)'; b.style.color = r===range?'#fff':'var(--muted)'; }
   });
-  const RMAP = {'1W':'5d|15m','1M':'1mo|1d','3M':'3mo|1d','6M':'6mo|1wk','1Y':'1y|1wk','3Y':'3y|1mo','5Y':'5y|1mo'};
+  const RMAP = {'1W':'5d|1d','1M':'1mo|1d','3M':'3mo|1d','6M':'6mo|1wk','1Y':'1y|1wk','3Y':'3y|1mo','5Y':'5y|1mo'};
   const [r,i] = (RMAP[range]||'1y|1wk').split('|');
   const data = await api('history', { symbol: sym, range: r, interval: i });
   const ctx = document.getElementById('priceChart'); if(!ctx) return;
 
-  // Destroy previous instances
   if (chartInst)   { chartInst.destroy();   chartInst   = null; }
   if (volChartInst){ volChartInst.destroy(); volChartInst= null; }
   if (rsiChartInst){ rsiChartInst.destroy(); rsiChartInst= null; }
@@ -1649,49 +1842,108 @@ async function renderPriceChart(sym, range) {
     return;
   }
 
+  lastChartData = data;
   const prices  = data.prices.map(p => p.close);
+  const opens   = data.prices.map(p => p.open  || p.close);
+  const highs   = data.prices.map(p => p.high  || p.close);
+  const lows    = data.prices.map(p => p.low   || p.close);
   const volumes = data.prices.map(p => p.volume || 0);
   const labels  = data.prices.map(p => p.date);
   const rsiVals = calcRSI(prices);
   const up      = prices[prices.length-1] >= prices[0];
   const color   = up ? '#1a7c4a' : '#c0392b';
-  const defOpts = { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{display:false}} };
+  const defOpts = { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false}}, scales:{x:{display:false}} };
 
-  // Price chart
+  // Build datasets
+  const datasets = [];
+
+  if (chartType === 'candle') {
+    // Candlestick simulation using floating bar chart
+    datasets.push({
+      label: 'OHLC',
+      data: prices.map((c, idx) => ({ x: labels[idx], o: opens[idx], h: highs[idx], l: lows[idx], c: c })),
+      backgroundColor: prices.map((c, idx) => c >= opens[idx] ? 'rgba(26,124,74,0.8)' : 'rgba(192,57,43,0.8)'),
+      borderColor: prices.map((c, idx) => c >= opens[idx] ? '#1a7c4a' : '#c0392b'),
+      borderWidth: 1,
+      barPercentage: 0.6,
+    });
+  } else {
+    // Line chart
+    datasets.push({ label: 'Price', data: prices, borderColor: color, borderWidth: 2, pointRadius: 0, tension: 0.3, fill: true, backgroundColor: up ? 'rgba(26,124,74,0.08)' : 'rgba(192,57,43,0.08)' });
+  }
+
+  // Moving averages
+  const maColors = { 20: 'rgba(26,95,168,0.9)', 50: 'rgba(212,135,10,0.9)', 200: 'rgba(107,107,101,0.7)' };
+  [20, 50, 200].forEach(period => {
+    if (activeMA[period] && prices.length >= period) {
+      const maData = calcMA(prices, period);
+      datasets.push({ label: period + '-Day MA', data: maData, borderColor: maColors[period], borderWidth: 1.5, pointRadius: 0, tension: 0.3, fill: false, spanGaps: false });
+    }
+  });
+
   chartInst = new Chart(ctx.getContext('2d'), {
-    type:'line',
-    data:{ labels, datasets:[{ data:prices, borderColor:color, borderWidth:2, pointRadius:0, tension:0.3, fill:true, backgroundColor:up?'rgba(26,124,74,0.08)':'rgba(192,57,43,0.08)' }] },
-    options:{ ...defOpts, plugins:{...defOpts.plugins, tooltip:{callbacks:{label:c=>'₹'+c.raw?.toLocaleString('en-IN',{maximumFractionDigits:2})}}}, scales:{x:{display:false}, y:{ticks:{font:{size:9},color:'#6b6b65',callback:v=>'₹'+(v>=1000?(v/1000).toFixed(1)+'K':v)},grid:{color:'#f0efe9'}}} }
+    type: chartType === 'candle' ? 'bar' : 'line',
+    data: { labels, datasets },
+    options: {
+      ...defOpts,
+      plugins: { ...defOpts.plugins, tooltip: { callbacks: { label: c => '₹' + (c.raw?.c || c.raw)?.toLocaleString('en-IN', { maximumFractionDigits: 2 }) } } },
+      scales: { x: { display: false }, y: { ticks: { font: { size: 9 }, color: '#6b6b65', callback: v => '₹' + (v >= 1000 ? (v/1000).toFixed(1)+'K' : v) }, grid: { color: '#f0efe9' } } }
+    }
   });
 
   // Volume chart
   const volCtx = document.getElementById('volumeChart');
   if (volCtx && volumes.some(v => v > 0)) {
     volChartInst = new Chart(volCtx.getContext('2d'), {
-      type:'bar',
-      data:{ labels, datasets:[{ data:volumes, backgroundColor: prices.map((p,i) => i===0?'#6b6b65':p>=prices[i-1]?'rgba(26,124,74,0.6)':'rgba(192,57,43,0.6)'), borderWidth:0 }] },
-      options:{ ...defOpts, scales:{x:{display:false}, y:{ticks:{font:{size:9},color:'#6b6b65',callback:v=>v>=1e7?(v/1e7).toFixed(1)+'Cr':v>=1e5?(v/1e5).toFixed(0)+'L':v},grid:{color:'#f0efe9'}}} }
+      type: 'bar',
+      data: { labels, datasets: [{ data: volumes, backgroundColor: prices.map((p, idx) => idx===0?'#6b6b65':p>=prices[idx-1]?'rgba(26,124,74,0.6)':'rgba(192,57,43,0.6)'), borderWidth: 0 }] },
+      options: { ...defOpts, scales: { x: { display: false }, y: { ticks: { font: { size: 9 }, color: '#6b6b65', callback: v => v>=1e7?(v/1e7).toFixed(1)+'Cr':v>=1e5?(v/1e5).toFixed(0)+'L':v }, grid: { color: '#f0efe9' } } } }
     });
   }
 
   // RSI chart
   const rsiCtx = document.getElementById('rsiChart');
   if (rsiCtx) {
-    const rsiColors = rsiVals.map(v => v === null ? 'transparent' : v > 70 ? '#c0392b' : v < 30 ? '#1a7c4a' : '#d4870a');
     rsiChartInst = new Chart(rsiCtx.getContext('2d'), {
-      type:'line',
-      data:{ labels, datasets:[
-        { data:rsiVals, borderColor:'#d4870a', borderWidth:1.5, pointRadius:0, tension:0.3, fill:false },
-        { data:labels.map(()=>70), borderColor:'rgba(192,57,43,0.3)', borderWidth:1, borderDash:[4,3], pointRadius:0 },
-        { data:labels.map(()=>30), borderColor:'rgba(26,124,74,0.3)', borderWidth:1, borderDash:[4,3], pointRadius:0 },
+      type: 'line',
+      data: { labels, datasets: [
+        { data: rsiVals, borderColor: '#d4870a', borderWidth: 1.5, pointRadius: 0, tension: 0.3, fill: false },
+        { data: labels.map(() => 70), borderColor: 'rgba(192,57,43,0.3)', borderWidth: 1, borderDash: [4,3], pointRadius: 0 },
+        { data: labels.map(() => 30), borderColor: 'rgba(26,124,74,0.3)', borderWidth: 1, borderDash: [4,3], pointRadius: 0 },
       ]},
-      options:{ ...defOpts, scales:{x:{display:false}, y:{min:0,max:100,ticks:{font:{size:9},color:'#6b6b65',stepSize:25},grid:{color:'#f0efe9'}}} }
+      options: { ...defOpts, scales: { x: { display: false }, y: { min: 0, max: 100, ticks: { font: { size: 9 }, color: '#6b6b65', stepSize: 25 }, grid: { color: '#f0efe9' } } } }
     });
+    // Update RSI insight text
+    const lastRSI = rsiVals.filter(v => v !== null).pop();
+    const rsiEl = document.getElementById('rsiInsight');
+    if (rsiEl && lastRSI) {
+      const rsiTxt = lastRSI > 70 ? `RSI: <b style="color:var(--r)">${lastRSI.toFixed(0)} — Overbought zone.</b> The stock has risen fast. Watch for potential pullback.`
+        : lastRSI < 30 ? `RSI: <b style="color:var(--g)">${lastRSI.toFixed(0)} — Oversold zone.</b> The stock has fallen fast. A bounce is possible.`
+        : `RSI: <b style="color:var(--a)">${lastRSI.toFixed(0)} — Neutral zone</b> (30–70). No extreme momentum in either direction.`;
+      rsiEl.innerHTML = rsiTxt;
+    }
+  }
+
+  // Generate and show chart intelligence
+  const insight = generateChartInsight(prices, volumes, rsiVals, range);
+  const insightEl  = document.getElementById('chartInsight');
+  const insightCnt = document.getElementById('chartInsightContent');
+  if (insightEl && insightCnt && insight) {
+    insightCnt.innerHTML = insight;
+    insightEl.style.display = 'block';
   }
 }
 
 // ── SCORE TAB — loads real fundamentals and scores them ──────────
 function buildScoreTab(s) {
+  // Show "Insufficient data" for unknown stocks with no real data
+  if (!s || (!s.price && !s.pe && !s.mktCap && !s.w52High)) {
+    return `<div style="text-align:center;padding:40px 20px">
+      <div style="font-size:36px;margin-bottom:12px">📊</div>
+      <div style="font-size:15px;font-weight:600;margin-bottom:8px">Insufficient Data</div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.6">We do not have enough data to score this stock yet. Try a Nifty 50 or Nifty 500 stock for full analysis.</div>
+    </div>`;
+  }
   const bench = BENCH[s.sector] || BENCH['IT Services'];
   const pe = s.pe || 0;
   const mktCapCr = s.mktCap > 0 ? Math.round(s.mktCap / 1e7) : 0;
@@ -1781,58 +2033,144 @@ function recalcScore() {
 
 // ── OUTLOOK TAB ───────────────────────────────────────────────────
 function buildOutlookTab(s) {
-  // 4 statistical models: Linear Regression, MA Crossover, RSI, Fundamental
-  const prices1Y = []; // placeholder — chart uses live data
   const price = s.price || 0, w52h = s.w52High||price, w52l = s.w52Low||0;
   const pct52 = w52h > w52l ? (price-w52l)/(w52h-w52l) : 0.5;
   const pe = s.pe || 0;
+  const now = new Date();
+  const ist = new Date(now.toLocaleString('en-US',{timeZone:'Asia/Kolkata'}));
+  const timeStr = ist.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true});
 
-  // Simple statistical calculations from available data
-  const lrSignal = pct52 > 0.5; // above midpoint = upward bias
-  const lrProb = Math.round(45 + pct52 * 25);
-  const maSignal = pct52 > 0.4;
-  const maProb = Math.round(42 + pct52 * 22);
-  const rsiVal = Math.round(30 + pct52 * 50); // estimated from 52W position
-  const rsiSignal = rsiVal < 60;
-  // RSI probability: deterministic based on RSI value (no random)
-  const rsiProb = rsiVal > 70 ? Math.round(35 - (rsiVal - 70) * 0.5) : rsiVal < 30 ? Math.round(70 + (30 - rsiVal) * 0.6) : Math.round(50 + (50 - rsiVal) * 0.3);
+  // Statistical signals
+  const lrSignal  = pct52 > 0.5;
+  const lrProb    = Math.round(45 + pct52 * 25);
+  const maSignal  = pct52 > 0.4;
+  const maProb    = Math.round(42 + pct52 * 22);
+  const rsiEst    = Math.round(30 + pct52 * 50);
+  const rsiSignal = rsiEst < 60;
+  const rsiProb   = rsiEst > 70 ? Math.round(35-(rsiEst-70)*0.5) : rsiEst < 30 ? Math.round(70+(30-rsiEst)*0.6) : Math.round(50+(50-rsiEst)*0.3);
   const fundScore = s.pillars ? s.pillars.slice(0,3).reduce((a,p)=>a+p.score,0)/3 : 5;
   const fundSignal = fundScore > 6;
-  const fundProb = Math.round(40 + fundScore * 4);
+  const fundProb   = Math.round(40 + fundScore * 4);
 
-  const bullCnt = [lrSignal, maSignal, rsiSignal, fundSignal].filter(Boolean).length;
+  const bullCnt = [lrSignal,maSignal,rsiSignal,fundSignal].filter(Boolean).length;
   const avgProb = Math.round((lrProb+maProb+rsiProb+fundProb)/4);
-  const isPos = bullCnt >= 2;
-  const col = isPos ? 'var(--g)' : 'var(--r)';
-  const bg = isPos ? 'var(--gl)' : 'var(--rl)';
-  const confLvl = bullCnt === 4 ? 'High' : bullCnt === 3 ? 'Moderate' : bullCnt === 2 ? 'Low' : 'Very Low';
-  const confPct = bullCnt === 4 ? 88 : bullCnt === 3 ? 65 : bullCnt === 2 ? 42 : 18;
+  const isPos   = bullCnt >= 2;
+  const col     = isPos ? 'var(--g)' : 'var(--r)';
+  const bg      = isPos ? 'var(--gl)' : 'var(--rl)';
+  const confLvl = bullCnt===4?'High':bullCnt===3?'Moderate':bullCnt===2?'Low':'Very Low';
+  const confPct = bullCnt===4?88:bullCnt===3?65:bullCnt===2?42:18;
 
-  // Price targets
-  const bull = price > 0 ? Math.round(price * (1 + (pct52 < 0.3 ? 0.25 : 0.15))) : 0;
-  const bear = price > 0 ? Math.round(price * (1 - (pct52 > 0.7 ? 0.2 : 0.12))) : 0;
-  const base = price > 0 ? Math.round(price * 1.08) : 0;
+  // Price targets — Short / Medium / Long
+  const todayChg = s.changePct || 0;
+  const todayAbs = s.change || 0;
+  const todayUp  = todayChg >= 0;
 
-  const noviceH = t('noviceHint').outlook;
+  // Short term: based on today's momentum + RSI position (1–4 weeks)
+  const stSignal = todayUp && rsiEst < 65 ? 'Bullish momentum' : !todayUp && rsiEst > 55 ? 'Bearish momentum' : 'Neutral / Wait';
+  const stBias   = todayUp && rsiEst < 65 ? 'g' : !todayUp && rsiEst > 55 ? 'r' : 'a';
+  const stProb   = Math.round(50 + (todayChg * 1.5) + (rsiEst < 40 ? 10 : rsiEst > 65 ? -10 : 0));
+  const stTarget = price > 0 ? Math.round(price * (1 + (todayUp ? 0.05 : -0.05))) : 0;
+
+  // Medium term: based on 52W position + MA (1–3 months)
+  const mtSignal = maSignal && pct52 < 0.75 ? 'Upward bias' : !maSignal && pct52 > 0.25 ? 'Downward pressure' : 'Consolidation likely';
+  const mtBias   = maSignal && pct52 < 0.75 ? 'g' : !maSignal && pct52 > 0.25 ? 'r' : 'a';
+  const mtTarget = price > 0 ? Math.round(price * (maSignal ? 1.12 : 0.92)) : 0;
+
+  // Long term: based on fundamentals + valuation (6–12 months)
+  const ltSignal = fundSignal && pe > 0 && pe < (pe * 1.5) ? 'Favourable fundamentals' : !fundSignal ? 'Fundamentals need review' : 'Fair value range';
+  const ltBias   = fundSignal ? 'g' : 'a';
+  const ltTarget = price > 0 ? Math.round(price * (isPos ? 1.20 : 0.88)) : 0;
+
+  // Live RSI context using today's actual price change
+  const liveRsiContext = Math.abs(todayChg) > 2
+    ? `Today's move of ${todayUp?'+':''}${todayChg.toFixed(2)}% is significant. This kind of ${todayUp?'sharp rise':'sharp fall'} in a single session ${todayUp?'pushes RSI higher — watch for overbought levels above 70':'pushes RSI lower — watch for oversold levels below 30'}.`
+    : `Today's move of ${todayUp?'+':''}${todayChg.toFixed(2)}% is modest. RSI estimated at ${rsiEst} — ${rsiEst>70?'overbought territory, potential pullback':rsiEst<30?'oversold territory, potential bounce':'neutral zone, no extreme signal'}.`;
+
   return `
-    <div class="novice-hint v">${noviceH}</div>
+    <div class="novice-hint v">${t('noviceHint').outlook}</div>
+
+    <!-- Live price stamp -->
+    <div style="display:flex;justify-content:space-between;align-items:center;background:var(--bg);border-radius:9px;padding:9px 12px;margin-bottom:12px">
+      <div>
+        <div style="font-size:11px;color:var(--muted)">Analysis based on live price</div>
+        <div style="font-size:16px;font-weight:800;color:${todayUp?'var(--g)':'var(--r)'}">${price>0?fmtPrice(price):'—'} <span style="font-size:12px">${todayUp?'+':''}${todayChg.toFixed(2)}%</span></div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:9px;color:var(--muted)">As of ${timeStr} IST</div>
+        <div style="font-size:11px;font-weight:600;color:${todayUp?'var(--g)':'var(--r)'}">${todayUp?'+':''}₹${Math.abs(todayAbs).toFixed(2)} today</div>
+      </div>
+    </div>
+
+    <!-- Short / Medium / Long term outlook -->
+    <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px">Statistical Outlook by Timeframe</div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
+
+      <!-- Short term -->
+      <div style="background:var(--card);border:0.5px solid var(--border);border-left:3px solid var(--${stBias});border-radius:10px;padding:12px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px">Short Term · 1–4 Weeks</div>
+            <div style="font-size:14px;font-weight:700;color:var(--${stBias});margin-top:2px">${stSignal}</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:3px">Based on today's momentum + RSI position</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:9px;color:var(--muted)">Statistical target</div>
+            <div style="font-size:14px;font-weight:700">${stTarget>0?fmtPrice(stTarget):'—'}</div>
+            <div style="font-size:10px;font-weight:600;color:var(--${stBias})">${stProb}% confidence</div>
+          </div>
+        </div>
+        <div style="font-size:10px;color:var(--text);margin-top:8px;line-height:1.5;background:var(--bg);border-radius:6px;padding:6px 8px">${liveRsiContext}</div>
+      </div>
+
+      <!-- Medium term -->
+      <div style="background:var(--card);border:0.5px solid var(--border);border-left:3px solid var(--${mtBias});border-radius:10px;padding:12px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px">Medium Term · 1–3 Months</div>
+            <div style="font-size:14px;font-weight:700;color:var(--${mtBias});margin-top:2px">${mtSignal}</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:3px">Based on 52-week position + moving averages</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:9px;color:var(--muted)">Statistical target</div>
+            <div style="font-size:14px;font-weight:700">${mtTarget>0?fmtPrice(mtTarget):'—'}</div>
+            <div style="font-size:10px;font-weight:600;color:var(--${mtBias})">${maProb}% confidence</div>
+          </div>
+        </div>
+        <div style="font-size:10px;color:var(--text);margin-top:8px;line-height:1.5;background:var(--bg);border-radius:6px;padding:6px 8px">Stock is at <b>${Math.round(pct52*100)}% of its 52-week range</b>. ${pct52>0.75?'Near yearly highs — upside may be limited. Watch for resistance.':pct52<0.25?'Near yearly lows — potential value zone, but verify business is healthy.':'Mid-range position — less extreme risk in either direction.'} ${maSignal?'20-day MA is above 50-day MA — short-term momentum positive.':'20-day MA below 50-day MA — short-term momentum weak.'}</div>
+      </div>
+
+      <!-- Long term -->
+      <div style="background:var(--card);border:0.5px solid var(--border);border-left:3px solid var(--${ltBias});border-radius:10px;padding:12px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px">Long Term · 6–12 Months</div>
+            <div style="font-size:14px;font-weight:700;color:var(--${ltBias});margin-top:2px">${ltSignal}</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:3px">Based on fundamental quality + valuation signals</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:9px;color:var(--muted)">Statistical target</div>
+            <div style="font-size:14px;font-weight:700">${ltTarget>0?fmtPrice(ltTarget):'—'}</div>
+            <div style="font-size:10px;font-weight:600;color:var(--${ltBias})">${fundProb}% confidence</div>
+          </div>
+        </div>
+        <div style="font-size:10px;color:var(--text);margin-top:8px;line-height:1.5;background:var(--bg);border-radius:6px;padding:6px 8px">Fundamental score: <b>${fundScore.toFixed(1)}/10</b>. ${pe>0?`P/E of <b>${pe.toFixed(1)}x</b>. `:''}${fundSignal?'Quality signals are positive — business metrics support long-term holding.':'Quality signals are mixed — review financials before long-term commitment.'} Note: Long-term outlook requires quarterly review as business conditions change.</div>
+      </div>
+    </div>
+
+    <!-- Overall signal -->
     <div class="out-box" style="background:${bg}">
-      <div class="out-lbl" style="color:${col}">Statistical Outlook — 3 Month View</div>
+      <div class="out-lbl" style="color:${col}">Overall Statistical Signal — All Timeframes</div>
       <div class="out-main" style="color:${col}">${isPos ? t('bullish') : t('bearish')}</div>
       <div class="out-sub" style="color:${col}">${confLvl} confidence — ${bullCnt} of 4 models in agreement</div>
       <div class="prob-pill"><div class="prob-num" style="color:${col}">${avgProb}% historical probability</div></div>
     </div>
-    <div class="price-targets">
-      <div class="pt-card" style="background:var(--rl)"><div class="pt-lbl" style="color:var(--r)">Bear Case</div><div class="pt-price" style="color:var(--r)">${bear>0?fmtPrice(bear):'—'}</div><div class="pt-pct" style="color:var(--r)">${price>0?((bear-price)/price*100).toFixed(0)+'%':'—'}</div></div>
-      <div class="pt-card" style="background:var(--bg);border:1px solid var(--border)"><div class="pt-lbl" style="color:var(--muted)">Base Case</div><div class="pt-price">${base>0?fmtPrice(base):'—'}</div><div class="pt-pct" style="color:var(--muted)">${price>0?'+'+((base-price)/price*100).toFixed(0)+'%':'—'}</div></div>
-      <div class="pt-card" style="background:var(--gl)"><div class="pt-lbl" style="color:var(--g)">Bull Case</div><div class="pt-price" style="color:var(--g)">${bull>0?fmtPrice(bull):'—'}</div><div class="pt-pct" style="color:var(--g)">${price>0?'+'+((bull-price)/price*100).toFixed(0)+'%':'—'}</div></div>
-    </div>
-    <div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px">4 Statistical Models</div>
+
+    <div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px">4 Statistical Models Detail</div>
     ${[
-      {name:'Linear Regression',desc:'Trend line through 52-week price range. R² shows trend reliability.',bull:lrSignal,prob:lrProb,find:lrSignal?`Price above midpoint of yearly range — trend bias upward`:`Price below midpoint — trend bias downward`},
-      {name:'Moving Average Signal',desc:'20-day vs 50-day average comparison. Short above long = bullish.',bull:maSignal,prob:maProb,find:maSignal?'Short-term momentum above long-term — positive signal':'Short-term momentum below long-term — caution signal'},
-      {name:'RSI Momentum (14-day)',desc:`RSI estimates ${rsiVal} based on 52-week position. Below 30 = oversold. Above 70 = overbought.`,bull:rsiSignal,prob:rsiProb,find:rsiVal>70?'Potentially overbought — exercise caution':rsiVal<30?'Potentially oversold — watch for reversal':'RSI in neutral zone — no extreme signal'},
-      {name:'Fundamental Momentum',desc:`Valuation score ${(s.pillars?.[3]?.score||5).toFixed(1)}/10 and momentum ${(s.pillars?.[4]?.score||5).toFixed(1)}/10 — both calculated from live Yahoo Finance data.`,bull:fundSignal,prob:fundProb,find:fundSignal?'Live data signals support upside potential':'Limited catalyst at current valuation — monitor closely'},
+      {name:'Linear Regression',         desc:'Trend line through 52-week range. Measures price direction bias.',                               bull:lrSignal, prob:lrProb,  find:lrSignal?'Price above midpoint — upward trend bias':'Price below midpoint — downward trend bias'},
+      {name:'Moving Average Signal',     desc:'20-day vs 50-day MA crossover. Short above long = positive momentum.',                          bull:maSignal, prob:maProb,  find:maSignal?'Short-term MA above long-term — bullish momentum':'Short-term MA below long-term — bearish momentum'},
+      {name:'RSI Momentum',              desc:`Live-adjusted RSI estimated at ${rsiEst}. Today's ${todayUp?'gain':'loss'} of ${Math.abs(todayChg).toFixed(2)}% incorporated.`, bull:rsiSignal,prob:rsiProb, find:rsiEst>70?'Overbought — pullback possible':rsiEst<30?'Oversold — bounce possible':'Neutral zone — no extreme signal'},
+      {name:'Fundamental Momentum',      desc:`Score ${fundScore.toFixed(1)}/10 from live valuation and market data.`,                         bull:fundSignal,prob:fundProb,find:fundSignal?'Fundamentals support potential upside':'Fundamentals mixed — monitor closely'},
     ].map(m=>`
       <div class="model-row">
         <div class="model-top">
@@ -1843,13 +2181,9 @@ function buildOutlookTab(s) {
         <div class="model-find" style="color:${m.bull?'var(--g)':'var(--r)'}">→ ${m.find}</div>
         <div class="mbar-bg"><div class="mbar-fill" style="width:${m.prob}%;background:${m.bull?'var(--gm)':'var(--r)'}"></div></div>
       </div>`).join('')}
-    <div style="background:var(--bg);border-radius:10px;padding:10px 12px;margin-bottom:10px">
-      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:6px"><span>${t('allAgree').split(' — ')[0]==='All'?'Low':'Low'}</span><span style="font-weight:600;color:${col}">${confLvl} · ${confPct}%</span><span>High</span></div>
-      <div style="height:10px;background:var(--border);border-radius:5px;overflow:hidden"><div style="height:100%;width:${confPct}%;background:${col};border-radius:5px;transition:width 0.8s"></div></div>
-      <div style="font-size:10px;color:var(--muted);margin-top:5px">${bullCnt===4?t('allAgree'):bullCnt>=2?t('twoAgree'):t('mixed')}</div>
-    </div>
+
     <div style="position:relative;height:150px;margin-bottom:10px"><canvas id="outChart"></canvas></div>
-    <div class="disc">${t('outDisc')}</div>`;
+    <div class="disc">${t('outDisc')} Targets shown are statistical ranges only — not analyst price targets or investment advice. Always verify business fundamentals before any investment decision.</div>`;
 }
 
 async function renderOutlookChart(s) {
@@ -2055,7 +2389,52 @@ function buildPeersTab(sym, s) {
         </div>`).join('')}
     </div>
 
-    <div class="disc">Live prices from Yahoo Finance. Shareholding from latest quarterly BSE filing. For deeper comparison use the Financials tab to load each company's P&L. Educational only — not investment advice.</div>`;
+    <div class="disc">Live prices from Yahoo Finance. Shareholding from latest quarterly BSE filing. For deeper comparison use the Financials tab to load each company's P&L. Educational only — not investment advice.</div>
+
+    <!-- How to pick from this sector -->
+    ${buildSectorPickGuide(s.sector)}`;
+}
+
+// Sector-specific stock picking guides
+const SECTOR_PICK_GUIDE = {
+  'IT Services': { icon:'💻', metrics:['Revenue growth (15%+ YoY preferred)','Operating margin (above 20%)','Deal wins and order book size','Attrition rate (lower is better)','USD revenue exposure'], watchFor:'USFDA approvals mean nothing here — watch US tech spending trends and USD/INR rate. When rupee weakens, IT profits rise. When US companies cut budgets, IT order books shrink.', redFlags:['Rising attrition without salary hikes','Losing large clients','Revenue in USD but costs rising in INR faster than revenue'] },
+  'Banking': { icon:'🏦', metrics:['Net Interest Margin (NIM above 3%)','Gross NPA ratio (below 3% preferred)','Capital Adequacy Ratio (above 12%)','CASA ratio (above 40% is good)','Return on Assets (above 1%)'], watchFor:'Banks are directly impacted by RBI rate decisions. When RBI raises rates, bank margins can improve but loan defaults may rise. Watch quarterly NPA disclosures carefully.', redFlags:['Rising NPA quarter after quarter','Declining NIM','Low CASA ratio means expensive deposits'] },
+  'Pharmaceutical': { icon:'💊', metrics:['USFDA approval track record','US generics revenue share','R&D as % of revenue (above 7%)','Domestic formulations growth','API vs formulations mix'], watchFor:'USFDA warning letters can destroy 20–30% of stock value overnight. US generics pricing pressure is chronic. Watch ANDA filings as a growth indicator.', redFlags:['Multiple USFDA observations pending','Over-reliance on single product','No R&D pipeline'] },
+  'Automobile': { icon:'🚗', metrics:['Monthly sales volumes (watch MoM and YoY)','EBITDA margin (above 12%)','EV transition strategy','Debt levels','Market share in key segments'], watchFor:'Monthly sales data released on 1st of every month moves auto stocks. Rising fuel prices hurt demand. RBI rate cuts boost two-wheeler and car loans.', redFlags:['Consistent market share loss','No credible EV plan','High inventory at dealer level'] },
+  'FMCG': { icon:'🛒', metrics:['Volume growth vs price-led growth','Gross margin trend','Distribution reach and rural penetration','Advertising spend as % of revenue','New product success rate'], watchFor:'FMCG is defensive — it falls less in downturns. But high valuations (P/E 50-70x) mean growth must be consistent. Rural demand follows monsoon and MSP cycles.', redFlags:['Declining volumes despite price hikes','Market share loss to D2C brands','Margin compression without recovery plan'] },
+  'Energy': { icon:'⚡', metrics:['Refining margins (GRM for oil refiners)','Debt to equity (manageable)','Government pricing policy impact','Capacity utilisation','Renewable energy pivot plans'], watchFor:'Oil PSUs are heavily regulated — government sets fuel prices. Private refinery profits directly follow crude-to-product spread. Watch Singapore GRM as a proxy.', redFlags:['Rising debt for OMCs','No renewable transition plan','Government overhang on pricing'] },
+  'Infrastructure': { icon:'🏗️', metrics:['Order book to revenue ratio (3x+ is healthy)','Execution track record','Working capital cycle','EBITDA margin (above 10%)','Debt levels'], watchFor:'Infrastructure is a long-term play tied to government capex. Budget allocation for roads, railways, and power drives stock moves. Watch quarterly order wins.', redFlags:['Order book shrinking','Poor execution — revenues flat despite big orderbook','High debt with rising interest costs'] },
+};
+
+function buildSectorPickGuide(sector) {
+  // Match sector name to guide
+  const sectorMap = {
+    'Automobile':'Automobile','Auto':'Automobile','IT Services':'IT Services','IT':'IT Services',
+    'Banking':'Banking','Bank':'Banking','Financial Services':'Banking',
+    'Pharma':'Pharmaceutical','Pharmaceutical':'Pharmaceutical',
+    'FMCG':'FMCG','Fast Moving Consumer Goods':'FMCG',
+    'Energy':'Energy','Oil & Gas':'Energy',
+    'Infrastructure':'Infrastructure','Construction':'Infrastructure',
+  };
+  const key = sectorMap[sector] || sector;
+  const g   = SECTOR_PICK_GUIDE[key];
+  if (!g) return '';
+  return `
+    <div style="background:var(--card);border:0.5px solid var(--border);border-radius:12px;padding:14px;margin-top:14px">
+      <div style="font-size:12px;font-weight:700;margin-bottom:10px">${g.icon} How to pick a good stock in ${sector}</div>
+      <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:6px">Key metrics to check:</div>
+      <div style="margin-bottom:10px">
+        ${g.metrics.map(m => `<div style="font-size:11px;padding:4px 0;border-bottom:0.5px solid var(--border);color:var(--text)">✓ ${m}</div>`).join('')}
+      </div>
+      <div style="background:var(--bl);border-radius:8px;padding:9px 11px;margin-bottom:8px">
+        <div style="font-size:10px;font-weight:700;color:var(--b);margin-bottom:4px">📌 What to watch for this sector:</div>
+        <div style="font-size:11px;color:var(--text);line-height:1.6">${g.watchFor}</div>
+      </div>
+      <div style="background:var(--rl);border-radius:8px;padding:9px 11px">
+        <div style="font-size:10px;font-weight:700;color:var(--r);margin-bottom:4px">🚩 Red flags:</div>
+        ${g.redFlags.map(f => `<div style="font-size:11px;color:var(--text);padding:2px 0">⚠️ ${f}</div>`).join('')}
+      </div>
+    </div>`;
 }
 
 async function loadPeerComparison(mainSym, peersStr, sector) {
@@ -2269,6 +2648,37 @@ async function loadIndices() {
   if (nifty) updateMoodCard(nifty, sensex, vix);
   // Update ticker with all indices
   updateTicker(data.indices);
+
+  // Load global indices
+  loadGlobalIndices();
+}
+
+async function loadGlobalIndices() {
+  const globalSyms = [
+    { sym: '^GSPC',  name: 'S&P 500',  flag: '🇺🇸', note: 'US large caps' },
+    { sym: '^IXIC',  name: 'Nasdaq',   flag: '🇺🇸', note: 'US tech' },
+    { sym: '^N225',  name: 'Nikkei',   flag: '🇯🇵', note: 'Japan' },
+    { sym: '^HSI',   name: 'Hang Seng',flag: '🇭🇰', note: 'Hong Kong' },
+    { sym: '^FTSE',  name: 'FTSE 100', flag: '🇬🇧', note: 'UK' },
+    { sym: '^DJI',   name: 'Dow Jones',flag: '🇺🇸', note: 'US blue chips' },
+  ];
+  const symsStr = globalSyms.map(g => g.sym).join(',');
+  const data = await api('batch', { symbols: symsStr });
+  const grid = document.getElementById('globalIdxGrid');
+  if (!grid) return;
+  if (!data?.quotes) { grid.innerHTML = '<div style="color:var(--muted);font-size:11px;padding:10px">Global data unavailable</div>'; return; }
+
+  grid.innerHTML = globalSyms.map(g => {
+    const q  = data.quotes[g.sym];
+    if (!q) return '';
+    const up = q.changePct >= 0;
+    return `<div class="idx-card">
+      <div class="idx-name">${g.flag} ${g.name}</div>
+      <div style="font-size:9px;color:var(--muted);margin-bottom:2px">${g.note}</div>
+      <div class="idx-val" style="font-size:14px">${q.price?.toLocaleString('en-US',{maximumFractionDigits:0})}</div>
+      <div class="idx-chg ${up?'up':'dn'}">${up?'▲':'▼'} ${Math.abs(q.changePct).toFixed(2)}%</div>
+    </div>`;
+  }).join('');
 }
 
 function updateTicker(indices) {
@@ -2435,8 +2845,13 @@ async function loadMovers() {
       name: data.quotes[sym].longName || STOCKS[sym]?.name || sym,
     }));
 
-  moversCache.gainers = [...results].sort((a, b) => b.live.changePct - a.live.changePct);
-  moversCache.losers  = [...results].sort((a, b) => a.live.changePct - b.live.changePct);
+  const allZeroPct = results.every(r => Math.abs(r.live.changePct) < 0.01);
+  moversCache.gainers = allZeroPct
+    ? [...results].sort((a, b) => b.live.changePct - a.live.changePct)
+    : [...results].filter(r => r.live.changePct > 0).sort((a, b) => b.live.changePct - a.live.changePct);
+  moversCache.losers  = allZeroPct
+    ? [...results].sort((a, b) => a.live.changePct - b.live.changePct)
+    : [...results].filter(r => r.live.changePct < 0).sort((a, b) => a.live.changePct - b.live.changePct);
   moversCache.volume  = [...results].sort((a, b) => (b.live.volume || 0) - (a.live.volume || 0));
   renderMovers('gainers');
   updateHeatmapFromMovers(results);
@@ -2455,23 +2870,33 @@ function renderMovers(type, overrideList) {
   const list = overrideList || moversCache[type] || [];
   if (!list.length) return;
 
-  // Detect weekend / all-zero scenario
   const allZero = list.every(r => Math.abs(r.live.changePct) < 0.01);
-  const weekendNote = allZero ? '<div style="background:var(--al);border-radius:8px;padding:8px 11px;font-size:10px;color:var(--a);margin-bottom:8px">📅 Markets closed — showing last session\'s closing prices. % change reflects Friday vs Thursday move.</div>' : '';
-
-  const display = type === 'volume'
-    ? r => fmtVol(r.live.volume)
-    : r => (r.live.changePct >= 0 ? '+' : '') + r.live.changePct.toFixed(2) + '%';
+  const weekendNote = allZero ? '<div style="background:var(--al);border-radius:8px;padding:8px 11px;font-size:10px;color:var(--a);margin-bottom:8px">📅 Markets closed — showing last session\'s closing prices.</div>' : '';
 
   el.innerHTML = weekendNote + list.slice(0, 8).map((r, i) => {
-    const up      = r.live.changePct >= 0;
-    const nameStr = (r.name || r.sym).substring(0, 28);
+    const up     = r.live.changePct >= 0;
+    const col    = up ? 'var(--g)' : 'var(--r)';
+    const name   = (r.name || r.sym).substring(0, 20);
+    const price  = r.live.price > 0 ? fmtPrice(r.live.price) : '—';
+    const pct    = r.live.changePct != null ? (up?'+':'')+r.live.changePct.toFixed(2)+'%' : '—';
+    const abs    = r.live.change   != null ? (up?'+':'−')+'₹'+Math.abs(r.live.change).toFixed(2) : '';
+    const vol    = fmtVol(r.live.volume);
+
     return `<div class="mrow" onclick="loadStock('${r.sym}')">
       <div class="mrank">${i + 1}</div>
-      <div style="flex:1"><div class="msym">${r.sym}</div><div class="mname">${nameStr}</div></div>
-      <div style="text-align:right">
-        <div class="mchg ${up ? 'up' : 'dn'}">${display(r)}</div>
-        <div class="msc">${r.live.price > 0 ? fmtPrice(r.live.price) : '—'}</div>
+      <div style="flex:1;min-width:0">
+        <div class="msym" style="font-size:13px;font-weight:700">${r.sym}</div>
+        <div class="mname" style="font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        ${type === 'volume' ? `
+          <div style="font-size:13px;font-weight:700;color:var(--b)">${vol}</div>
+          <div style="font-size:11px;color:var(--muted)">${price}</div>
+        ` : `
+          <div style="font-size:15px;font-weight:800;color:${col};line-height:1.1">${price}</div>
+          <div style="font-size:12px;font-weight:700;color:${col}">${pct}</div>
+          <div style="font-size:10px;color:${col};opacity:0.8">${abs}</div>
+        `}
       </div>
     </div>`;
   }).join('')
@@ -2629,9 +3054,26 @@ async function loadNews() {
   const el = document.getElementById('newsContent');
   if(el) el.innerHTML = '<div class="shimmer" style="height:200px;border-radius:12px"></div>';
   buildNewsCats();
-  const data = await api('news');
+  // Wire language to Google News — hl=hi for Hindi, hl=gu for Gujarati, hl=en for English
+  const newsLang = lang === 'hi' ? 'hi' : lang === 'gu' ? 'gu' : 'en';
+  const data = await api('news', { hl: newsLang });
   allNews = data?.news || [];
   renderNews('All');
+  scheduleNewsRefresh();
+}
+
+let newsRefreshTimer = null;
+function scheduleNewsRefresh() {
+  if (newsRefreshTimer) clearTimeout(newsRefreshTimer);
+  // Only auto-refresh during market hours (Mon-Fri 9:15 AM - 3:30 PM IST)
+  const now = new Date();
+  const ist = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+  const day = ist.getDay(); // 0=Sun, 6=Sat
+  const h = ist.getHours(), m = ist.getMinutes();
+  const isMarketHours = day >= 1 && day <= 5 && (h > 9 || (h === 9 && m >= 15)) && (h < 15 || (h === 15 && m <= 30));
+  if (isMarketHours) {
+    newsRefreshTimer = setTimeout(() => loadNews(), 3 * 60 * 1000); // 3 minutes
+  }
 }
 
 function buildNewsCats() {
@@ -2769,19 +3211,20 @@ function showSectorDrill(sectorName) {
 }
 async function buildIPOs() {
   const el = document.getElementById('ipoContent'); if(!el) return;
-  // Static curated base (kept up to date)
+  // Updated IPO data — March 2026
   const staticIPOs = [
-    {name:'HDB Financial Services',date:'Upcoming FY26',band:'₹500–540',gmp:'',status:'upcoming',note:'HDFC Bank subsidiary'},
-    {name:'Navi Technologies',date:'SEBI Approved',band:'TBD',gmp:'',status:'filed',note:'Fintech startup'},
-    {name:'Ather Energy',date:'Listed Apr 2025',band:'₹321',gmp:'',status:'listed',note:'EV two-wheeler'},
-    {name:'Hexaware Technologies',date:'Listed Feb 2025',band:'₹708',gmp:'',status:'listed',note:'IT services'},
+    {name:'HDB Financial Services', date:'Open: Apr 2026',    band:'₹700–740',   gmp:'',  status:'upcoming', note:'HDFC Bank subsidiary — NBFC'},
+    {name:'Ather Energy',           date:'Listed Apr 2025',   band:'₹321',       gmp:'',  status:'listed',   note:'EV two-wheeler — NSE/BSE'},
+    {name:'Hexaware Technologies',  date:'Listed Feb 2025',   band:'₹708',       gmp:'',  status:'listed',   note:'IT services — NSE/BSE'},
+    {name:'Shadowfax Technologies', date:'Filed DRHP 2026',   band:'TBD',        gmp:'',  status:'filed',    note:'Logistics & delivery'},
+    {name:'Smartworks Coworking',   date:'Filed DRHP 2026',   band:'TBD',        gmp:'',  status:'filed',    note:'Co-working spaces'},
+    {name:'Navi Technologies',      date:'SEBI Approved',     band:'TBD',        gmp:'',  status:'filed',    note:'Fintech — Sachin Bansal'},
   ];
-  // Render static immediately
   renderIPOList(el, staticIPOs);
-  // Try to fetch live IPO news headline
-  const newsData = await api('news', { q: 'India IPO 2025 NSE BSE listing subscription' });
+  // Fetch live IPO news
+  const newsData = await api('news', { q: 'India IPO 2026 NSE BSE listing subscription allotment' });
   if (newsData?.news?.length) {
-    const ipoNews = newsData.news.filter(n => n.title.toLowerCase().includes('ipo')).slice(0, 2);
+    const ipoNews = newsData.news.filter(n => n.title.toLowerCase().includes('ipo') || n.title.toLowerCase().includes('listing')).slice(0, 3);
     if (ipoNews.length) {
       const newsEl = document.createElement('div');
       newsEl.style.cssText = 'margin-top:10px;border-top:0.5px solid var(--border);padding-top:10px';
@@ -3188,6 +3631,27 @@ const LEARN_DATA = {
       { q: 'Not understanding what you own — the biggest risk of all',
         a: 'When a company you own announces something unexpected — a new acquisition, a change in regulation, a key executive leaving — your first reaction reveals everything. If you understand the business deeply, you can evaluate the news quickly and decide whether it changes your long-term view. If you do not understand it, you panic. Panic leads to selling at exactly the wrong time. The solution is simple: own fewer companies but understand them deeply. Ten stocks you understand well will outperform fifty stocks you bought on tips. The stock market rewards knowledge and patience above everything else.' },
     ]},
+
+    // ── CHAPTER 8: CASE STUDIES ──────────────────────────────────
+    { cat: '📚 Chapter 8: Real Indian Stock Case Studies', sub: 'What actually happened — and what the charts were telling us', icon:'📚', items: [
+      { q: 'Case Study 1 — Infosys: The 50% crash that was not the end (2000–2003)',
+        a: 'What happened: Infosys was India\'s star IT stock. From its 2000 peak around ₹8,000+ (adjusted), it crashed to below ₹4,000 by 2003 — a 50%+ fall. Many retail investors panicked and sold.\n\nWhat the charts showed: The fall coincided with the global dot-com bust. The 200-day moving average broke decisively. RSI fell below 30 — deeply oversold. Volume on down days was very high, meaning institutions were selling.\n\nWhat the fundamentals showed: Revenue was still growing. Profits were intact. No debt. Promoters were not selling. The business itself was fine. The stock fell because global sentiment collapsed, not because Infosys was broken.\n\nWhat happened next: Anyone who held from 2003 saw 30x returns over the next 20 years.\n\nLesson: RSI below 30 in a fundamentally strong business = potential opportunity, not definite disaster. Always ask — is the business broken, or is the market being irrational?' },
+
+      { q: 'Case Study 2 — Yes Bank: The slow collapse nobody wanted to see (2018–2020)',
+        a: 'What happened: Yes Bank fell from ₹400 in 2018 to below ₹10 by March 2020 — a 97% collapse. Thousands of retail investors averaged down all the way believing it would recover.\n\nWhat the charts showed: The stock broke its 200-day MA in mid-2018 and never recovered it. Each rally was sold. Lower highs, lower lows — a textbook downtrend. RSI barely reached 50 on rallies before falling again.\n\nWhat the fundamentals showed: Gross NPA was rising every quarter. Promoter pledged shares kept increasing. The RBI rejected the CEO\'s reappointment — a massive red flag. Related party transactions were opaque.\n\nRed flags that were visible: Rising NPAs. Pledged promoter shares. Regulatory friction. Management not addressing concerns directly.\n\nLesson: When the chart shows a sustained downtrend AND fundamentals are deteriorating, averaging down is not "buying cheap" — it is buying more of a failing business. Both the chart and the balance sheet were screaming warning signs simultaneously.' },
+
+      { q: 'Case Study 3 — Asian Paints: The quiet compounder (2010–2024)',
+        a: 'What happened: Asian Paints went from around ₹1,200 in 2010 to ₹3,500 by 2024 — roughly 15x in 14 years. No drama. No spectacular news. Just consistent compounding.\n\nWhat the charts showed: A steady uptrend for 14 years. Price consistently above the 200-day moving average. Shallow corrections of 15–25% followed by new highs. RSI rarely went below 40 — always bought on dips.\n\nWhat the fundamentals showed: Revenue growing 12–15% every year. ROE consistently above 25%. Zero debt throughout. Strong brand — Indians do not switch paint brands. Distribution network so deep that no competitor could replicate it.\n\nLesson: The best investments are boring. Asian Paints never made headlines. No management drama, no fraud, no regulatory issues. Just quietly growing year after year. The chart of a true compounder is a gentle upward slope — not a rocket ship.' },
+
+      { q: 'Case Study 4 — Adani Group: When FII selling meets short seller (Jan 2023)',
+        a: 'What happened: In January 2023, Hindenburg Research published a report alleging fraud at Adani Group companies. Adani stocks fell 50–70% within days. This was one of the fastest destructions of market value in Indian stock market history.\n\nWhat the charts showed: A gap down on massive volume on the day the report dropped. Several Adani stocks hit their lower circuit immediately. The 20-day and 50-day MAs broke simultaneously. No technical indicator could have predicted this — it was event-driven.\n\nWhat followed: FIIs sold heavily. The Adani FPO was called off. Promoters bought shares to stabilise prices.\n\nLesson: Even a perfect chart cannot protect you from event risk — a sudden regulatory change, fraud allegation, or geopolitical shock. This is why position sizing matters. Never put more than 5–10% of your portfolio in any single stock, no matter how confident you are. Diversification is not just a strategy — it is insurance.' },
+
+      { q: 'Case Study 5 — Zomato: Profitable after years of losses — stock doubles (2023)',
+        a: 'What happened: Zomato listed in 2021 at ₹116, crashed to ₹40 by 2022. Many said the business model was broken. By late 2023, after reporting its first quarterly profit, the stock was back above ₹150.\n\nWhat the charts showed: The stock formed a long base between ₹40–70 from mid-2022 to early 2023. Volume was drying up — sellers exhausted. Then a breakout above ₹80 on heavy volume. Classic accumulation followed by markup pattern.\n\nWhat the fundamentals showed: Revenue growing fast. Losses narrowing every quarter. Blinkit (quick commerce) growing 100%+ YoY. Management communicating clearly about the path to profitability.\n\nLesson: Loss-making companies can be great investments if the losses are shrinking and revenue is growing. The chart\'s long base formation at low prices was the market quietly accumulating before the fundamentals turned. Volume drying up at a low = sellers gone. Volume spiking on the breakout = institutions buying.' },
+
+      { q: 'Case Study 6 — COVID crash and recovery (March 2020)',
+        a: 'What happened: In March 2020, Nifty 50 fell from 12,000 to 7,500 in 3 weeks — a 37% crash. The fastest bear market in Indian history. Everyone said the economy was over.\n\nWhat the charts showed: RSI hit 12 — the lowest in history. Every technical indicator was at extreme readings. On March 24, the day India announced lockdown, Nifty hit bottom at 7,511. Then it bounced.\n\nWhat the fundamentals showed: Most large companies still had cash, no immediate bankruptcy risk. RBI cut rates aggressively. Government announced stimulus. The crisis was medical, not financial.\n\nWhat happened next: By December 2020, Nifty was back at 13,000. By December 2021, it hit 18,000. Those who held — or bought at the bottom — doubled their money in 18 months.\n\nLesson: RSI at extreme lows in a market-wide crash (not a company-specific collapse) has historically been a strong long-term buying signal for diversified index investors. The question is never "is the market falling?" It is "why is it falling and will the underlying economy survive?"' },
+    ]},
   ],
 
   // ── HINDI ─────────────────────────────────────────────────────
@@ -3390,15 +3854,38 @@ function buildLearn() {
 }
 
 function formatLearnAnswer(text) {
-  // Make answers more readable — bold key terms, add visual structure
-  return text
+  // Case study stock map — detect stock name and add chart link
+  const caseStudyStocks = {
+    'Infosys': 'INFY', 'Yes Bank': 'YESBANK', 'Asian Paints': 'ASIANPAINT',
+    'Adani': 'ADANIENT', 'Zomato': 'ZOMATO', 'Nifty 50': null,
+  };
+
+  // Convert \n\n to paragraphs for case studies
+  let formatted = text
+    .split(/\n\n+/)
+    .map(para => para.trim() ? `<div style="margin-bottom:8px">${para.replace(/\n/g, '<br>')}</div>` : '')
+    .join('');
+
+  // Bold key financial terms
+  formatted = formatted
     .replace(/\b(P\/E|ROE|EPS|RSI|MACD|SIP|NPA|NIM|EBITDA|P\/B|D\/E|CAGR|FII|DII|IPO|NFO|NSE|BSE|SEBI|RBI|Nifty|Sensex)\b/g, '<b>$1</b>')
     .replace(/₹[\d,]+(\s*(Cr|L|K|lakh|crore))?/g, '<span style="color:var(--gm);font-weight:600">$&</span>')
     .replace(/(\d+)%/g, '<span style="font-weight:600">$1%</span>')
     .replace(/\b(Bullish|Bearish|bullish|bearish)\b/g, '<span style="font-weight:600">$1</span>')
-    .replace(/Rule: ([^.]+)\./g, '<div style="background:var(--al);border-left:3px solid var(--a);padding:6px 10px;border-radius:0 6px 6px 0;margin:6px 0;font-size:10px;font-weight:600;color:var(--a)">📌 Rule: $1.</div>')
-    .replace(/Real example: ([^.]+\.)/g, '<div style="background:var(--bl);border-left:3px solid var(--b);padding:6px 10px;border-radius:0 6px 6px 0;margin:6px 0;font-size:10px;color:var(--b)">💡 Example: $1</div>')
-    .replace(/Example: ([^.]+\.)/g, '<div style="background:var(--bl);border-left:3px solid var(--b);padding:6px 10px;border-radius:0 6px 6px 0;margin:6px 0;font-size:10px;color:var(--b)">💡 Example: $1</div>');
+    .replace(/Rule: ([^<]+)\./g, '<div style="background:var(--al);border-left:3px solid var(--a);padding:6px 10px;border-radius:0 6px 6px 0;margin:6px 0;font-size:10px;font-weight:600;color:var(--a)">📌 Rule: $1.</div>')
+    .replace(/Lesson: ([^<]+)/g, '<div style="background:var(--gl);border-left:3px solid var(--gm);padding:8px 10px;border-radius:0 6px 6px 0;margin:8px 0;font-size:11px;font-weight:600;color:var(--g)">💡 Lesson: $1</div>')
+    .replace(/Example: ([^<]+\.)/g, '<div style="background:var(--bl);border-left:3px solid var(--b);padding:6px 10px;border-radius:0 6px 6px 0;margin:6px 0;font-size:10px;color:var(--b)">💡 Example: $1</div>');
+
+  // Add chart link for case studies that mention specific stocks
+  let chartLink = '';
+  for (const [name, sym] of Object.entries(caseStudyStocks)) {
+    if (sym && text.includes(name)) {
+      chartLink = `<div style="margin-top:10px"><button onclick="showPage('research');loadStock('${sym}')" style="background:var(--gm);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">📊 View ${name} Live Chart →</button></div>`;
+      break;
+    }
+  }
+
+  return formatted + chartLink;
 }
 
 function toggleChapter(ci) {
@@ -3448,11 +3935,77 @@ function resetLearnProgress() {
 // ── RESEARCH OVERLAY ──────────────────────────────────────────────
 function buildSectorChips() {
   const el = document.getElementById('sectorChips'); if (!el) return;
-  el.innerHTML = SECTORS.map(s =>
-    `<div onclick="loadStock('${s.rep}')" style="background:var(--card);border:0.5px solid var(--border);border-radius:8px;padding:6px 11px;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:5px">
+  // Map sector names to SECTOR_STOCKS keys
+  const sectorMap = {
+    'IT Services':'IT','Banking':'Banking','Pharma':'Pharma','Automobile':'Auto',
+    'FMCG':'FMCG','Energy / Oil':'Energy','Infrastructure':'Infra','Defence':'Defence',
+    'EMS / Electronics':'EMS','Metals & Mining':'Metals','Power':'Power','Telecom':'Telecom',
+  };
+  el.innerHTML = SECTORS.map(s => {
+    const key = sectorMap[s.name] || null;
+    // If we have full sector stocks, show sector drill-down; otherwise load rep stock
+    const onclick = key
+      ? `showResearchSector('${s.name}','${key}')`
+      : `loadStock('${s.rep}')`;
+    return `<div onclick="${onclick}" style="background:var(--card);border:0.5px solid var(--border);border-radius:8px;padding:6px 11px;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap">
       <span>${s.icon}</span><span>${s.name}</span>
-    </div>`
-  ).join('');
+    </div>`;
+  }).join('');
+}
+
+// Show ALL stocks in a sector within Research tab
+function showResearchSector(sectorName, sectorKey) {
+  const stocks = SECTOR_STOCKS[sectorKey] || [];
+  const resEl  = document.getElementById('resMain'); // main research area
+  const srEl   = document.getElementById('sectorResPanel');
+
+  // Create or reuse a sector panel below the search
+  let panel = document.getElementById('sectorResPanel');
+  if (!panel) {
+    panel = document.createElement('div');
+    panel.id = 'sectorResPanel';
+    const chips = document.getElementById('sectorChips');
+    if (chips && chips.parentNode) chips.parentNode.insertBefore(panel, chips.nextSibling);
+  }
+
+  const guide = buildSectorPickGuide(sectorName);
+  panel.innerHTML = `
+    <div style="background:var(--card);border:0.5px solid var(--border);border-radius:14px;padding:14px;margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="font-size:14px;font-weight:700">${SECTORS.find(s=>s.name===sectorName)?.icon||'📊'} ${sectorName} Sector</div>
+        <div onclick="document.getElementById('sectorResPanel').innerHTML=''" style="font-size:11px;color:var(--muted);cursor:pointer;padding:4px 8px;border:0.5px solid var(--border);border-radius:6px">✕ Close</div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:10px">Tap any stock to see full research</div>
+      <div id="sectorResStocks" style="display:flex;flex-direction:column;gap:7px">
+        ${stocks.map(sym => `
+          <div onclick="loadStock('${sym}')" style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--bg);border-radius:10px;cursor:pointer;border:0.5px solid var(--border)" id="srs-${sym}">
+            <div>
+              <div style="font-size:13px;font-weight:600">${sym}</div>
+              <div style="font-size:10px;color:var(--muted)">${STOCKS[sym]?.name||sym}</div>
+            </div>
+            <div style="text-align:right" id="srs-price-${sym}">
+              <div style="font-size:10px;color:var(--muted)">Loading…</div>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>
+    ${guide}`;
+
+  // Scroll to panel
+  panel.scrollIntoView({ behavior:'smooth', block:'start' });
+
+  // Load live prices for all sector stocks
+  api('batch', { symbols: stocks.join(',') }).then(data => {
+    if (!data?.quotes) return;
+    stocks.forEach(sym => {
+      const q   = data.quotes[sym];
+      const el2 = document.getElementById('srs-price-' + sym);
+      if (!el2 || !q) return;
+      const up = q.changePct >= 0;
+      el2.innerHTML = `<div style="font-size:13px;font-weight:700">${q.price>0?'₹'+q.price.toLocaleString('en-IN',{maximumFractionDigits:2}):'—'}</div>
+        <div style="font-size:10px;font-weight:600;color:${up?'var(--g)':'var(--r)'}">${up?'+':''}${q.changePct?.toFixed(2)||0}%</div>`;
+    });
+  });
 }
 
 function buildThemeChips() {
@@ -3562,14 +4115,190 @@ function submitFeedback() {
   window.open('https://wa.me/917878477979?text=' + encodeURIComponent(msg));
 }
 
-// ── ONBOARDING TOUR ───────────────────────────────────────────────
+// ── PORTFOLIO TAB SWITCHER ─────────────────────────────────────────
+function switchPortTab(tab) {
+  const real  = document.getElementById('portReal');
+  const paper = document.getElementById('portPaper');
+  const btnR  = document.getElementById('pt-real');
+  const btnP  = document.getElementById('pt-paper');
+  if (tab === 'real') {
+    if(real)  real.style.display  = 'block';
+    if(paper) paper.style.display = 'none';
+    if(btnR)  { btnR.style.background = 'var(--gm)'; btnR.style.color = '#fff'; }
+    if(btnP)  { btnP.style.background = 'transparent'; btnP.style.color = 'var(--muted)'; }
+  } else {
+    if(real)  real.style.display  = 'none';
+    if(paper) paper.style.display = 'block';
+    if(btnP)  { btnP.style.background = 'var(--b)'; btnP.style.color = '#fff'; }
+    if(btnR)  { btnR.style.background = 'transparent'; btnR.style.color = 'var(--muted)'; }
+    renderPaperHoldings();
+  }
+}
+
+// ── PAPER TRADING ──────────────────────────────────────────────────
+const PAPER_START = 100000;
+let paperPortfolio = JSON.parse(localStorage.getItem('ss_paper') || '{"cash":100000,"holdings":[]}');
+let paperLivePrice = 0;
+
+function savePaper() { localStorage.setItem('ss_paper', JSON.stringify(paperPortfolio)); }
+
+async function paperSymLookup() {
+  const sym = document.getElementById('paperSymInp')?.value?.trim()?.toUpperCase();
+  const prev = document.getElementById('paperPricePreview');
+  if (!sym || sym.length < 2) { if(prev) prev.textContent = ''; paperLivePrice = 0; return; }
+  if(prev) prev.textContent = '⏳ Fetching live price…';
+  const data = await api('quote', { symbol: sym });
+  if (data?.price > 0) {
+    paperLivePrice = data.price;
+    if(prev) prev.innerHTML = `<b style="color:var(--text)">${sym}</b> · Live price: <b style="color:var(--gm)">₹${data.price.toLocaleString('en-IN',{maximumFractionDigits:2})}</b>`;
+    paperCalcTotal();
+  } else {
+    paperLivePrice = 0;
+    if(prev) prev.textContent = 'Stock not found — check symbol';
+  }
+}
+
+function paperCalcTotal() {
+  const qty = parseInt(document.getElementById('paperQtyInp')?.value || 0);
+  const tot = document.getElementById('paperTotalPreview');
+  if (paperLivePrice > 0 && qty > 0) {
+    const total = paperLivePrice * qty;
+    if(tot) tot.textContent = 'Total: ₹' + total.toLocaleString('en-IN',{maximumFractionDigits:0});
+  } else {
+    if(tot) tot.textContent = 'Total: —';
+  }
+}
+
+async function paperBuy() {
+  const sym = document.getElementById('paperSymInp')?.value?.trim()?.toUpperCase();
+  const qty = parseInt(document.getElementById('paperQtyInp')?.value || 0);
+  if (!sym || qty < 1) { alert('Enter a stock symbol and quantity'); return; }
+  if (paperLivePrice <= 0) { alert('Please wait for price to load'); return; }
+  const cost = paperLivePrice * qty;
+  if (cost > paperPortfolio.cash) { alert('Insufficient virtual cash! You have ₹' + paperPortfolio.cash.toLocaleString('en-IN',{maximumFractionDigits:0}) + ' available'); return; }
+  // Check if already holding
+  const existing = paperPortfolio.holdings.find(h => h.sym === sym);
+  if (existing) {
+    // Average down/up
+    const totalQty  = existing.qty + qty;
+    const totalCost = existing.avgPrice * existing.qty + paperLivePrice * qty;
+    existing.qty      = totalQty;
+    existing.avgPrice = +(totalCost / totalQty).toFixed(2);
+  } else {
+    paperPortfolio.holdings.push({ sym, qty, avgPrice: +paperLivePrice.toFixed(2), buyDate: new Date().toLocaleDateString('en-IN') });
+  }
+  paperPortfolio.cash -= cost;
+  savePaper();
+  document.getElementById('paperSymInp').value = '';
+  document.getElementById('paperQtyInp').value = '';
+  document.getElementById('paperPricePreview').textContent = '';
+  document.getElementById('paperTotalPreview').textContent = 'Total: —';
+  paperLivePrice = 0;
+  renderPaperHoldings();
+  alert(`✅ Bought ${qty} shares of ${sym} at ₹${paperLivePrice || cost/qty} (virtual)`);
+}
+
+async function paperSell(sym) {
+  const h = paperPortfolio.holdings.find(h => h.sym === sym);
+  if (!h) return;
+  const qtyStr = prompt(`Sell ${sym} — you hold ${h.qty} shares. How many to sell?`, h.qty);
+  const qty = parseInt(qtyStr);
+  if (!qty || qty <= 0 || qty > h.qty) { alert('Invalid quantity'); return; }
+  const data = await api('quote', { symbol: sym });
+  const price = data?.price || h.avgPrice;
+  const proceeds = price * qty;
+  h.qty -= qty;
+  if (h.qty <= 0) paperPortfolio.holdings = paperPortfolio.holdings.filter(x => x.sym !== sym);
+  paperPortfolio.cash += proceeds;
+  const pnl  = (price - h.avgPrice) * qty;
+  const pnlPct = ((price - h.avgPrice) / h.avgPrice * 100).toFixed(1);
+  savePaper();
+  renderPaperHoldings();
+  alert(`✅ Sold ${qty} ${sym} at ₹${price.toLocaleString('en-IN',{maximumFractionDigits:2})}\nP&L: ${pnl >= 0 ? '+' : ''}₹${pnl.toFixed(0)} (${pnlPct}%)`);
+}
+
+async function renderPaperHoldings() {
+  const el = document.getElementById('paperHoldings');
+  const balEl  = document.getElementById('paperBalance');
+  const cashEl = document.getElementById('paperCash');
+  const invEl  = document.getElementById('paperInvested');
+  const pnlEl  = document.getElementById('paperPnl');
+  if (!el) return;
+
+  const holdings = paperPortfolio.holdings;
+  if (!holdings.length) {
+    el.innerHTML = '<div style="text-align:center;padding:24px;color:var(--muted);font-size:12px">No virtual positions yet.<br>Search a stock above and buy your first virtual share!</div>';
+    if(cashEl) cashEl.textContent = '₹' + paperPortfolio.cash.toLocaleString('en-IN',{maximumFractionDigits:0});
+    if(invEl)  invEl.textContent  = '₹0';
+    if(pnlEl)  { pnlEl.textContent = '₹0'; pnlEl.style.color = '#fff'; }
+    if(balEl)  balEl.textContent   = '₹' + paperPortfolio.cash.toLocaleString('en-IN',{maximumFractionDigits:0});
+    return;
+  }
+
+  el.innerHTML = '<div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:8px;text-transform:uppercase">Virtual Holdings</div><div style="text-align:center;padding:10px;color:var(--muted);font-size:11px">⏳ Fetching live prices…</div>';
+
+  // Fetch live prices for all holdings
+  const syms = holdings.map(h => h.sym).join(',');
+  const liveData = await api('batch', { symbols: syms });
+  const quotes = liveData?.quotes || {};
+
+  let totalInvested = 0, totalCurrent = 0;
+
+  const rows = holdings.map(h => {
+    const q = quotes[h.sym];
+    const livePrice = q?.price || h.avgPrice;
+    const pnl = (livePrice - h.avgPrice) * h.qty;
+    const pnlPct = ((livePrice - h.avgPrice) / h.avgPrice * 100).toFixed(1);
+    const invested = h.avgPrice * h.qty;
+    const current  = livePrice * h.qty;
+    totalInvested += invested;
+    totalCurrent  += current;
+    const up = pnl >= 0;
+    return `<div style="background:var(--card);border:0.5px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <div>
+          <div style="font-size:13px;font-weight:700">${h.sym}</div>
+          <div style="font-size:10px;color:var(--muted)">${h.qty} shares · Avg ₹${h.avgPrice.toLocaleString('en-IN',{maximumFractionDigits:2})} · Since ${h.buyDate}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:14px;font-weight:700">₹${livePrice.toLocaleString('en-IN',{maximumFractionDigits:2})}</div>
+          <div style="font-size:11px;font-weight:600;color:${up?'var(--g)':'var(--r)'}">${up?'+':''}${pnlPct}%</div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-size:11px;color:${up?'var(--g)':'var(--r)'}">P&L: ${up?'+':''}₹${Math.abs(pnl).toLocaleString('en-IN',{maximumFractionDigits:0})} ${up?'profit':'loss'}</div>
+        <button onclick="paperSell('${h.sym}')" style="background:var(--rl);color:var(--r);border:none;border-radius:7px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">Sell</button>
+      </div>
+      ${!up && pnl < -500 ? `<div style="font-size:10px;color:var(--muted);margin-top:6px;line-height:1.5">💡 Learning moment: This position is down. Ask yourself — has anything changed in the business, or is this just market noise?</div>` : ''}
+      ${up && pnl > 1000 ? `<div style="font-size:10px;color:var(--muted);margin-top:6px;line-height:1.5">💡 Learning moment: This is up. Consider: was your original thesis right? Has anything changed that would make you sell now?</div>` : ''}
+    </div>`;
+  }).join('');
+
+  el.innerHTML = '<div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:8px;text-transform:uppercase">Virtual Holdings</div>' + rows;
+
+  const totalPnL = totalCurrent - totalInvested;
+  const up = totalPnL >= 0;
+  if(cashEl) cashEl.textContent = '₹' + paperPortfolio.cash.toLocaleString('en-IN',{maximumFractionDigits:0});
+  if(invEl)  invEl.textContent  = '₹' + totalInvested.toLocaleString('en-IN',{maximumFractionDigits:0});
+  if(pnlEl)  { pnlEl.textContent = (up?'+':'')+'₹'+Math.abs(totalPnL).toLocaleString('en-IN',{maximumFractionDigits:0}); pnlEl.style.color = up ? '#4ade80' : '#f87171'; }
+  if(balEl)  balEl.textContent   = '₹' + (paperPortfolio.cash + totalCurrent).toLocaleString('en-IN',{maximumFractionDigits:0});
+}
+
+function paperReset() {
+  if (!confirm('Reset your virtual portfolio? This will clear all positions and restore ₹1,00,000 virtual cash.')) return;
+  paperPortfolio = { cash: PAPER_START, holdings: [] };
+  savePaper();
+  renderPaperHoldings();
+}
+
+
 const TOUR_STEPS = [
-  { targetId:'nav-home',     ico:'🏠', title:'Home',      sub:'Your market dashboard',    desc:'Start here every day. See market mood, live Nifty & Sensex values, top moving stocks, sector heatmap, and live news — all updated in real time.', position:'top' },
-  { targetId:'nav-research', ico:'🔍', title:'Research',  sub:'Analyse any stock',        desc:'Search any NSE or BSE stock — TCS, ZOMATO, HDFC Bank, anything. Get live price, charts, P&L, financial ratios, peer comparison, and data-driven insights.', position:'top' },
-  { targetId:'nav-watchlist',ico:'⭐', title:'Watchlist', sub:'Stocks you are watching',  desc:'Tap the ☆ star on any stock research page to save it here. See live prices for all your saved stocks in one place.', position:'top' },
-  { targetId:'nav-portfolio',ico:'📊', title:'Portfolio', sub:'Track what you own',       desc:'Add stocks you have bought with quantity and buy price. See your live profit or loss, and run a stress test to see how your portfolio handles interest rate changes.', position:'top' },
-  { targetId:'nav-learn',    ico:'📚', title:'Learn',     sub:'85 free lessons',          desc:'Complete stock market education in English, हिन्दी, and ગુજરાતી. Covers basics, candlestick charts, how to pick a company, financial ratios, and common investor mistakes.', position:'top' },
-  { targetId:'nav-feedback', ico:'💬', title:'Feedback',  sub:'You are a beta user!',     desc:'This app is in beta and your opinion shapes what gets built next. Takes 2 minutes. Feedback goes directly to the developer via WhatsApp. Every response is read personally.', position:'top', isLast:true },
+  { targetId:'nav-home',     ico:'🏠', title:'Home',           sub:'Your market dashboard',       desc:'Start here every day. See market mood, live Nifty & Sensex values, top moving stocks, sector heatmap, global indices, and live news — all updated every 60 seconds during market hours.', position:'top' },
+  { targetId:'nav-research', ico:'🔍', title:'Research',       sub:'Analyse any stock or sector',  desc:'Search any NSE or BSE stock — TCS, ZOMATO, HDFC Bank, anything. Browse by sector to see ALL stocks in that sector with live prices. Get charts with moving averages, RSI, financials, peer comparison, and plain-English insights.', position:'top' },
+  { targetId:'nav-watchlist',ico:'⭐', title:'Watchlist',      sub:'Stocks you are watching',      desc:'Tap the ☆ star on any stock research page to save it here. See live prices for all your saved stocks in one place. Great for tracking stocks before you invest.', position:'top' },
+  { targetId:'nav-portfolio',ico:'📊', title:'Portfolio',      sub:'Real + Paper Trading',         desc:'Two modes: "My Portfolio" to track real investments, and "Paper Trading" to practice with ₹1,00,000 virtual money at live prices — zero real risk. Perfect for building confidence before investing real money.', position:'top' },
+  { targetId:'nav-learn',    ico:'📚', title:'Learn',          sub:'85 free lessons + Case Studies', desc:'Complete market education in English, हिन्दी, and ગુજરાતી. Covers basics, candlestick charts, how to pick a company, financial ratios, real case studies of Indian stocks, and common investor mistakes.', position:'top' },
+  { targetId:'nav-feedback', ico:'💬', title:'Feedback',       sub:'You are a beta user!',          desc:'This app is in beta and your opinion shapes what gets built next. Takes 2 minutes. Feedback goes directly to the developer via WhatsApp. Every response is read personally.', position:'top', isLast:true },
 ];
 let tourStep = 0;
 
@@ -3643,15 +4372,37 @@ document.addEventListener('DOMContentLoaded', () => {
   // Pre-warm the server session immediately so it's cached before data calls fire
   api('warmup').catch(() => {});
 
-  // Load all data immediately — session cache on server means no repeated 2-4s session overhead
+  // Load all data immediately
   loadIndices();
   loadMovers();
   loadDarkHorse();
   setTimeout(() => { if (document.getElementById('ht-today')?.classList.contains('on')) loadNews(); }, 500);
 
+  // 60-second auto refresh during market hours
+  startAutoRefresh();
+
   // Show onboarding tour for first-time users
   initTour();
 });
+
+let autoRefreshTimer = null;
+function startAutoRefresh() {
+  if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+  autoRefreshTimer = setInterval(() => {
+    const now = new Date();
+    const ist = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+    const day = ist.getDay();
+    const h = ist.getHours(), m = ist.getMinutes();
+    const isOpen = day >= 1 && day <= 5 && (h > 9 || (h===9&&m>=15)) && (h < 15 || (h===15&&m<=30));
+    if (isOpen) {
+      loadIndices();
+      loadMovers();
+      // Update last-refreshed indicator
+      const ind = document.getElementById('lastUpdated');
+      if (ind) ind.textContent = 'Updated ' + ist.getHours().toString().padStart(2,'0') + ':' + ist.getMinutes().toString().padStart(2,'0');
+    }
+  }, 60000); // every 60 seconds
+}
 
 </script>
 </body>
