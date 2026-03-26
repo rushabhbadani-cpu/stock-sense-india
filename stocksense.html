@@ -1766,14 +1766,18 @@ const SECTORS = [
 ];
 
 const THEMES = [
-  {name:'🤖 Artificial Intelligence', reps:['INFY','PERSISTENT','HCLTECH','TATAELXSI'], news:'AI India stock market'},
-  {name:'⚡ Electric Vehicles',       reps:['TATAMOTORS','MM','EXIDEIND'],              news:'electric vehicle EV India'},
-  {name:'🛡️ Defence & Aerospace',    reps:['HAL','BEL','MAZDOCK','BHARATFORG'],         news:'India defence sector'},
-  {name:'☀️ Renewable Energy',       reps:['ADANIGREEN','NTPC','TATAPOWER'],             news:'renewable energy India'},
-  {name:'💊 Generic Pharma',         reps:['SUNPHARMA','CIPLA','DRREDDY'],              news:'India pharma USFDA'},
-  {name:'🏠 Real Estate',            reps:['DLF','GODREJPROP','OBEROIRLTY'],            news:'India real estate'},
-  {name:'🌾 Agri / Fertiliser',      reps:['CHAMBLFERT','PIIND','UPL'],                news:'India agriculture fertiliser'},
-  {name:'📱 Fintech / Digital',       reps:['PAYTM','ZOMATO','NYKAA'],                  news:'India fintech digital payments'},
+  {name:'🤖 Artificial Intelligence', reps:['INFY','PERSISTENT','HCLTECH','TATAELXSI','WIPRO','TCS','LTIM','COFORGE'], news:'AI artificial intelligence India stock market'},
+  {name:'⚡ Electric Vehicles',       reps:['TATAMOTORS','MM','EXIDEIND','AMARA','MOTHERSON','SAMVARDHANA','BOSCHLTD'], news:'electric vehicle EV India stock'},
+  {name:'🛡️ Defence & Aerospace',    reps:['HAL','BEL','MAZDOCK','BHARATFORG','BDL','MIDHANI','BEML','GRSE'], news:'India defence sector stock'},
+  {name:'☀️ Renewable Energy',       reps:['ADANIGREEN','NTPC','TATAPOWER','NHPC','SJVN','INOXWIND','CESC'], news:'renewable energy solar wind India stock'},
+  {name:'💊 Generic Pharma',         reps:['SUNPHARMA','CIPLA','DRREDDY','LUPIN','AUROPHARMA','DIVISLAB','BIOCON'], news:'India pharma USFDA generic stock'},
+  {name:'🏠 Real Estate',            reps:['DLF','GODREJPROP','OBEROIRLTY','PRESTIGE','BRIGADE','SOBHA','MAHLIFE'], news:'India real estate housing stock'},
+  {name:'🌾 Agri / Fertiliser',      reps:['CHAMBLFERT','PIIND','UPL','COROMANDEL','GNFC','GSFC','PARADEEP'], news:'India agriculture fertiliser stock'},
+  {name:'📱 Fintech / Digital',       reps:['PAYTM','ZOMATO','NYKAA','POLICYBZR','DELHIVERY','MAPMYIND'], news:'India fintech digital payments stock'},
+  {name:'🏗️ Infrastructure',         reps:['LT','ADANIPORTS','IRFC','RVNL','KEC','KALPATPOWR','IRB','PNCINFRA'], news:'India infrastructure capex roads stock'},
+  {name:'🏦 PSU Banks',              reps:['SBIN','PNB','BANKBARODA','CANBK','UNIONBANK','BANKINDIA','MAHABANK'], news:'India PSU public sector bank stock'},
+  {name:'💎 Premium Consumer',       reps:['TITAN','TRENT','ABFRL','VEDL','MANYAVAR','METRO'], news:'India premium consumer brand stock'},
+  {name:'🔌 Electronics Mfg (EMS)',  reps:['DIXON','KAYNES','AMBER','SYRMA','PGEL','AVALON','IDEAFORGE'], news:'India electronics manufacturing EMS stock'},
 ];
 
 // Sector benchmarks
@@ -3301,10 +3305,13 @@ const HEATMAP_SYMS = [
 
 // Must include ALL HEATMAP_SYMS so heatmap always gets populated
 const MOVER_SYMS = [
-  // All 12 heatmap stocks (required)
-  'INFY','HDFCBANK','SUNPHARMA','MARUTI','ITC','RELIANCE','LT','HAL','DIXON','TATASTEEL','NTPC','BHARTIARTL',
-  // Additional movers
-  'TCS','PERSISTENT','HCLTECH','KOTAKBANK','AXISBANK','BAJFINANCE','TITAN','TATAMOTORS','SBIN','ICICIBANK','WIPRO'
+  // Nifty 50 large caps — broad coverage ensures enough gainers AND losers
+  'RELIANCE','TCS','HDFCBANK','INFY','ICICIBANK','HINDUNILVR','SBIN','BHARTIARTL',
+  'KOTAKBANK','LT','AXISBANK','ITC','BAJFINANCE','ASIANPAINT','MARUTI',
+  'SUNPHARMA','TITAN','ULTRACEMCO','WIPRO','HCLTECH','TATAMOTORS','ONGC',
+  'TATASTEEL','NTPC','BAJAJ-AUTO','POWERGRID','NESTLEIND','TECHM','JSWSTEEL',
+  // Mid cap + thematic
+  'HAL','DIXON','PERSISTENT','ZOMATO','ADANIENT','ADANIPORTS','SIEMENS','ABB',
 ];
 
 async function loadMovers() {
@@ -3329,13 +3336,31 @@ async function loadMovers() {
     }));
 
   const allZeroPct = results.every(r => Math.abs(r.live.changePct) < 0.01);
-  moversCache.gainers = allZeroPct
-    ? [...results].sort((a, b) => b.live.changePct - a.live.changePct)
-    : [...results].filter(r => r.live.changePct > 0).sort((a, b) => b.live.changePct - a.live.changePct);
-  moversCache.losers  = allZeroPct
-    ? [...results].sort((a, b) => a.live.changePct - b.live.changePct)
-    : [...results].filter(r => r.live.changePct < 0).sort((a, b) => a.live.changePct - b.live.changePct);
-  moversCache.volume  = [...results].sort((a, b) => (b.live.volume || 0) - (a.live.volume || 0));
+
+  // Sort by changePct
+  const sorted = [...results].sort((a, b) => b.live.changePct - a.live.changePct);
+
+  if (allZeroPct) {
+    // Weekend / closed market — show all sorted, no filtering
+    moversCache.gainers = sorted;
+    moversCache.losers  = [...sorted].reverse();
+  } else {
+    // Live market — filter properly but ensure at least 5 in each list
+    const trueGainers = results.filter(r => r.live.changePct > 0.05).sort((a, b) => b.live.changePct - a.live.changePct);
+    const trueLosers  = results.filter(r => r.live.changePct < -0.05).sort((a, b) => a.live.changePct - b.live.changePct);
+
+    // If fewer than 5 gainers, pad with near-zero positive or smallest negatives
+    moversCache.gainers = trueGainers.length >= 3
+      ? trueGainers
+      : sorted.slice(0, Math.max(5, trueGainers.length));
+
+    // If fewer than 5 losers, pad with near-zero negative or smallest positives
+    moversCache.losers = trueLosers.length >= 3
+      ? trueLosers
+      : [...sorted].reverse().slice(0, Math.max(5, trueLosers.length));
+  }
+
+  moversCache.volume = [...results].sort((a, b) => (b.live.volume || 0) - (a.live.volume || 0));
   renderMovers('gainers');
   updateHeatmapFromMovers(results);
 }
@@ -4505,8 +4530,59 @@ function showTheme(nameEnc, repsStr, newsEnc) {
   const name = decodeURIComponent(nameEnc);
   const reps = repsStr.split(',');
   const news = decodeURIComponent(newsEnc);
-  // Show first rep stock and load theme news
-  loadStock(reps[0]);
+
+  // Find or create a theme panel below the theme chips
+  let panel = document.getElementById('themeResPanel');
+  if (!panel) {
+    panel = document.createElement('div');
+    panel.id = 'themeResPanel';
+    const chips = document.getElementById('themeChips');
+    if (chips && chips.parentNode) chips.parentNode.insertBefore(panel, chips.nextSibling);
+  }
+
+  // Find theme emoji/icon
+  const theme = THEMES.find(t => t.name === name) || { name, reps };
+
+  panel.innerHTML = `
+    <div style="background:var(--card);border:0.5px solid var(--border);border-radius:14px;padding:14px;margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="font-size:14px;font-weight:700">${name}</div>
+        <div onclick="document.getElementById('themeResPanel').innerHTML=''" style="font-size:11px;color:var(--muted);cursor:pointer;padding:4px 8px;border:0.5px solid var(--border);border-radius:6px">✕ Close</div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:10px">Tap any stock to see full research</div>
+      <div id="themeStockList" style="display:flex;flex-direction:column;gap:7px">
+        ${reps.map(sym => `
+          <div onclick="loadStock('${sym}')" style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--bg);border-radius:10px;cursor:pointer;border:0.5px solid var(--border)" id="trs-${sym}">
+            <div>
+              <div style="font-size:13px;font-weight:600">${sym}</div>
+              <div style="font-size:10px;color:var(--muted)">${STOCKS[sym]?.name || sym}</div>
+            </div>
+            <div style="text-align:right" id="trs-price-${sym}">
+              <div style="font-size:10px;color:var(--muted)">Loading…</div>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+
+  // Scroll to panel
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // Fetch live prices for all theme stocks
+  api('batch', { symbols: reps.join(',') }).then(data => {
+    if (!data?.quotes) return;
+    reps.forEach(sym => {
+      const q   = data.quotes[sym];
+      const el  = document.getElementById('trs-price-' + sym);
+      if (!el || !q) return;
+      const up  = (q.changePct || 0) >= 0;
+      el.innerHTML = `
+        <div style="font-size:13px;font-weight:700">${q.price > 0 ? fmtPrice(q.price) : '—'}</div>
+        <div style="font-size:10px;font-weight:600;color:${up ? 'var(--g)' : 'var(--r)'}">
+          ${up ? '+' : ''}${(q.changePct || 0).toFixed(2)}%
+        </div>`;
+    });
+  });
+
   // Load theme-specific news in background
   api('news', { q: news }).then(data => {
     if (data?.news?.length) {
