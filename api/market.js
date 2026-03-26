@@ -92,16 +92,27 @@ function extractQuote(data, symbol) {
 }
 
 // ── SINGLE QUOTE — uses v7 bulk for accurate real-time price ─────
+// Special symbol map for stocks Yahoo handles differently
+var SYMBOL_OVERRIDES = {
+  'TATAMOTORS': 'TATAMOTORS.NS',  // Tata Motors regular shares (not DVR)
+  'MM':         'M&M.NS',          // Mahindra
+  'BAJAJ-AUTO': 'BAJAJ-AUTO.NS',
+};
+
 async function getQuote(symbol, session) {
   // Try v7 bulk first (real-time price, correct weekend %)
-  var bulkSym = symbol.replace(/&/g, '%26'); // handle M&M etc
+  var bulkSym = SYMBOL_OVERRIDES[symbol] || symbol.replace(/&/g, '%26');
+  var lookupKey = bulkSym.replace('.NS','').replace('.BO','');
   var quotes  = await getBulkQuotes([bulkSym], session);
-  if (quotes[bulkSym] && quotes[bulkSym].price > 0) {
-    console.log('Quote v7 ' + symbol + ': Rs.' + quotes[bulkSym].price + ' ' + (quotes[bulkSym].changePct >= 0 ? '+' : '') + quotes[bulkSym].changePct + '%');
-    return Object.assign({}, quotes[bulkSym], { symbol: symbol });
+  var q = quotes[bulkSym] || quotes[lookupKey] || quotes[symbol];
+  if (q && q.price > 0) {
+    console.log('Quote v7 ' + symbol + ': Rs.' + q.price + ' ' + (q.changePct >= 0 ? '+' : '') + q.changePct + '%');
+    return Object.assign({}, q, { symbol: symbol });
   }
-  // Fallback to chart endpoint
-  var syms = [symbol + '.NS', symbol + '.BO', symbol];
+  // Fallback to chart endpoint — try .NS first for Indian stocks
+  var syms = SYMBOL_OVERRIDES[symbol]
+    ? [SYMBOL_OVERRIDES[symbol], symbol + '.NS', symbol + '.BO', symbol]
+    : [symbol + '.NS', symbol + '.BO', symbol];
   for (var i = 0; i < syms.length; i++) {
     try {
       var data = await yahooFetch(syms[i], session);
@@ -230,13 +241,41 @@ async function getIndices(session) {
       var m      = result.meta;
       var price  = m.regularMarketPrice || 0;
       if (price <= 0) return null;
-      var closes = (result.indicators && result.indicators.quote && result.indicators.quote[0] && result.indicators.quote[0].close || []).filter(function(c){ return c != null && c > 0; });
-      var prev   = closes.length >= 2 ? closes[closes.length - 2] : (m.previousClose || price);
-      return { name: name, symbol: sym, value: +price.toFixed(2), change: +(price-prev).toFixed(2), changePct: +((price-prev)/prev*100).toFixed(2), prevClose: +prev.toFixed(2) };
+      // Use regularMarketChangePercent directly — most reliable source
+      var changePct = m.regularMarketChangePercent != null
+        ? +m.regularMarketChangePercent.toFixed(2)
+        : null;
+      var change    = m.regularMarketChange != null
+        ? +m.regularMarketChange.toFixed(2)
+        : null;
+      // Fallback: calculate from previousClose
+      if (changePct === null || changePct === 0) {
+        var prev = m.chartPreviousClose || m.previousClose || price;
+        if (prev > 0 && prev !== price) {
+          changePct = +((price - prev) / prev * 100).toFixed(2);
+          change    = +(price - prev).toFixed(2);
+        }
+      }
+      // Second fallback: use last two closes from indicator data
+      if ((changePct === null || changePct === 0) && result.indicators) {
+        var closes = (result.indicators.quote && result.indicators.quote[0] && result.indicators.quote[0].close || []).filter(function(c){ return c != null && c > 0; });
+        if (closes.length >= 2) {
+          var prev2 = closes[closes.length - 2];
+          changePct = +((price - prev2) / prev2 * 100).toFixed(2);
+          change    = +(price - prev2).toFixed(2);
+        }
+      }
+      return {
+        name: name, symbol: sym,
+        value: +price.toFixed(2),
+        change: change || 0,
+        changePct: changePct || 0,
+        prevClose: +(m.chartPreviousClose || m.previousClose || price).toFixed(2)
+      };
     } catch(e) { console.error('Index ' + sym + ':', e.message); return null; }
   }));
   var indices = results.filter(Boolean);
-  console.log('Indices: ' + indices.length + '/8');
+  console.log('Indices: ' + indices.length + '/8 — changePcts: ' + indices.map(function(i){ return i.name + ':' + i.changePct + '%'; }).join(', '));
   return { indices: indices, live: indices.length > 0 };
 }
 
@@ -301,12 +340,16 @@ async function getForex(session) {
 }
 
 // ── NEWS ──────────────────────────────────────────────────────────
-async function getNews(q) {
+async function getNews(q, hl) {
   try {
-    var baseQuery   = q || 'India stock market NSE Nifty Sensex economy RBI';
-    var globalExtra = q ? '' : ' OR "global markets" OR "Fed rate" OR "crude oil" OR war geopolitical';
+    var lang        = hl || 'en';
+    var baseQuery   = q || (lang === 'hi' ? 'भारत शेयर बाजार NSE Nifty Sensex RBI अर्थव्यवस्था' : lang === 'gu' ? 'ભારત શેર બજાર NSE Nifty Sensex RBI અર્થતંત્ર' : 'India stock market NSE Nifty Sensex economy RBI');
+    var globalExtra = q ? '' : (lang === 'en' ? ' OR "global markets" OR "Fed rate" OR "crude oil" OR war geopolitical' : '');
     var query       = encodeURIComponent(baseQuery + globalExtra);
-    var res = await fetch('https://news.google.com/rss/search?q=' + query + '+when:3d&hl=en-IN&gl=IN&ceid=IN:en', {
+    // Language params: hl=hi for Hindi, hl=gu for Gujarati, hl=en-IN for English
+    var hlParam     = lang === 'hi' ? 'hi' : lang === 'gu' ? 'gu' : 'en-IN';
+    var ceid        = lang === 'hi' ? 'IN:hi' : lang === 'gu' ? 'IN:gu' : 'IN:en';
+    var res = await fetch('https://news.google.com/rss/search?q=' + query + '+when:3d&hl=' + hlParam + '&gl=IN&ceid=' + ceid, {
       headers: { 'Accept': 'application/rss+xml, text/xml' },
       signal: AbortSignal.timeout(8000),
     });
@@ -325,12 +368,12 @@ async function getNews(q) {
       var pub   = pm ? pm[1] : '';
       if (title) {
         var tl        = title.toLowerCase();
-        var sentiment = tl.match(/fall|drop|crash|loss|decline|plunge|slump/) ? 'negative' : tl.match(/rise|gain|surge|rally|profit|jump|soar/) ? 'positive' : 'neutral';
+        var sentiment = tl.match(/fall|drop|crash|loss|decline|plunge|slump|गिर|घट|ઘટ/) ? 'negative' : tl.match(/rise|gain|surge|rally|profit|jump|soar|बढ़|वृद्धि|વધ/) ? 'positive' : 'neutral';
         var hrs       = Math.round((Date.now() - new Date(pub)) / 3600000);
         items.push({ title: title.replace(/ - [^-]+$/, '').replace(/&amp;/g, '&').trim().slice(0, 130), source: src, sentiment: sentiment, timeAgo: isNaN(hrs) ? 'Recently' : hrs < 1 ? 'Just now' : hrs < 24 ? hrs + 'h ago' : Math.round(hrs/24) + 'd ago' });
       }
     }
-    console.log('News: ' + items.length + ' items');
+    console.log('News (' + lang + '): ' + items.length + ' items');
     return { news: items, live: items.length > 0 };
   } catch(e) { return { news: [], live: false, error: e.message }; }
 }
@@ -401,7 +444,7 @@ export default async function handler(req, res) {
     else if (action === 'indices')      result = await getIndices(session);
     else if (action === 'commodities')  result = await getCommodities(session);
     else if (action === 'forex')        result = await getForex(session);
-    else if (action === 'news')         result = await getNews(p.q);
+    else if (action === 'news')         result = await getNews(p.q, p.hl);
     else                                result = { error: 'Unknown action' };
     return res.status(200).json(result);
   } catch(e) {
