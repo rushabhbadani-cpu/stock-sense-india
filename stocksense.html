@@ -4542,7 +4542,8 @@ function buildLearn() {
   if (greetEl) greetEl.textContent = greet;
   checkStreak();
   updateUniStats();
-  switchUniMode('story');
+  // Preserve current mode — only reset to story on first load
+  switchUniMode(uniMode || 'story');
 }
 
 function switchUniMode(mode, el) {
@@ -6104,9 +6105,13 @@ function openChartLesson(levelIdx, lessonIdx) {
 function closeChartLesson() {
   const reader = document.getElementById('csLessonReader');
   if (reader) reader.remove();
-  // Refresh chart school view
-  const tc = document.getElementById('tabContents') || document.getElementById('uniContent');
+  // Refresh chart school view in the correct container
+  const tc = document.getElementById('uniContent');
   if (tc) tc.innerHTML = buildChartSchool();
+  // Restore active tab highlight
+  document.querySelectorAll('.uni-mode').forEach(b => b.classList.remove('on'));
+  const btn = document.querySelector(`.uni-mode[onclick*="'chartschool'"]`);
+  if (btn) btn.classList.add('on');
 }
 
 function csAnswer(chosen, correct, lessonId, el) {
