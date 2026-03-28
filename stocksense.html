@@ -357,42 +357,117 @@ button{font-family:"DM Sans",sans-serif;cursor:pointer}
 @keyframes fadein{from{opacity:0}to{opacity:1}}
 .fadein{animation:fadein 0.3s ease}
 
-/* ── STOCKSENSE UNIVERSITY ──────────────────────────────────── */
-.uni-tabs{display:flex;gap:0;background:var(--bg);border-radius:var(--r12);padding:3px;margin-bottom:16px}
-.uni-tab{flex:1;padding:9px 4px;font-size:10px;font-weight:700;text-align:center;border-radius:var(--r8);cursor:pointer;transition:all 0.2s;color:var(--muted);letter-spacing:0.1px;line-height:1.3}
-.uni-tab.on{background:var(--card);color:var(--text);box-shadow:var(--shadow-sm)}
-.uni-tab .uni-ico{font-size:15px;display:block;margin-bottom:2px}
-.story-card{background:var(--card);border-radius:var(--r16);overflow:hidden;box-shadow:var(--shadow);margin-bottom:12px;border:0.5px solid var(--border);cursor:pointer;transition:all 0.2s}
-.story-card:active{transform:scale(0.98)}
+/* ── STOCKSENSE UNIVERSITY — Unified Design System ────────────── */
+
+/* ── MODE SELECTOR ── */
+.uni-modes{display:flex;gap:0;background:var(--bg);border-radius:var(--r12);padding:3px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none}
+.uni-modes::-webkit-scrollbar{display:none}
+.uni-mode{flex:1;text-align:center;padding:9px 6px;border-radius:var(--r8);font-size:10px;font-weight:700;cursor:pointer;transition:all 0.2s;white-space:nowrap;color:var(--muted);min-width:60px}
+.uni-mode.on{background:var(--card);color:var(--text);box-shadow:var(--shadow-sm)}
+
+/* ── MODE HEADER — same across all 5 modes ── */
+.u-mode-header{margin-bottom:14px}
+.u-mode-eyebrow{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.9px;color:var(--muted);margin-bottom:4px}
+.u-mode-title{font-size:16px;font-weight:700;font-family:'DM Serif Display',serif;margin-bottom:3px;color:var(--text)}
+.u-mode-sub{font-size:11px;color:var(--muted);line-height:1.55}
+
+/* ── UNIFIED BASE CARD — used by all modes ── */
+.u-card{background:var(--card);border-radius:var(--r16);overflow:hidden;box-shadow:var(--shadow);margin-bottom:12px;border:0.5px solid var(--border);transition:box-shadow 0.15s}
+.u-card:active{transform:scale(0.99)}
+
+/* Card header band */
+.u-card-band{padding:11px 14px 10px;display:flex;align-items:center;gap:10px;border-bottom:0.5px solid var(--border2)}
+.u-card-band-icon{width:36px;height:36px;border-radius:var(--r10);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.u-card-band-info{flex:1;min-width:0}
+.u-card-band-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;color:var(--muted);margin-bottom:2px}
+.u-card-band-title{font-size:13px;font-weight:700;color:var(--text);line-height:1.3;font-family:'DM Serif Display',serif}
+.u-card-band-badge{font-size:9px;font-weight:700;padding:3px 9px;border-radius:20px;flex-shrink:0;white-space:nowrap}
+
+/* Card body */
+.u-card-body{padding:14px}
+.u-card-body-sm{padding:12px 14px}
+
+/* ── STORY CARDS ── */
 .story-banner{height:88px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
-.story-banner-ico{font-size:52px;opacity:0.25;position:absolute}
+.story-banner-ico{font-size:52px;opacity:0.22;position:absolute}
 .story-banner-title{font-size:15px;font-weight:700;font-family:'DM Serif Display',serif;color:#fff;text-align:center;padding:0 16px;position:relative;z-index:1;text-shadow:0 1px 6px rgba(0,0,0,0.4);line-height:1.3}
-.story-body{padding:13px 14px}
-.story-hook{font-size:12px;font-weight:600;line-height:1.6;margin-bottom:8px;color:var(--text)}
-.story-meta{display:flex;align-items:center;gap:7px}
-.story-tag{font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:0.5px}
-.story-time{font-size:10px;color:var(--muted)}
-.story-opt{padding:11px 13px;border:1.5px solid var(--border);border-radius:var(--r10);margin-bottom:7px;cursor:pointer;font-size:12px;font-weight:500;transition:all 0.2s;background:var(--bg)}
-.story-opt:hover{border-color:var(--gm);background:var(--gl)}
-.story-opt.correct{background:var(--gl);border-color:var(--g);color:var(--g);font-weight:700}
-.story-opt.wrong{background:var(--rl);border-color:var(--r);color:var(--r)}
-.dojo-card{background:linear-gradient(135deg,#111110,#1e1e1c);border-radius:var(--r16);padding:16px;margin-bottom:12px;box-shadow:0 4px 20px rgba(0,0,0,0.15)}
-.dojo-opt{padding:11px 14px;border:1px solid rgba(255,255,255,0.12);border-radius:var(--r10);margin-bottom:7px;cursor:pointer;font-size:12px;font-weight:500;color:rgba(255,255,255,0.85);transition:all 0.2s;background:rgba(255,255,255,0.04)}
-.dojo-opt:hover{border-color:var(--gm);background:rgba(29,179,104,0.1);color:#fff}
-.dojo-opt.correct{background:rgba(29,179,104,0.2);border-color:var(--gm);color:var(--gm);font-weight:700}
-.dojo-opt.wrong{background:rgba(224,49,49,0.15);border-color:var(--r);color:var(--r)}
-.dd-topic{background:var(--card);border-radius:var(--r14);overflow:hidden;box-shadow:var(--shadow-sm);margin-bottom:8px;border:0.5px solid var(--border)}
-.dd-topic-hdr{padding:13px 15px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:background 0.15s}
-.dd-topic-hdr:hover{background:var(--bg)}
-.dd-ico{width:40px;height:40px;border-radius:var(--r10);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
-.dd-layers{display:none;border-top:0.5px solid var(--border)}
-.dd-layer{padding:12px 15px;border-bottom:0.5px solid var(--border2);cursor:pointer;transition:background 0.15s}
-.dd-layer:last-child{border-bottom:none}
-.dd-layer-content{font-size:11px;color:var(--text);line-height:1.75;margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border2);display:none}
-.dd-layer-content.open{display:block}
-.cs-chart-area{background:#1a1a18;padding:12px;border-radius:var(--r12);margin-bottom:10px;min-height:150px;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
-.checklist-cb{width:22px;height:22px;border-radius:6px;border:2px solid var(--border);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;margin-top:1px;font-size:12px}
-.checklist-cb.checked{background:var(--gm);border-color:var(--gm);color:#fff}
+.story-hook{font-size:12px;line-height:1.7;color:var(--muted);margin-bottom:10px}
+.story-expand{display:none}.story-expand.open{display:block}
+.story-para{font-size:12px;line-height:1.8;color:var(--text);margin-bottom:10px}
+.story-highlight{background:var(--al);border-left:3px solid var(--a);padding:9px 12px;border-radius:0 var(--r8) var(--r8) 0;font-size:11px;font-weight:600;color:var(--a);margin:10px 0;line-height:1.5}
+.story-lesson{background:var(--gl);border-radius:var(--r8);padding:10px 12px;font-size:11px;font-weight:700;color:var(--g);margin:10px 0}
+.story-quiz-q{font-size:12px;font-weight:700;color:var(--b);margin-bottom:10px;line-height:1.4}
+.story-opt{display:block;width:100%;text-align:left;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--r8);font-size:12px;font-weight:500;cursor:pointer;margin-bottom:7px;transition:all 0.15s;background:var(--bg);font-family:'DM Sans',sans-serif;line-height:1.4}
+.story-opt:hover{border-color:var(--b);background:var(--bl)}
+.story-opt.correct{border-color:var(--g);background:var(--gl);color:var(--g);font-weight:700}
+.story-opt.wrong{border-color:var(--r);background:var(--rl);color:var(--r)}
+
+/* ── CHART SCHOOL ── */
+.cs-svg-wrap{background:#17181a;padding:14px 12px;position:relative;min-height:80px}
+.cs-step{display:flex;gap:11px;padding:10px 14px;border-bottom:0.5px solid var(--border2)}
+.cs-step:last-child{border-bottom:none}
+.cs-step-num{width:22px;height:22px;border-radius:50%;background:var(--gm);color:#fff;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0;margin-top:2px}
+.cs-step-txt{font-size:11px;color:var(--text);line-height:1.65;flex:1}
+
+/* ── WHY MACHINE ── */
+.why-card{background:linear-gradient(145deg,#0d1117,#0e1a2e);border-radius:var(--r16);overflow:hidden;box-shadow:var(--shadow);margin-bottom:12px;border:0.5px solid rgba(255,255,255,0.06)}
+.why-card-header{padding:14px 14px 12px;border-bottom:0.5px solid rgba(255,255,255,0.07)}
+.why-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:rgba(255,255,255,0.35);margin-bottom:4px}
+.why-title{font-size:14px;font-weight:700;font-family:'DM Serif Display',serif;color:#fff;line-height:1.3}
+.why-body{padding:14px}
+.why-node{display:flex;gap:11px;padding-bottom:14px;position:relative}
+.why-node:last-child{padding-bottom:0}
+.why-node::before{content:'';position:absolute;left:15px;top:33px;bottom:0;width:1.5px;background:rgba(255,255,255,0.08)}
+.why-node:last-child::before{display:none}
+.why-node-icon{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;z-index:1}
+.why-node-cause{font-size:11px;font-weight:700;color:rgba(255,255,255,0.88);margin-bottom:2px;line-height:1.3}
+.why-node-effect{font-size:10px;color:rgba(255,255,255,0.48);line-height:1.5}
+.why-principle{background:rgba(255,255,255,0.06);border-radius:var(--r8);padding:10px 12px;margin-top:14px;font-size:11px;color:rgba(255,255,255,0.75);line-height:1.65;border-left:3px solid var(--gm)}
+
+/* ── DOJO ── */
+.dojo-streak-card{background:linear-gradient(135deg,#0d0820,#0a1a2e);border-radius:var(--r16);padding:16px;margin-bottom:12px;border:0.5px solid rgba(255,255,255,0.06)}
+.challenge-type-badge{display:inline-flex;align-items:center;gap:5px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;padding:3px 9px;border-radius:20px;margin-bottom:10px}
+.challenge-q{font-size:13px;font-weight:700;line-height:1.5;margin-bottom:12px;color:var(--text);font-family:'DM Serif Display',serif}
+.challenge-opt{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:11px 13px;border:1.5px solid var(--border);border-radius:var(--r10);font-size:12px;font-weight:500;cursor:pointer;margin-bottom:7px;transition:all 0.15s;background:var(--bg);font-family:'DM Sans',sans-serif;line-height:1.4}
+.challenge-opt:hover{border-color:var(--gm);background:var(--gl)}
+.challenge-opt.correct{border-color:var(--g);background:var(--gl);color:var(--g);font-weight:700}
+.challenge-opt.wrong{border-color:var(--r);background:var(--rl);color:var(--r)}
+.challenge-letter{width:22px;height:22px;border-radius:50%;background:var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;color:var(--muted)}
+
+/* ── DEEP DIVE ── */
+.deep-topic{background:var(--card);border-radius:var(--r16);overflow:hidden;box-shadow:var(--shadow-sm);margin-bottom:8px;border:0.5px solid var(--border)}
+.deep-topic-hdr{padding:13px 14px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:background 0.15s}
+.deep-topic-hdr:hover{background:var(--bg)}
+.deep-topic-num{width:32px;height:32px;border-radius:var(--r8);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0}
+.deep-topic-title{font-size:13px;font-weight:700;margin-bottom:2px;line-height:1.3;font-family:'DM Serif Display',serif}
+.deep-topic-meta{font-size:10px;color:var(--muted)}
+.deep-layers{display:none;border-top:0.5px solid var(--border2)}
+.deep-layer{padding:13px 14px;border-bottom:0.5px solid var(--border2)}
+.deep-layer:last-child{border-bottom:none}
+.deep-layer-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.deep-layer-content{font-size:12px;line-height:1.8;color:var(--text)}
+.deep-live-example{background:var(--bl);border-radius:var(--r8);padding:10px 12px;margin:8px 0;font-size:11px;line-height:1.65;border-left:3px solid var(--b);color:var(--text)}
+.deep-q-opt{display:block;width:100%;text-align:left;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--r8);font-size:11px;cursor:pointer;margin-bottom:6px;transition:all 0.15s;background:var(--card);font-family:'DM Sans',sans-serif}
+.deep-q-opt:hover{border-color:var(--b);background:var(--bl)}
+.deep-q-opt.correct{border-color:var(--g);background:var(--gl);color:var(--g);font-weight:700}
+.deep-q-opt.wrong{border-color:var(--r);background:var(--rl);color:var(--r)}
+
+/* ── SHARED QUIZ RESULT ── */
+.quiz-result{border-radius:var(--r10);padding:10px 13px;margin-top:8px;font-size:11px;line-height:1.65;display:none}
+.quiz-result.show{display:block}
+.quiz-result.correct{background:var(--gl);border-left:3px solid var(--g);color:var(--g)}
+.quiz-result.wrong{background:var(--rl);border-left:3px solid var(--r);color:var(--text)}
+
+/* ── XP PILL — same across all modes ── */
+.xp-pill{background:var(--gl);color:var(--g);font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px}
+.xp-pill-earned{background:var(--al);color:var(--a)}
+
+/* Semester section dividers */
+.sem-divider{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.9px;color:var(--muted);margin:16px 0 8px;padding-bottom:6px;border-bottom:0.5px solid var(--border2);display:flex;align-items:center;justify-content:space-between}
+
+/* Stop-loss slider */
+.sl-slider{-webkit-appearance:none;appearance:none;width:100%;height:5px;border-radius:3px;background:var(--border);outline:none;margin:10px 0}
+.sl-slider::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--r);cursor:pointer;box-shadow:0 2px 6px rgba(192,26,26,0.3)}
 
 </style>
 </head>
@@ -4460,72 +4535,91 @@ const STORIES = {
 
 function buildStoryMode() {
   const stories = STORIES[lang] || STORIES.en;
-  const modeTitle = lang === 'hi' ? 'कहानी पथ — असली भारतीय कंपनियों की सच्ची कहानियाँ' :
-                    lang === 'gu' ? 'Story Path — ભારતીય companies ની સત્ય વાર્તાઓ' :
-                    'Story Path — Real Indian companies. Real lessons. Real money.';
+  const done    = Object.keys(uniProgress.storyDone).length;
+  const titles  = {
+    en:{ eye:'Story Path', title:'Real Indian companies. Real money. Real lessons.', sub:`${stories.length} stories · ${done} completed · 20 XP each` },
+    hi:{ eye:'कहानी पथ', title:'असली भारतीय कंपनियों की सच्ची कहानियाँ।', sub:`${stories.length} कहानियाँ · ${done} पूरी · 20 XP each` },
+    gu:{ eye:'Story Path', title:'ભારતીય companies ની સત્ય વાર્તાઓ.', sub:`${stories.length} stories · ${done} પૂર્ણ · 20 XP each` },
+  };
+  const T = titles[lang] || titles.en;
   return `
-    <div style="font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.5">${modeTitle}</div>
+    <div class="u-mode-header">
+      <div class="u-mode-eyebrow">${T.eye}</div>
+      <div class="u-mode-title">${T.title}</div>
+      <div class="u-mode-sub">${T.sub}</div>
+    </div>
     ${stories.map((s, idx) => buildStoryCard(s, idx)).join('')}`;
 }
 
 function buildStoryCard(s, idx) {
-  const done = uniProgress.storyDone[s.id];
+  const done   = uniProgress.storyDone[s.id];
+  const tagCol = done ? 'var(--g)' : 'var(--muted)';
+  const tagBg  = done ? 'var(--gl)' : 'var(--bg)';
   return `
-    <div class="story-card">
+    <div class="u-card">
+      <!-- Banner -->
       <div class="story-banner" style="background:${s.bg}">
-        <div style="font-size:52px">${s.emoji}</div>
-        ${done ? '<div style="position:absolute;top:10px;right:12px;background:var(--gm);color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px">✓ Done +20XP</div>' : ''}
+        <div class="story-banner-ico">${s.emoji}</div>
+        <div class="story-banner-title">${s.title}</div>
+        ${done ? `<div style="position:absolute;top:10px;right:12px;background:rgba(0,0,0,0.35);backdrop-filter:blur(4px);color:#fff;font-size:9px;font-weight:700;padding:3px 9px;border-radius:20px">✓ +20 XP</div>` : ''}
       </div>
-      <div class="story-body">
-        <div class="story-chapter">${s.chapter}</div>
-        <div class="story-title">${s.title}</div>
+      <!-- Body -->
+      <div class="u-card-body">
+        <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:6px">${s.chapter}</div>
         <div class="story-hook">${s.hook}</div>
+        <!-- Expand -->
         <div class="story-expand" id="story-expand-${idx}">
           ${s.body.map(p => `<div class="story-para">${p}</div>`).join('')}
           <div class="story-highlight">📌 ${s.highlight}</div>
           <div class="story-lesson">${s.lesson}</div>
-          <div class="story-quiz">
-            <div class="story-quiz-q">🧠 Quick check: ${s.quiz.q}</div>
+          <!-- Quiz -->
+          <div style="background:var(--bg);border-radius:var(--r12);padding:13px;margin-top:12px;border:1px solid var(--border2)">
+            <div class="story-quiz-q">🧠 ${s.quiz.q}</div>
             ${s.quiz.opts.map((opt, oi) => `
-              <button class="story-opt" onclick="storyAnswer(${idx},${oi},${s.quiz.correct},'story-expand-${idx}','${s.id}',this)">${opt}</button>`).join('')}
-            <div id="story-result-${idx}" class="story-result" style="display:none"></div>
+              <button class="story-opt" onclick="storyAnswer(${idx},${oi},${s.quiz.correct},'${s.id}',this)">${opt}</button>`).join('')}
+            <div id="story-result-${idx}" class="quiz-result"></div>
           </div>
         </div>
+        <!-- Read / collapse button -->
         <button onclick="expandStory(${idx})" id="story-btn-${idx}"
-          style="width:100%;background:${done?'var(--gl)':'var(--gm)'};color:${done?'var(--g)':'#fff'};border:none;border-radius:10px;padding:11px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s">
-          ${done ? '✓ Read Again' : 'Read This Story →'}
+          style="width:100%;background:${done?'var(--gl)':'var(--gm)'};color:${done?'var(--g)':'#fff'};border:none;border-radius:var(--r10);padding:12px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s;margin-top:4px">
+          ${done ? '✓ Read Again' : 'Read this story →'}
         </button>
       </div>
     </div>`;
 }
+
+
 
 function expandStory(idx) {
   const ex  = document.getElementById('story-expand-' + idx);
   const btn = document.getElementById('story-btn-' + idx);
   if (!ex) return;
   const open = ex.classList.toggle('open');
-  if (btn) btn.textContent = open ? '▲ Close' : 'Read This Story →';
+  const story = (STORIES[lang] || STORIES.en)[idx];
+  const done  = uniProgress.storyDone[story?.id];
+  if (btn) btn.textContent = open ? '▲ Close' : done ? '✓ Read Again' : 'Read this story →';
 }
 
-function storyAnswer(idx, chosen, correct, expandId, storyId, el) {
-  // Disable all options in this quiz
-  const quiz = el.closest('.story-quiz');
-  if (!quiz) return;
-  quiz.querySelectorAll('.story-opt').forEach((b, i) => {
+function storyAnswer(idx, chosen, correct, storyId, el) {
+  // Disable all opts
+  const wrap = el.closest('.u-card-body') || el.parentElement;
+  wrap.querySelectorAll('.story-opt').forEach((b, i) => {
     b.disabled = true;
-    b.style.opacity = i === correct ? '1' : '0.5';
     if (i === correct) b.classList.add('correct');
     if (i === chosen && chosen !== correct) b.classList.add('wrong');
   });
   const resultEl = document.getElementById('story-result-' + idx);
-  const story = (STORIES[lang] || STORIES.en)[idx];
+  const story    = (STORIES[lang] || STORIES.en)[idx];
   if (resultEl) {
-    resultEl.style.display = 'block';
+    resultEl.classList.add('show');
     if (chosen === correct) {
-      resultEl.innerHTML = `<div style="background:var(--gl);border-radius:8px;padding:10px 12px;font-size:11px;color:var(--g);font-weight:600;line-height:1.6">✅ Correct! +20 XP<br><span style="font-weight:400;color:var(--text)">${story.quiz.explain}</span></div>`;
+      resultEl.classList.add('correct');
+      resultEl.innerHTML = `✅ Correct! +20 XP — ${story.quiz.explain}`;
       if (!uniProgress.storyDone[storyId]) { uniProgress.storyDone[storyId] = true; awardXP(20, 'Story'); }
     } else {
-      resultEl.innerHTML = `<div style="background:var(--rl);border-radius:8px;padding:10px 12px;font-size:11px;color:var(--r);font-weight:600;line-height:1.6">Not quite — the correct answer is highlighted above.<br><span style="font-weight:400;color:var(--text)">${story.quiz.explain}</span></div>`;
+      resultEl.classList.add('wrong');
+      resultEl.innerHTML = `The correct answer is highlighted. ${story.quiz.explain}`;
     }
   }
 }
@@ -4623,43 +4717,53 @@ const CHART_LESSONS = [
 ];
 
 function buildChartMode() {
-  const lbl = lang === 'hi' ? 'Chart School — हर concept एक real chart पर दिखाया जाता है' :
-               lang === 'gu' ? 'Chart School — દરેક concept real chart પર' :
-               'Chart School — Every concept shown on a real Indian market chart. See it. Understand it. Find it live.';
+  const T = {
+    en:{ eye:'Chart School', title:'Every concept shown on a real chart.', sub:'See it. Understand it. Find it live on Indian stocks. '+CHART_LESSONS.length+' lessons.' },
+    hi:{ eye:'Chart School', title:'हर concept एक real chart पर।', sub:'देखो। समझो। Live stocks पर खोजो। '+CHART_LESSONS.length+' lessons.' },
+    gu:{ eye:'Chart School', title:'દરેક concept real chart પર.', sub:'જુઓ. સમજો. Live stocks પર શોધો. '+CHART_LESSONS.length+' lessons.' },
+  }[lang] || { eye:'Chart School', title:'Every concept shown on a real chart.', sub:CHART_LESSONS.length+' lessons.' };
   return `
-    <div style="font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.5">${lbl}</div>
+    <div class="u-mode-header">
+      <div class="u-mode-eyebrow">${T.eye}</div>
+      <div class="u-mode-title">${T.title}</div>
+      <div class="u-mode-sub">${T.sub}</div>
+    </div>
     ${CHART_LESSONS.map((cl, idx) => buildChartLesson(cl, idx)).join('')}`;
 }
 
 function buildChartLesson(cl, idx) {
-  const title = cl.title[lang] || cl.title.en;
-  const steps = (cl.steps[lang] || cl.steps.en);
-  const remember = cl.remember[lang] || cl.remember.en;
-  const liveLink = cl.liveLink[lang] || cl.liveLink.en;
-  const done = uniProgress.deepDone['chart_' + cl.id];
-
-  // Generate SVG inline
-  const svg = generateChartSVG(cl.svgId, idx);
-
+  const title    = cl.title[lang]   || cl.title.en;
+  const steps    = cl.steps[lang]   || cl.steps.en;
+  const remember = cl.remember[lang]|| cl.remember.en;
+  const liveLink = cl.liveLink[lang]|| cl.liveLink.en;
+  const done     = uniProgress.deepDone['chart_' + cl.id];
+  const svg      = generateChartSVG(cl.svgId, idx);
+  const remLbl   = lang==='hi'?'याद रखें':lang==='gu'?'યાદ રાખો':'Remember';
   return `
-    <div class="chart-lesson">
-      <div class="chart-lesson-header">
-        <div class="chart-lesson-num">${cl.num} ${done ? '✅' : ''}</div>
-        <div class="chart-lesson-title">${title}</div>
+    <div class="u-card">
+      <div class="u-card-band">
+        <div class="u-card-band-icon" style="background:var(--bg)">${done?'✅':'📊'}</div>
+        <div class="u-card-band-info">
+          <div class="u-card-band-label">${cl.num}${done?' · Completed':''}</div>
+          <div class="u-card-band-title">${title}</div>
+        </div>
+        ${done?'<div class="xp-pill">+15 XP</div>':''}
       </div>
-      <div class="chart-svg-wrap">${svg}</div>
-      ${steps.map(s => `
-        <div class="chart-step">
-          <div class="chart-step-num">${s.n}</div>
-          <div class="chart-step-txt">${s.txt}</div>
+      <div class="cs-svg-wrap">${svg}</div>
+      ${steps.map(s=>`
+        <div class="cs-step">
+          <div class="cs-step-num">${s.n}</div>
+          <div class="cs-step-txt">${s.txt}</div>
         </div>`).join('')}
-      <div style="background:var(--al);margin:12px 16px;border-radius:8px;padding:10px 12px;font-size:11px;color:var(--a);font-weight:600;line-height:1.5;border-left:3px solid var(--a)">
-        📌 ${lang === 'hi' ? 'याद रखें' : lang === 'gu' ? 'યાદ રાખો' : 'Remember'}: ${remember}
+      <div style="background:var(--al);margin:12px 14px 0;border-radius:var(--r8);padding:10px 12px;font-size:11px;color:var(--a);font-weight:600;line-height:1.5;border-left:3px solid var(--a)">
+        📌 ${remLbl}: ${remember}
       </div>
-      <div onclick="loadStock('${cl.liveStock}');showPage('research')" 
-        style="background:var(--gm);margin:0 16px 16px;border-radius:10px;padding:11px 14px;font-size:12px;font-weight:700;color:#fff;cursor:pointer;text-align:center;transition:opacity 0.2s"
-        onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
-        📊 ${liveLink}
+      <div class="u-card-body-sm">
+        <button onclick="loadStock('${cl.liveStock}');showPage('research');uniProgress.deepDone['chart_${cl.id}']=true;saveUni()"
+          style="width:100%;background:var(--gm);color:#fff;border:none;border-radius:var(--r10);padding:12px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity 0.2s"
+          onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+          📊 ${liveLink}
+        </button>
       </div>
     </div>`;
 }
@@ -4846,30 +4950,38 @@ const WHY_CHAINS = {
 
 function buildWhyMode() {
   const chains = WHY_CHAINS[lang] || WHY_CHAINS.en;
-  const lbl = lang === 'hi' ? 'Why Machine — बाज़ार में हर movement के पीछे एक कारण है। यहाँ वो chain समझें।' :
-               lang === 'gu' ? 'Why Machine — દરેક market movement ની chain. સમજો.' :
-               'Why Machine — Every market movement has a chain of causes. Follow the chain and you will never be confused by headlines again.';
+  const T = {
+    en:{ eye:'Why Machine', title:'Every market move has a cause and effect chain.', sub:'Follow the chain and headlines never confuse you again. '+chains.length+' chains.' },
+    hi:{ eye:'Why Machine', title:'हर market movement के पीछे एक कारण की chain है।', sub:'Chain समझो — headlines कभी confuse नहीं करेंगे। '+chains.length+' chains.' },
+    gu:{ eye:'Why Machine', title:'દરેક market movement ની cause-effect chain.', sub:'Chain સમજો — headlines confuse નહીં કરે. '+chains.length+' chains.' },
+  }[lang] || { eye:'Why Machine', title:'Every market move has a cause and effect chain.', sub:chains.length+' chains.' };
   return `
-    <div style="font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.5">${lbl}</div>
+    <div class="u-mode-header">
+      <div class="u-mode-eyebrow">${T.eye}</div>
+      <div class="u-mode-title">${T.title}</div>
+      <div class="u-mode-sub">${T.sub}</div>
+    </div>
     ${chains.map(chain => buildWhyChain(chain)).join('')}`;
 }
 
 function buildWhyChain(chain) {
   return `
-    <div class="why-daily">
-      <div style="font-size:9px;color:rgba(255,255,255,0.4);font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:5px">${chain.date}</div>
-      <div style="font-size:15px;font-weight:700;font-family:'DM Serif Display',serif;margin-bottom:14px;line-height:1.3">${chain.title}</div>
-      <div>
+    <div class="why-card">
+      <div class="why-card-header">
+        <div class="why-label">${chain.date}</div>
+        <div class="why-title">${chain.title}</div>
+      </div>
+      <div class="why-body">
         ${chain.nodes.map(n => `
           <div class="why-node">
             <div class="why-node-icon" style="background:${n.bg}">${n.icon}</div>
-            <div style="flex:1;padding-top:4px">
+            <div style="flex:1;padding-top:3px">
               <div class="why-node-cause">${n.cause}</div>
               <div class="why-node-effect">→ ${n.effect}</div>
             </div>
           </div>`).join('')}
+        <div class="why-principle">📌 ${chain.principle}</div>
       </div>
-      <div class="why-principle">📌 ${chain.principle}</div>
     </div>`;
 }
 
@@ -4966,66 +5078,86 @@ const DAILY_CHALLENGES = {
 
 function buildDojoMode() {
   const challenges = DAILY_CHALLENGES[lang] || DAILY_CHALLENGES.en;
-  const streak = uniProgress.streak || 0;
+  const streak     = uniProgress.streak || 0;
+  const answered   = Object.keys(uniProgress.dojoToday).filter(k => !k.includes('-')).length;
 
-  // Build 7-day streak bar
+  const T = {
+    en:{ eye:'Daily Dojo', title:'3 minutes a day. Build your streak.', sub:`${challenges.length} challenges · ${answered} answered today · 15 XP each` },
+    hi:{ eye:'Daily Dojo', title:'रोज़ 3 मिनट। Streak बनाओ।', sub:`${challenges.length} challenges · ${answered} आज answered · 15 XP each` },
+    gu:{ eye:'Daily Dojo', title:'રોજ 3 મિનિટ. Streak બનાઓ.', sub:`${challenges.length} challenges · ${answered} આજ answered · 15 XP each` },
+  }[lang] || { eye:'Daily Dojo', title:'3 minutes a day.', sub:'' };
+
   const days = ['M','T','W','T','F','S','S'];
-  const today = new Date().getDay(); // 0=Sun
+  const today = new Date().getDay();
   const streakBar = days.map((d, i) => {
     const isToday = i === (today === 0 ? 6 : today - 1);
     const isDone  = !isToday && i < (today === 0 ? 6 : today - 1);
     const bg  = isToday ? '#b35c00' : isDone ? '#127842' : 'var(--border)';
     const col = (isToday || isDone) ? '#fff' : 'var(--muted)';
-    const shadow = isToday ? 'box-shadow:0 2px 8px rgba(179,92,0,0.35)' : '';
-    return `<div style="width:34px;height:34px;border-radius:8px;background:${bg};color:${col};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-direction:column;gap:1px;${shadow}">
-      <span>${d}</span>
-    </div>`;
+    const sh  = isToday ? 'box-shadow:0 2px 8px rgba(179,92,0,0.35)' : '';
+    return `<div style="width:36px;height:36px;border-radius:9px;background:${bg};color:${col};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;${sh}">${d}</div>`;
   }).join('');
 
-  const dojoLabel = lang === 'hi' ? 'Dojo — रोज़ 3 मिनट। रोज़ एक नया सवाल। Streak बनाओ।' :
-                    lang === 'gu' ? 'Dojo — રોજ 3 મિનિટ. Streak બનાઓ.' :
-                    'Dojo — 3 minutes a day. One challenge at a time. Build your streak.';
-
+  const streakLbl = lang==='hi'?'दिन की streak':lang==='gu'?'Day Streak':'Day Streak';
   return `
-    <div style="font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.5">${dojoLabel}</div>
-    <div class="dojo-header">
-      <div style="font-size:28px;font-weight:800;font-family:'DM Serif Display',serif">${streak} 🔥</div>
-      <div style="font-size:10px;color:rgba(255,255,255,0.5);margin-top:2px;letter-spacing:0.5px">${lang==='hi'?'दिन की streak':'Day Streak'}</div>
-      <div style="display:flex;gap:6px;justify-content:center;margin-top:12px">${streakBar}</div>
+    <div class="u-mode-header">
+      <div class="u-mode-eyebrow">${T.eye}</div>
+      <div class="u-mode-title">${T.title}</div>
+      <div class="u-mode-sub">${T.sub}</div>
+    </div>
+    <div class="dojo-streak-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.4);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px">${streakLbl}</div>
+          <div style="font-size:32px;font-weight:800;font-family:'DM Serif Display',serif;color:#fff;line-height:1">${streak} 🔥</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:10px;color:rgba(255,255,255,0.4);margin-bottom:3px">Today</div>
+          <div style="font-size:20px;font-weight:800;color:#f97316">${answered}/${challenges.length}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:5px;justify-content:center">${streakBar}</div>
     </div>
     ${challenges.map((ch, idx) => buildChallenge(ch, idx)).join('')}`;
 }
 
 function buildChallenge(ch, idx) {
-  const answered = uniProgress.dojoToday[ch.id];
+  const answered   = uniProgress.dojoToday[ch.id];
+  const chosenIdx  = uniProgress.dojoToday[ch.id + '-chosen'];
+  const typeCols   = { 'Morning Brief':'var(--a)','Pattern Spotter':'var(--b)','Stock Detective':'#5f3dc4' };
+  const typeCol    = typeCols[ch.type] || 'var(--muted)';
+  const typeBgMap  = { 'Morning Brief':'var(--al)','Pattern Spotter':'var(--bl)','Stock Detective':'var(--pl)' };
+  const typeBg     = typeBgMap[ch.type] || 'var(--bg)';
   return `
-    <div class="challenge-card">
-      <div style="padding:10px 16px 0;display:flex;align-items:center;gap:8px">
-        <span style="font-size:18px">${ch.typeIcon}</span>
-        <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted)">${ch.type}</span>
-        ${answered ? '<span style="font-size:9px;background:var(--gl);color:var(--g);padding:2px 8px;border-radius:20px;font-weight:700;margin-left:auto">+15 XP ✓</span>' : ''}
+    <div class="u-card">
+      <div class="u-card-band">
+        <div class="u-card-band-icon" style="background:${typeBg}">${ch.typeIcon}</div>
+        <div class="u-card-band-info">
+          <div class="u-card-band-label" style="color:${typeCol}">${ch.type}</div>
+          <div style="font-size:10px;color:var(--muted)">${answered ? 'Answered' : 'Tap an option to answer'}</div>
+        </div>
+        ${answered ? '<div class="xp-pill xp-pill-earned">+15 XP ✓</div>' : ''}
       </div>
-      <div style="padding:14px 16px 0">
+      <div class="u-card-body">
         <div class="challenge-q">${ch.q}</div>
         <div id="ch-opts-${idx}">
-          ${ch.opts.map((opt, oi) => `
-            <button class="challenge-opt ${answered && oi===ch.correct?'correct':answered&&oi===uniProgress.dojoToday[ch.id+'-chosen']?'wrong':''}"
-              onclick="dojoAnswer(${idx},'${ch.id}',${oi},${ch.correct},this)"
-              ${answered?'disabled':''}>
-              <span style="width:20px;height:20px;border-radius:50%;background:var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">${String.fromCharCode(65+oi)}</span>
+          ${ch.opts.map((opt, oi) => {
+            const cls = answered && oi === ch.correct ? 'correct' : answered && oi === chosenIdx ? 'wrong' : '';
+            return `<button class="challenge-opt ${cls}" onclick="dojoAnswer(${idx},'${ch.id}',${oi},${ch.correct},this)" ${answered?'disabled':''}>
+              <div class="challenge-letter">${String.fromCharCode(65+oi)}</div>
               <span>${opt}</span>
-            </button>`).join('')}
+            </button>`;
+          }).join('')}
         </div>
-        <div id="ch-explain-${idx}" style="font-size:11px;line-height:1.7;padding:12px 0 4px;${answered?'display:block':'display:none'}">
-          <div style="background:${answered?'var(--gl)':'var(--bg)'};border-radius:8px;padding:10px 12px;border-left:3px solid ${answered?'var(--gm)':'var(--border)'}">${ch.explain}</div>
+        <div id="ch-explain-${idx}" class="quiz-result ${answered?(chosenIdx===ch.correct?'show correct':'show wrong'):''}">
+          ${answered ? (chosenIdx===ch.correct?'✅ Correct! ':'❌ Not quite — ') + ch.explain : ''}
         </div>
       </div>
-      <div style="height:12px"></div>
     </div>`;
 }
 
 function dojoAnswer(idx, chalId, chosen, correct, el) {
-  if (uniProgress.dojoToday[chalId]) return; // already answered
+  if (uniProgress.dojoToday[chalId]) return;
   const optsEl    = document.getElementById('ch-opts-' + idx);
   const explainEl = document.getElementById('ch-explain-' + idx);
   if (!optsEl) return;
@@ -5035,12 +5167,10 @@ function dojoAnswer(idx, chalId, chosen, correct, el) {
     if (i === chosen && chosen !== correct) b.classList.add('wrong');
   });
   if (explainEl) {
-    explainEl.style.display = 'block';
     const challenges = DAILY_CHALLENGES[lang] || DAILY_CHALLENGES.en;
     const ch = challenges[idx];
-    explainEl.innerHTML = `<div style="background:${chosen===correct?'var(--gl)':'var(--rl)'};border-radius:8px;padding:10px 12px;border-left:3px solid var(--${chosen===correct?'gm':'r'});font-size:11px;line-height:1.7">
-      ${chosen===correct?'✅ Correct! +15 XP':'❌ Not quite. '}${ch.explain}
-    </div>`;
+    explainEl.classList.add('show', chosen === correct ? 'correct' : 'wrong');
+    explainEl.innerHTML = (chosen === correct ? '✅ Correct! +15 XP — ' : '❌ ') + ch.explain;
   }
   uniProgress.dojoToday[chalId] = true;
   uniProgress.dojoToday[chalId + '-chosen'] = chosen;
@@ -5360,29 +5490,40 @@ const DEEP_TOPICS = [
 ];
 
 function buildDeepMode() {
-  const lbl = lang === 'hi' ? 'Deep Dive — हर topic में 4 layers: 60 सेकंड → Real Example → Full Picture → Quiz' :
-               lang === 'gu' ? 'Deep Dive — 4 layers: 60 sec → Real Example → Full Picture → Quiz' :
-               'Deep Dive — Every topic in 4 layers. 60 seconds → Real Indian example → Full detail → Test yourself.';
-
   const semGroups = {};
   DEEP_TOPICS.forEach(t => {
     if (!semGroups[t.sem]) semGroups[t.sem] = [];
     semGroups[t.sem].push(t);
   });
 
+  const done    = Object.keys(uniProgress.deepDone).filter(k => !k.startsWith('chart_')).length;
+  const T = {
+    en:{ eye:'Deep Dive', title:'Every topic in 4 layers.', sub:`${DEEP_TOPICS.length} topics · ${done} completed · 25 XP each · 60 sec → Example → Detail → Quiz` },
+    hi:{ eye:'Deep Dive', title:'हर topic में 4 layers।', sub:`${DEEP_TOPICS.length} topics · ${done} पूरे · 25 XP each · 60 sec → Example → Detail → Quiz` },
+    gu:{ eye:'Deep Dive', title:'દરેક topic 4 layers માં.', sub:`${DEEP_TOPICS.length} topics · ${done} complete · 25 XP each` },
+  }[lang] || { eye:'Deep Dive', title:'Every topic in 4 layers.', sub:'' };
+
   const semTitles = {
     1:{ en:'Semester 1 — Foundation', hi:'सेमेस्टर 1 — नींव', gu:'Semester 1 — પાયો' },
     2:{ en:'Semester 2 — Reading Stocks', hi:'सेमेस्टर 2 — Stocks पढ़ना', gu:'Semester 2 — Stocks વાંચવા' },
     3:{ en:'Semester 3 — Risk & Protection', hi:'सेमेस्टर 3 — Risk Management', gu:'Semester 3 — Risk' },
-    4:{ en:'Semester 4 — Strategy & Portfolio', hi:'सेमेस्टर 4 — Strategy और Portfolio', gu:'Semester 4 — Strategy' },
+    4:{ en:'Semester 4 — Strategy & Portfolio', hi:'सेमेस्टर 4 — Strategy', gu:'Semester 4 — Strategy' },
   };
 
   return `
-    <div style="font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.5">${lbl}</div>
+    <div class="u-mode-header">
+      <div class="u-mode-eyebrow">${T.eye}</div>
+      <div class="u-mode-title">${T.title}</div>
+      <div class="u-mode-sub">${T.sub}</div>
+    </div>
     ${Object.entries(semGroups).map(([sem, topics]) => {
       const semTitle = (semTitles[sem]||{})[lang] || (semTitles[sem]||{}).en || `Semester ${sem}`;
+      const semDone  = topics.filter(t => uniProgress.deepDone[t.id]).length;
       return `
-        <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin:14px 0 8px">${semTitle}</div>
+        <div class="sem-divider">
+          <span>${semTitle}</span>
+          <span style="color:var(--g);font-size:9px">${semDone}/${topics.length}</span>
+        </div>
         ${topics.map(t => buildDeepTopic(t)).join('')}`;
     }).join('')}`;
 }
@@ -5396,11 +5537,11 @@ function buildDeepTopic(topic) {
     <div class="deep-topic" id="dt-${topic.id}">
       <div class="deep-topic-hdr" onclick="toggleDeepTopic('${topic.id}')">
         <div class="deep-topic-num" style="background:${topic.semBg};color:${topic.semColor}">${topic.sem}</div>
-        <div style="flex:1">
+        <div style="flex:1;min-width:0">
           <div class="deep-topic-title">${title}</div>
-          <div class="deep-topic-meta">⏱ ${topic.time} read ${done ? '· ✅ Completed' : ''}</div>
+          <div class="deep-topic-meta">⏱ ${topic.time}${done ? ' · ✅ +25 XP' : ''}</div>
         </div>
-        <div id="dt-chev-${topic.id}" style="font-size:16px;color:var(--muted);transition:transform 0.2s">›</div>
+        <div id="dt-chev-${topic.id}" style="font-size:18px;color:var(--muted);transition:transform 0.25s;flex-shrink:0">›</div>
       </div>
       <div class="deep-layers" id="dl-${topic.id}">
         ${layers.map((layer, li) => buildDeepLayer(topic, layer, li)).join('')}
@@ -5448,12 +5589,12 @@ function deepQuizAnswer(qid, chosen, correct, topicId, el) {
     if (i === chosen && chosen !== correct) b.classList.add('wrong');
   });
   if (resultEl) {
-    resultEl.style.display = 'block';
-    const topic  = DEEP_TOPICS.find(t => t.id === topicId);
-    const layers = (topic?.layers[lang] || topic?.layers.en) || [];
+    const topic     = DEEP_TOPICS.find(t => t.id === topicId);
+    const layers    = (topic?.layers[lang] || topic?.layers.en) || [];
     const quizLayer = layers.find(l => l.quiz);
-    resultEl.style.background = chosen === correct ? 'var(--gl)' : 'var(--rl)';
-    resultEl.textContent = (chosen === correct ? '✅ Correct! +25 XP — ' : '❌ Not quite — ') + (quizLayer?.quiz?.explain || '');
+    const explain   = quizLayer?.quiz?.explain || '';
+    resultEl.classList.add('show', chosen === correct ? 'correct' : 'wrong');
+    resultEl.textContent = (chosen === correct ? '✅ Correct! +25 XP — ' : '❌ Not quite — ') + explain;
   }
   if (!uniProgress.deepDone[topicId]) {
     uniProgress.deepDone[topicId] = true;
