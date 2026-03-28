@@ -2195,12 +2195,24 @@ async function renderPriceChart(sym, range) {
   if (loadDiv) loadDiv.style.display = 'none';
 
   if (!prices_data?.prices?.length) {
-    ctx.parentElement.innerHTML = `
-      <div style="text-align:center;padding:30px 20px;color:var(--muted)">
-        <div style="font-size:24px;margin-bottom:8px">📊</div>
-        <div style="font-size:12px;font-weight:600;margin-bottom:4px">Chart data unavailable</div>
-        <div style="font-size:10px">Market may be closed or data delayed.<br>Try a different range or come back during market hours.</div>
-      </div>`;
+    // Don't replace canvas — show overlay so canvas stays intact for retry
+    loadDiv = document.getElementById('chartLoadMsg') || loadDiv;
+    if (!loadDiv) {
+      loadDiv = document.createElement('div');
+      loadDiv.id = 'chartLoadMsg';
+      ctx.parentElement.appendChild(loadDiv);
+    }
+    loadDiv.style.cssText = 'position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);border-radius:8px;z-index:2;gap:10px';
+    loadDiv.style.display = 'flex';
+    loadDiv.innerHTML = `<div style="text-align:center;padding:0 16px">
+      <div style="font-size:28px;margin-bottom:8px">📊</div>
+      <div style="font-size:13px;font-weight:700;margin-bottom:4px;color:var(--text)">Chart data unavailable</div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:12px;line-height:1.5">Market may be closed or data is delayed.<br>Try clicking retry or switch to 1M / 1Y range.</div>
+      <button onclick="document.getElementById('chartLoadMsg').style.display='none';renderPriceChart('${sym}','${range}')" 
+        style="background:var(--gm);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">
+        ↻ Retry
+      </button>
+    </div>`;
     return;
   }
 
@@ -4971,8 +4983,8 @@ const CHART_LESSONS = [
         { n:4, txt:'Real example: Nifty March 2024 — 21,800 support. 22,400 resistance. Breakout hold.' },
       ]
     },
-    liveLink: { en:'See current support/resistance on Nifty →', hi:'Nifty पर अभी देखें →', gu:'Nifty પર હમણાં જુઓ →' },
-    liveStock:'NIFTY50',
+    liveLink: { en:'See support/resistance on HDFC Bank live →', hi:'HDFC Bank पर S&R देखें →', gu:'HDFC Bank પર S&R જુઓ →' },
+    liveStock:'HDFCBANK',
     remember:{ en:'Support = floor (buyers protect). Resistance = ceiling (sellers take profits). Volume confirms the move.', hi:'Support = floor, Resistance = ceiling. Volume breakout की पुष्टि करता है।', gu:'Support = floor, Resistance = ceiling. Volume breakout confirm કરે.' }
   },
   {
@@ -5076,7 +5088,7 @@ function buildChartLesson(cl, idx) {
         📌 ${remLbl}: ${remember}
       </div>
       <div class="u-card-body-sm">
-        <button onclick="loadStock('${cl.liveStock}');showPage('research');uniProgress.deepDone['chart_${cl.id}']=true;saveUni()"
+        <button onclick="showPage('research');loadStock('${cl.liveStock}');uniProgress.deepDone['chart_${cl.id}']=true;saveUni()"
           style="width:100%;background:var(--gm);color:#fff;border:none;border-radius:var(--r10);padding:12px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity 0.2s"
           onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
           📊 ${liveLink}
