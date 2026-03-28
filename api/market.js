@@ -207,18 +207,34 @@ async function getMarketScan(session) {
 
 // ── HISTORY ───────────────────────────────────────────────────────
 async function getHistory(symbol, range, interval, session) {
-  var syms = [symbol + '.NS', symbol + '.BO', symbol];
+  // Index symbols (^NSEI etc) don't get .NS/.BO suffix
+  var isIndex = symbol.startsWith('^');
+  var syms = isIndex
+    ? [symbol]
+    : [symbol + '.NS', symbol + '.BO', symbol];
   for (var i = 0; i < syms.length; i++) {
     try {
       var data = await yahooFetch(syms[i], session, range, interval);
       var r    = data && data.chart && data.chart.result && data.chart.result[0];
       if (!r) continue;
       var ts   = r.timestamp || [];
-      var cl   = r.indicators && r.indicators.quote && r.indicators.quote[0] && r.indicators.quote[0].close || [];
-      var vol  = r.indicators && r.indicators.quote && r.indicators.quote[0] && r.indicators.quote[0].volume || [];
+      var quote= r.indicators && r.indicators.quote && r.indicators.quote[0] || {};
+      var cl   = quote.close  || [];
+      var op   = quote.open   || [];
+      var hi   = quote.high   || [];
+      var lo   = quote.low    || [];
+      var vol  = quote.volume || [];
       var prices = ts.map(function(t, idx) {
-        return { date: new Date(t * 1000).toISOString().split('T')[0], close: cl[idx] ? +cl[idx].toFixed(2) : null, volume: vol[idx] || 0 };
-      }).filter(function(p){ return p.close !== null; });
+        if (!cl[idx]) return null;
+        return {
+          date:   new Date(t * 1000).toISOString().split('T')[0],
+          close:  +cl[idx].toFixed(2),
+          open:   op[idx] ? +op[idx].toFixed(2) : +cl[idx].toFixed(2),
+          high:   hi[idx] ? +hi[idx].toFixed(2) : +cl[idx].toFixed(2),
+          low:    lo[idx] ? +lo[idx].toFixed(2) : +cl[idx].toFixed(2),
+          volume: vol[idx] || 0
+        };
+      }).filter(Boolean);
       if (prices.length) return { prices: prices, live: true, symbol: syms[i] };
     } catch(e) { console.error('History ' + syms[i] + ':', e.message); }
   }
