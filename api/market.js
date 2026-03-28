@@ -430,9 +430,11 @@ export default async function handler(req, res) {
   var action = p.action  || 'quote';
 
   try {
+    // Session is best-effort — some endpoints work without crumb
     var session = (action !== 'news') ? await getSession() : null;
-    if (action !== 'news' && !session) {
-      return res.status(200).json({ live: false, error: 'Session failed' });
+    // Only hard-fail for warmup if session fails — other actions try chart fallback
+    if (action === 'warmup' && !session) {
+      return res.status(200).json({ ok: false, error: 'Session failed — Yahoo Finance rate limited' });
     }
     var result;
     if      (action === 'warmup')       { console.log('Warmup: session pre-fetched'); result = { ok: true, cached: !!_sessionCache }; }
