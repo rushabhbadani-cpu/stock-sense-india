@@ -549,7 +549,7 @@ button{font-family:"DM Sans",sans-serif;cursor:pointer}
             <div class="dh-m"><div class="dh-ml">Volume</div><div class="dh-mv" id="dhVol"></div></div>
             <div class="dh-m"><div class="dh-ml">DH Score</div><div class="dh-mv" id="dhScore"></div></div>
           </div>
-          <!-- How it's calculated - transparent -->
+          <!-- How it is calculated - transparent -->
           <div id="dhCalc" style="margin-top:10px;padding:8px;background:rgba(0,0,0,0.15);border-radius:8px;font-size:9px;color:rgba(255,255,255,0.6);line-height:1.5;display:none"></div>
           <div style="font-size:9px;color:rgba(255,255,255,0.4);margin-top:6px;cursor:pointer" onclick="document.getElementById('dhCalc').style.display=document.getElementById('dhCalc').style.display==='none'?'block':'none'">📊 How is this calculated? (tap to see)</div>
         </div>
@@ -1146,7 +1146,7 @@ button{font-family:"DM Sans",sans-serif;cursor:pointer}
   <div class="tour-welcome-card">
     <div class="wico">👋</div>
     <h2>Welcome to StockSense!</h2>
-    <p>India's free stock market learning app. Live data, real stock analysis, and plain-language education — all in one place.</p>
+    <p>India free stock market learning app. Live data, real stock analysis, and plain-language education — all in one place.</p>
     <p style="font-size:12px;color:var(--g);font-weight:600;margin-bottom:20px">Let us show you around — takes 30 seconds.</p>
     <button class="tour-start-btn" onclick="startTour()">Show me around 🚀</button>
     <span class="tour-skip-all" onclick="endTour()">Skip — I will explore myself</span>
@@ -3063,7 +3063,7 @@ function buildPeersTab(sym, s) {
         </div>`).join('')}
     </div>
 
-    <div class="disc">Live prices from Yahoo Finance. Shareholding from latest quarterly BSE filing. For deeper comparison use the Financials tab to load each company's P&L. Educational only — not investment advice.</div>
+    <div class="disc">Live prices from Yahoo Finance. Shareholding from latest quarterly BSE filing. For deeper comparison use the Financials tab to load each company P&L. Educational only — not investment advice.</div>
 
     <!-- How to pick from this sector -->
     ${buildSectorPickGuide(s.sector)}`;
@@ -3158,7 +3158,7 @@ async function loadPeerComparison(mainSym, peersStr, sector) {
         </tbody>
       </table>
     </div>
-    <div style="font-size:10px;color:var(--muted);margin-top:8px">52W = position in 52-week range. Tap any row to open that stock's full analysis. Green highlight = selected stock.</div>`;
+    <div style="font-size:10px;color:var(--muted);margin-top:8px">52W = position in 52-week range. Tap any row to open that stock full analysis. Green highlight = selected stock.</div>`;
 }
 
 // ── COMPANY TAB ───────────────────────────────────────────────────
@@ -3214,7 +3214,7 @@ function buildSWOTTab(s) {
   }
   if (w52pct > 80) insights.push({ type:'caution', text:`Price is near its 52-week high (${w52pct}% of range). Stocks near yearly highs can have strong momentum but also carry higher profit-booking risk.` });
   if (w52pct < 20) insights.push({ type:'caution', text:`Price is near its 52-week low (${w52pct}% of range). This could signal ongoing business trouble or a buying opportunity — need to check fundamentals to decide which.` });
-  if (s.promoter > 60) insights.push({ type:'positive', text:`High promoter holding of ${s.promoter}% — founders have significant skin in the game. This generally signals management confidence in the company's future.` });
+  if (s.promoter > 60) insights.push({ type:'positive', text:`High promoter holding of ${s.promoter}% — founders have significant skin in the game. This generally signals management confidence in the company future.` });
   if (s.promoter > 0 && s.promoter < 20) insights.push({ type:'caution', text:`Low promoter holding of ${s.promoter}% — founders hold relatively little of the company. This may be worth investigating further.` });
   if (s.pledgePct > 10) insights.push({ type:'risk', text:`⚠️ ${s.pledgePct}% of promoter shares are pledged as collateral. Heavy pledging is a risk factor — if the stock falls, lenders may force sell.` });
   if (s.fii > 30) insights.push({ type:'positive', text:`High FII holding of ${s.fii}% shows strong foreign institutional interest. Global funds see this stock as worth holding.` });
@@ -3536,7 +3536,7 @@ async function loadGlobalIndices() {
   if (grid) grid.innerHTML = shimmer;
   if (homeGrid) homeGrid.innerHTML = shimmer;
 
-  // Fetch each global index individually — batch doesn't work for ^ symbols
+  // Fetch each global index individually — batch does not work for ^ symbols
   const results = await Promise.all(
     globalSyms.map(g => api('quote', { symbol: g.sym }).then(q => ({ ...g, q })))
   );
@@ -3601,7 +3601,7 @@ function updateMoodCard(nifty, sensex, vix) {
   const vixTxt   = vix ? (vix.value > 20 ? `Volatility (VIX ${vix.value.toFixed(1)}) is elevated — markets are nervous.` : `Volatility (VIX ${vix.value.toFixed(1)}) is calm — steady market conditions.`) : '';
 
   // What Nifty 50 IS (educational)
-  const explainer = `Nifty 50 tracks India's 50 largest companies on NSE. When it ${up ? 'rises' : 'falls'}, it means most of these big companies' shares are being ${up ? 'bought' : 'sold'} more today. ${vixTxt}`;
+  const explainer = `Nifty 50 tracks India 50 largest companies on NSE. When it ${up ? 'rises' : 'falls'}, it means most of these big companies' shares are being ${up ? 'bought' : 'sold'} more today. ${vixTxt}`;
 
   if (title) { title.style.color = up ? 'var(--g)' : 'var(--r)'; title.textContent = up ? '📈 Bullish — Markets rising' : '📉 Bearish — Markets falling'; }
   if (reason) {
@@ -6275,20 +6275,497 @@ function buildChartSchool() {
 }
 
 // ── FUNDAMENTALS SCHOOL (architecture — content coming) ───────
-function buildFundamentalsSchool() {
-  const T = {
-    en:{ eye:'Fundamentals School', title:'Business analysis, financial statements, and valuation.', sub:'40 lessons · 5 levels · Coming soon — Chart School first' },
-    hi:{ eye:'Fundamentals School', title:'Business analysis, financial statements, और valuation।', sub:'40 lessons · Coming soon' },
-    gu:{ eye:'Fundamentals School', title:'Business analysis, financial statements, valuation.', sub:'40 lessons · Coming soon' },
-  }[lang] || { eye:'Fundamentals School', title:'Business analysis and valuation.', sub:'' };
+// ═══════════════════════════════════════════════════════════════
+// FUNDAMENTALS SCHOOL — 40 lessons, 5 levels
+// ═══════════════════════════════════════════════════════════════
 
-  const levels = [
-    { num:1, title:'Level 1 — Business Basics', sub:'What FA is, investing vs trading, annual reports', color:'#127842', bg:'var(--gl)' },
-    { num:2, title:'Level 2 — Financial Statements', sub:'Income statement, balance sheet, cash flow', color:'#1458a8', bg:'var(--bl)' },
-    { num:3, title:'Level 3 — Core Ratios', sub:'EPS, PE, ROE, ROCE, debt ratios', color:'#7048e8', bg:'var(--pl)' },
-    { num:4, title:'Level 4 — Business Quality', sub:'Moat, management, promoters, governance', color:'#c01a1a', bg:'var(--rl)' },
-    { num:5, title:'Level 5 — Valuation & Macro', sub:'Intrinsic value, DCF, margin of safety, industry', color:'#b35c00', bg:'var(--al)' },
-  ];
+const FA_SCHOOL_LEVELS = [
+  {
+    id:'fs1', num:1,
+    title:{ en:'Level 1 — Business Basics', hi:'Level 1 — Business Basics', gu:'Level 1 — Business Basics' },
+    subtitle:{ en:'What FA is, how businesses work, annual reports', hi:'FA क्या है, businesses कैसे काम करते हैं', gu:'FA શું, businesses કેવી રીતે' },
+    color:'#127842', bg:'var(--gl)',
+    lessons:[
+      {
+        id:'f1', num:'F1',
+        title:{ en:'What fundamental analysis is', hi:'Fundamental analysis क्या है', gu:'Fundamental analysis શું' },
+        time:'4 min',
+        definition:{ en:'Fundamental analysis is evaluating a stock by studying the actual business — revenues, profits, debts, management, and competitive position — to determine what it is truly worth. The goal: find companies whose real value is higher than their stock price.', hi:'FA = actual business study करना — revenues, profits, debts, management — यह जानने के लिए कि stock actually कितना worth है।', gu:'FA = actual business study — real value find. Goal: real value > stock price.' },
+        psychology:{ en:'Most people buy stocks like lottery tickets — based on tips and rumours. FA asks: "If I owned this entire business, would it be a good investment?" Rakesh Jhunjhunwala, Warren Buffett, Peter Lynch made their fortunes studying businesses — not watching prices.', hi:'ज़्यादातर लोग tips पर खरीदते हैं। FA पूछता है: "अगर मैं यह पूरा business own करूँ, तो क्या यह अच्छा investment होगा?"', gu:'Most people buy on tips. FA asks: "If I owned this whole business, would it be good?"' },
+        svgId:'faSVG1',
+        example:{ en:'In 2003, Rakesh Jhunjhunwala bought Titan at ₹3 per share. He studied the business: dominant brand, growing middle class, jewellery shifting from unorganised to organised retail. Today Titan trades above ₹3,000. That 1,000x return came from understanding the business — not the chart.', hi:'2003 में Jhunjhunwala ने Titan ₹3 में खरीदा। Business study: dominant brand, growing middle class। आज ₹3,000+। 1,000x return = business understanding।', gu:'2003 — Titan ₹3 → आज ₹3,000+. 1,000x = business understanding.' },
+        mistake:{ en:'"Fundamentals do not matter — only price matters." Wrong. Price follows fundamentals over time, always. Over 5-10 years, great businesses always rise and bad businesses always fall. Price is short-term noise. Business quality is the long-term signal.', hi:'"Fundamentals matter नहीं।" गलत। Price fundamentals को follow करती है — हमेशा। 5-10 years में great businesses हमेशा rise करते हैं।', gu:'"Only price." Wrong. Price follows fundamentals always. 5-10 years = business quality wins.' },
+        xref:'See also: Chart School C1 — Fundamentals tell you WHAT to buy. Charts tell you WHEN.',
+        exercise:{ en:['Open Research tab → search TCS','Go to Financials tab','Look at revenue for the last 4 years','Has it grown every year?','That growing revenue is the fundamental reason TCS stock has risen over time'] },
+        quiz:{ en:{ q:'A stock rose 40% in 3 months but revenue has been falling for 2 years and debt is rising. What does FA say?', opts:['Buy — price momentum is strong','Be very cautious — rising price without improving fundamentals is unsustainable','Hold — need more data','Debt does not matter if price is rising'], correct:1, explain:'Price and business value can disconnect for months. But they always reconnect. Rising stock price with falling revenue and rising debt is borrowing time — not creating value.' } }
+      },
+      {
+        id:'f2', num:'F2',
+        title:{ en:'Investing vs trading vs speculation', hi:'Investing vs trading vs speculation', gu:'Investing vs trading vs speculation' },
+        time:'4 min',
+        definition:{ en:'Three distinct activities people constantly confuse. Investing: buying business ownership for years, based on quality and valuation. Trading: buying and selling on short-term price movements, days to weeks. Speculation: buying purely on hope, with no real analysis. Each has different tools, time horizons, and risk profiles. Knowing which you are doing before you start determines your entire approach.', hi:'3 अलग activities। Investing: years के लिए, quality और valuation based। Trading: short-term, days to weeks। Speculation: hope — कोई analysis नहीं। शुरू करने से पहले तय करें।', gu:'3 different activities. Investing: years, quality. Trading: days-weeks. Speculation: hope only. Decide BEFORE starting.' },
+        psychology:{ en:'The confusion between these three causes enormous damage. Someone buys on a tip (speculation), it falls 30%, they tell themselves "I am a long-term investor now" (forced investing), hold as it falls 70%. Or someone buys a great company but panic-sells at 15% down (trading behaviour) and misses the 10x return. You must decide your approach BEFORE you buy — not after the price moves.', hi:'यह confusion बड़ा नुकसान करती है। Tip पर खरीदा (speculation), 30% गिरा, खुद को कहा "long-term investor हूँ" (forced investing), 70% तक गिरने तक hold किया। या great company खरीदी पर 15% down पर panic-sell (trading)। आपको पहले decide करना होगा।', gu:'Confusion = big damage. Buy on tip (speculation) → falls → "I am long-term investor" (forced) → holds to -70%. Decide approach BEFORE buying.' },
+        svgId:'faSVG2',
+        example:{ en:'Dhirendra Kumar (Value Research) studied Indian mutual fund data. Investors who held equity funds for 10+ years almost always made money. Investors who switched based on recent performance almost always underperformed. Same market, same funds — completely different outcomes based purely on whether they were investing or speculating with their fund choices.', hi:'Dhirendra Kumar ने study किया: 10+ साल equity funds hold करने वालों ने almost always पैसे बनाए। Recent performance पर switch करने वाले almost always underperform किए। Same market, same funds।', gu:'Value Research: 10+ year holders = almost always profit. Switchers = almost always underperform. Same market, same funds.' },
+        mistake:{ en:'"I will be a trader but switch to investor if the trade goes wrong." This removes stop-loss discipline without giving you fundamental research conviction. You need to decide your approach BEFORE you buy — not after the price moves against you.', hi:'"Trade गलत होगा तो investor बन जाऊँगा।" यह stop-loss discipline हटाता है बिना FA conviction दिए। पहले decide करें।', gu:'"Trade goes wrong = I become investor." This removes stop-loss without FA conviction. Decide FIRST.' },
+        xref:'See also: Chart School C39 — traders and investors use different timeframes for the same reason they need different mental frameworks.',
+        exercise:{ en:['Before your next stock purchase write down:','I am buying this as a [trader/investor/speculator]','Time horizon: [X days / X years]','Exit condition: [specific price level or business event]','This single habit prevents most financial mistakes'] },
+        quiz:{ en:{ q:'You buy a stock planning to sell in 2 weeks if it rises 8%. Instead it falls 15%. You tell yourself "it is a good company, I will hold long-term." What has happened?', opts:['Smart decision — becoming a long-term investor','You switched strategies mid-trade — removing your stop-loss without having done fundamental research. This is how small losses become large ones','Normal — all investors experience this','You should average down immediately'], correct:1, explain:'Deciding to "become an investor" after a trade goes wrong is not a strategy — it is denial. Without having done fundamental research before the purchase, you have no basis for the long-term conviction you are now claiming.' } }
+      },
+      {
+        id:'f3', num:'F3',
+        title:{ en:'How a business makes money', hi:'Business कैसे पैसे बनाता है', gu:'Business પૈસા કેવી રીતે' },
+        time:'4 min',
+        definition:{ en:'Every business has a model — the mechanism by which it earns money. Three fundamental types: (1) Product business: makes something and sells it (Asian Paints, Maruti). (2) Service business: provides expertise or time (TCS, HDFC Bank). (3) Platform business: connects buyers and sellers and earns a fee (Zomato, Nykaa). Understanding the business model is the first step — before any numbers.', hi:'हर business का एक model है। 3 types: (1) Product: बनाता है और बेचता है (Asian Paints, Maruti)। (2) Service: expertise देता है (TCS, HDFC Bank)। (3) Platform: buyers-sellers connect करता है (Zomato, Nykaa)। Business model = पहला step — numbers से पहले।', gu:'3 types: (1) Product (Asian Paints, Maruti). (2) Service (TCS, HDFC Bank). (3) Platform (Zomato, Nykaa). Business model = first step before numbers.' },
+        psychology:{ en:'Peter Lynch rule: "Never invest in a business you cannot explain to a 10-year-old." If you cannot explain how the company makes money, you cannot evaluate whether it will make more or less in future. You have no framework for judging news, competition, or management decisions. You are speculating — not investing.', hi:'Peter Lynch का rule: "जिस business को 10 साल के बच्चे को explain नहीं कर सकते, उसमें invest मत करो।" अगर नहीं समझते कि company पैसे कैसे बनाती है, तो future evaluate नहीं कर सकते।', gu:'Peter Lynch: "Never invest in business you cannot explain to a 10-year-old." If you cannot explain HOW it earns, you cannot evaluate future.' },
+        svgId:'faSVG3',
+        example:{ en:'Many retail investors bought Paytm at ₹2,150 in its 2021 IPO without understanding the business model. How did Paytm make money? UPI payments (free), financial services (loans, insurance), advertising. The path to profitability was unclear. Those who could not answer "how does Paytm make money?" should not have invested. The stock fell to ₹438 within a year.', hi:'Paytm IPO 2021 में ₹2,150 पर खरीदा बिना business model समझे। Paytm पैसे कैसे बनाता था? UPI (free), financial services, advertising। Profitability unclear था। Stock ₹438 तक गिरा।', gu:'Paytm IPO ₹2,150 — business model unclear — stock fell to ₹438. "How does Paytm earn?" = first question.' },
+        mistake:{ en:'"This company is in a hot sector — it must be a good investment." Hot sector does not equal good business model. In 2021, dozens of Indian ed-tech startups were in the hot online education sector. Most are now shut or worth a fraction of their IPO price. The sector grew — but the individual business models were broken.', hi:'"Hot sector = good investment।" गलत। 2021 में Indian ed-tech startups hot sector में थे। ज़्यादातर अब बंद हैं। Sector grew, business models broken।', gu:'"Hot sector = good." Wrong. 2021 ed-tech: hot sector, broken models. Sector grew, companies failed.' },
+        xref:'See also: Fundamentals F26 — competitive advantage — once you understand HOW a business earns, ask whether competitors can replicate it.',
+        exercise:{ en:['Pick 3 stocks from your watchlist','For each write one sentence: "This company makes money by ___"','If you cannot complete the sentence confidently — do not invest until you can','This one test eliminates most bad investments'] },
+        quiz:{ en:{ q:'Company A sells products to customers. Company B connects buyers and sellers and takes a small fee per transaction. Which model scales better as it grows?', opts:['Company A — products are tangible and reliable','Company B — platforms scale without proportional cost increases. Each new user makes the platform more valuable for all others (network effect)','Both scale equally','Cannot determine without revenue data'], correct:1, explain:'Platform businesses have near-zero marginal cost for each additional user — the infrastructure already exists. Product businesses must manufacture more for each additional sale. This is why Zomato, NSE, and Google trade at higher multiples than manufacturers.' } }
+      },
+      {
+        id:'f4', num:'F4',
+        title:{ en:'Revenue, profit, and cash flow', hi:'Revenue, profit, और cash flow', gu:'Revenue, profit, cash flow' },
+        time:'5 min',
+        definition:{ en:'Three financial concepts every investor must distinguish. Revenue (Sales/Turnover): total money received from customers — the top line. Profit (Net Income): what is left after ALL expenses, taxes, and interest — the bottom line. Cash Flow: actual cash moving in and out — the most honest number. A company can have high revenue and still lose money. It can show accounting profit but have no cash. All three must be examined together.', hi:'3 concepts: Revenue: customers से मिला total money। Profit: सब expenses, tax, interest के बाद बचा। Cash Flow: actual cash movement — सबसे honest number। Revenue high होने पर भी loss हो सकता है। Profit show होने पर भी cash नहीं हो सकता।', gu:'3 concepts: Revenue = top line. Profit = bottom line after all expenses. Cash Flow = actual cash = most honest. All 3 must be checked together.' },
+        psychology:{ en:'Revenue is easy to grow — just sell more, even at a loss. Profit can be manipulated through accounting choices. Cash flow is hardest to fake — cash is either in the bank or it is not. Warren Buffett said: "Accounting is the language of business, but cash flow is the truth." Companies that consistently show profit but have weak cash flow deserve deep scrutiny.', hi:'Revenue बढ़ाना आसान — loss पर भी बेचो। Profit को accounting से manipulate किया जा सकता है। Cash flow fake करना सबसे मुश्किल। Buffett: "Cash flow is the truth।"', gu:'Revenue = easy to grow. Profit = can be manipulated. Cash flow = hardest to fake. Buffett: "Cash flow is the truth."' },
+        svgId:'faSVG4',
+        example:{ en:'Vodafone Idea: Revenue ₹40,000+ crore annually (enormous top line). But after interest, subscriber losses, and spectrum fees — Net Loss ₹20,000-30,000 crore per year. And operating cash flow is negative — spending more cash than it earns. Revenue alone told a completely different and misleading story.', hi:'Vodafone Idea: Revenue ₹40,000+ crore। लेकिन Net Loss ₹20,000-30,000 crore/year। Operating cash flow negative। Revenue अकेला completely misleading story बताता था।', gu:'Vodafone Idea: Revenue ₹40,000+ Cr → Net Loss ₹20,000-30,000 Cr → Cash flow negative. Revenue alone = misleading.' },
+        mistake:{ en:'Celebrating "record revenue" announcements. Revenue growth without profit growth — called growth at any cost — has destroyed enormous wealth. Zomato, Swiggy, most 2021-2022 Indian IPOs had record revenue and record losses simultaneously. The metric that matters is profitable revenue growth — not revenue growth alone.', hi:'"Record revenue" celebrate करना। Revenue growth without profit = wealth destroyed। 2021-2022 IPOs: record revenue, record losses। Profitable revenue growth = only metric that matters।', gu:'"Record revenue" = not celebration. 2021 IPOs: record revenue + record losses. Need: PROFITABLE revenue growth.' },
+        xref:'See also: Fundamentals F9 (Income Statement), F15 (Cash Flow Statement) — where to find these numbers.',
+        exercise:{ en:['Open Research tab → any company → Financials','Find: Total Revenue and Net Profit','Calculate: Net Profit ÷ Revenue × 100 = Net Profit Margin %','Above 15% is generally good','What is the margin? Is it growing or shrinking over 4 years?'] },
+        quiz:{ en:{ q:'A company reports ₹1,000 crore revenue, ₹50 crore net profit (5% margin), but operating cash flow is negative ₹200 crore. What is the most concerning signal?', opts:['Revenue is too low','Negative operating cash flow — the company is losing real cash despite showing accounting profit. The profit may not be real or sustainable','5% margin is too low','All three numbers look fine'], correct:1, explain:'Negative operating cash flow means the business is consuming more cash than it generates — regardless of what the P&L shows. This is the most reliable early warning signal of financial distress.' } }
+      },
+      {
+        id:'f5', num:'F5',
+        title:{ en:'Why stock price and business value are different', hi:'Stock price और business value अलग क्यों', gu:'Stock price vs business value' },
+        time:'4 min',
+        definition:{ en:'Stock price is what the market is willing to pay right now — influenced by sentiment, news, and short-term events. Business value (intrinsic value) is what the business is actually worth based on its assets, earnings, and future cash flows. These two numbers are almost never the same. The gap between them is where investment opportunity exists — or danger hides.', hi:'Stock price = market अभी कितना देना चाहता है — sentiment, news, short-term events से। Business value = business actually कितना worth है — assets, earnings, future cash flows से। यह दोनों almost never same होते।', gu:'Stock price = market sentiment now. Business value = actual worth from earnings + assets. These almost never match. Gap = opportunity or danger.' },
+        psychology:{ en:'Benjamin Graham described it perfectly: "In the short run, the market is a voting machine. In the long run, it is a weighing machine." Short term: whoever is most popular gets the most votes (highest price). Long term: whoever has the most substance gets the most weight (highest value). The market daily opinion is not the same as the stock true worth.', hi:'Benjamin Graham: "Short run में market voting machine है। Long run में weighing machine।" Short term: popularity = high price। Long term: substance = high value। Market की daily opinion ≠ stock की true worth।', gu:'Graham: "Short run = voting machine. Long run = weighing machine." Short: popularity = price. Long: substance = value.' },
+        svgId:'faSVG5',
+        example:{ en:'Nifty 50 in March 2020 fell 38% in 3 weeks. Did India 50 largest businesses become 38% less valuable? Did TCS software capabilities disappear? Did HDFC Bank loan book evaporate? No — the businesses were virtually unchanged. Fear drove the voting machine. By December 2020, the weighing machine had done its work — Nifty was back at all-time highs.', hi:'March 2020 में Nifty 3 हफ्तों में 38% गिरा। TCS की capabilities गई? HDFC Bank का loan book गया? नहीं — businesses unchanged रहे। Fear ने voting machine drive किया। December 2020 में all-time highs वापस।', gu:'Nifty March 2020 -38% in 3 weeks. Businesses changed? No. Fear drove voting machine. Dec 2020 = all-time highs again.' },
+        mistake:{ en:'"The stock is down 40% — it must be cheap." Not necessarily. A stock can fall 40% and still be expensive if the business has deteriorated. And a stock up 100% can still be cheap if the business grew faster than price. Price alone tells you nothing about value. You must compare price to business value.', hi:'"Stock 40% गिरा — सस्ता होगा।" ज़रूरी नहीं। Business deteriorate हुई हो तो 40% गिरने के बाद भी expensive हो सकता है। Price alone = value के बारे में कुछ नहीं बताता।', gu:'"Down 40% = cheap." Not necessarily. Business may have deteriorated. Price alone tells nothing about value.' },
+        xref:'See also: Fundamentals F33-F36 — Valuation — tools for calculating what a business is actually worth.',
+        exercise:{ en:['Pick any stock you know','Write: "I think this business is worth ₹___ per share because ___"','Now look at the current market price','Is the market valuing it higher or lower than your estimate?','That gap (positive or negative) is your investment thesis'] },
+        quiz:{ en:{ q:'A stock trades at ₹500. An investor calculates the business is worth ₹300 based on earnings and assets. What should the investor do?', opts:['Buy — any stock can go up','Avoid or sell — stock appears overvalued. Market price exceeds estimated business value. This is a margin of safety problem','Buy because the market is always right','The calculation is probably wrong — trust the market price'], correct:1, explain:'When market price significantly exceeds your estimated intrinsic value, you are paying more than the business is worth. Even if the business is good, overpaying reduces — and can eliminate — your returns. This is the fundamental risk in bubble markets.' } }
+      },
+      {
+        id:'f6', num:'F6',
+        title:{ en:'How to read an annual report', hi:'Annual report कैसे पढ़ें', gu:'Annual report કેવી રીতે' },
+        time:'6 min',
+        definition:{ en:'An annual report is a comprehensive document filed every year with BSE/NSE. It contains: (1) Chairman letter — management narrative. (2) Management Discussion and Analysis (MD&A) — detailed business review. (3) Financial statements — P&L, Balance Sheet, Cash Flow. (4) Auditor report — independent verification. (5) Notes to accounts — crucial details often buried here. Reading an annual report is the single most important skill in fundamental analysis.', hi:'Annual report = company का हर साल BSE/NSE में file होने वाला comprehensive document। Contains: Chairman letter, MD&A, Financial statements, Auditor report, Notes to accounts। Annual report पढ़ना = FA का सबसे important skill।', gu:'Annual report = BSE/NSE yearly filing. Contains: Chairman letter, MD&A, Financials, Auditor report, Notes. Reading it = FA most important skill.' },
+        psychology:{ en:'Most retail investors never read an annual report. They rely on headlines, analyst reports, and social media. This creates a massive information gap — institutions read these documents in detail while retail investors react to summaries. The good news: annual reports are publicly available for free on BSE, NSE, and company websites. Reading even one carefully puts you ahead of 95% of retail investors.', hi:'ज़्यादातर retail investors annual report नहीं पढ़ते। Headlines और social media पर depend करते हैं। Institutions detail में पढ़ते हैं। Good news: BSE, NSE पर free मिलते हैं। एक carefully पढ़ना = 95% retail investors से आगे।', gu:'Most retail = never read. Institutions = read in detail. Free on BSE/NSE. One careful read = ahead of 95% retail.' },
+        svgId:'faSVG6',
+        example:{ en:'HDFC Bank annual report: 400+ pages. Pages 1-15: Chairman letter — management view and priorities. Pages 40-80: MD&A — NPA trends, loan growth by segment, digital banking metrics. Pages 150-200: Financial statements — the numbers. Pages 200-400: Notes to accounts — where management buries important details about related-party transactions, contingent liabilities, and accounting policy changes. The most important pages are often the last 200.', hi:'HDFC Bank annual report 400+ pages। Pages 1-15: Chairman letter। Pages 40-80: MD&A — NPA trends, loan growth। Pages 150-200: Financial statements। Pages 200-400: Notes to accounts — related party transactions, contingent liabilities। Most important = last 200 pages।', gu:'HDFC Bank: 400+ pages. 1-15: Chairman. 40-80: MD&A. 150-200: Financials. 200-400: Notes — most important = last 200.' },
+        mistake:{ en:'Reading only the Chairman letter and financial statements. The Notes to accounts are where the real story often is. Notes reveal: contingent liabilities (pending lawsuits), related-party transactions (money flowing to promoter companies), accounting policy changes (making profits look better without real improvement), and off-balance-sheet commitments. The most flattering parts are written first. The most revealing parts are written last.', hi:'सिर्फ Chairman letter और financials पढ़ना। Notes to accounts में real story होती है: contingent liabilities, related party transactions, accounting policy changes। Flattering parts पहले, revealing parts last।', gu:'Reading only Chairman letter + financials = mistake. Notes = real story: liabilities, related party, policy changes.' },
+        xref:'See also: Fundamentals F31 — accounting red flags — what specifically to look for in the notes section.',
+        exercise:{ en:['Go to bseindia.com','Search any company → Annual Reports section','Download latest annual report','Read ONLY the MD&A section (15-20 pages)','Write: (1) What went well (2) What risks management mentioned (3) Their plan for next year'] },
+        quiz:{ en:{ q:'An annual report Chairman letter says "record year with exceptional growth." The Notes to accounts reveal a change in revenue recognition policy that moved ₹500 crore of next year revenue into this year. What does this tell you?', opts:['Great — any valid accounting is acceptable','The "record year" may be partly manufactured — the policy change inflated this year revenue at the expense of next year. The notes revealed what the headline number hid','Revenue recognition policies are irrelevant','The Chairman letter is always more reliable than the notes'], correct:1, explain:'Accounting policy changes that shift revenue between periods are a classic earnings management technique. The notes revealed the truth that the headline number obscured. This is exactly why reading the notes is more important than reading the headlines.' } }
+      },
+      {
+        id:'f7', num:'F7',
+        title:{ en:'How to read quarterly results', hi:'Quarterly results कैसे पढ़ें', gu:'Quarterly results કેવી રીતે' },
+        time:'5 min',
+        definition:{ en:'Every listed Indian company files quarterly results (every 3 months) within 45 days of quarter end. These contain: Revenue, Operating profit (EBITDA), Net profit, EPS, and management commentary. Quarters in India: Q1 (Apr-Jun), Q2 (Jul-Sep), Q3 (Oct-Dec), Q4 (Jan-Mar). Markets react violently to results — often moving 5-15% on announcement day.', hi:'हर listed Indian company quarterly results 45 days में file करती है। Contains: Revenue, EBITDA, Net profit, EPS, management commentary। Q1: Apr-Jun, Q2: Jul-Sep, Q3: Oct-Dec, Q4: Jan-Mar। Markets results पर 5-15% move करते हैं।', gu:'Listed companies: quarterly results within 45 days. Revenue, EBITDA, Net profit, EPS, management commentary. Markets move 5-15% on results day.' },
+        psychology:{ en:'The market does not react to the actual numbers — it reacts to numbers relative to expectations. This is the most important insight about quarterly results. If analysts expected ₹1,000 crore profit and the company delivered ₹1,050 crore — the stock may rise 10% despite "only" ₹1,050 crore. If they expected ₹1,200 crore and got ₹1,150 crore — the stock may fall 8% despite a "good" result. The gap between expectation and reality moves the stock — not the number itself.', hi:'Market actual numbers पर react नहीं करता — expectations के relative करता है। यह quarterly results का सबसे important insight है। ₹1,000 Cr expected, ₹1,050 Cr मिला → stock +10%। ₹1,200 Cr expected, ₹1,150 Cr मिला → stock -8%।', gu:'Market reacts to: RESULT vs EXPECTATION gap — not the number itself. Beat = stock up. Miss = stock down. Regardless of absolute number.' },
+        svgId:'faSVG7',
+        example:{ en:'Infosys Q1 FY24 (July 2023): Revenue growth 4.2% YoY — reasonable. But the company lowered full-year guidance from 4-7% growth to 1-3.5%. Despite reasonable current quarter numbers, the stock fell 7% in a single day. The guidance cut told investors future quarters would disappoint. Past results mattered less than future expectations.', hi:'Infosys Q1 FY24: Revenue growth 4.2% YoY — reasonable। लेकिन full-year guidance cut: 4-7% से 1-3.5%। Stock एक दिन में 7% गिरा। Future expectation = past result से ज़्यादा matter करती है।', gu:'Infosys Q1 FY24: 4.2% growth OK. Guidance cut 4-7% → 1-3.5%. Stock -7% one day. Future expectations > past results.' },
+        mistake:{ en:'Buying or selling based on one quarter without context. One bad quarter in a 10-year excellent track record is noise. One good quarter in a deteriorating business is noise in the other direction. Always look at the trend across 8-12 quarters — not just the most recent one. And always read management commentary — numbers tell you what happened, commentary tells you why and what comes next.', hi:'एक quarter देखकर buy/sell करना। 10-year excellent track record में एक bad quarter = noise। 4 quarters का trend देखें — 8-12 quarters better। Management commentary पढ़ें।', gu:'One quarter = not enough. Look at 8-12 quarter trend. Management commentary = why it happened + what comes next.' },
+        xref:'See also: Chart School C5 — quarterly results create gap-up or gap-down candles. Understanding the fundamental reason makes the chart pattern readable.',
+        exercise:{ en:['Go to bseindia.com → Financial Results section for any company','Find last 4 quarterly results','For each write: Revenue, Net Profit, YoY growth %','Is the trend improving, stable, or deteriorating?','A deteriorating trend across 4 quarters is a warning even if each quarter "looks OK"'] },
+        quiz:{ en:{ q:'TCS reports Q2 results: Revenue ₹59,000 crore (up 8% YoY), Net Profit ₹11,500 crore (up 9% YoY). The stock falls 5% on the day. What is the most likely reason?', opts:['The results were bad','Analysts expected 11% revenue growth and ₹12,000 crore profit. TCS missed expectations despite reporting growth — markets react to the expectation gap, not the absolute number','The market was falling that day','8% revenue growth is too slow'], correct:1, explain:'The stock fell because TCS underdelivered vs analyst estimates — even though absolute numbers looked fine. This is why tracking analyst consensus expectations (available on Bloomberg, Refinitiv) is as important as tracking the results themselves.' } }
+      },
+      {
+        id:'f8', num:'F8',
+        title:{ en:'What makes a company investable — the checklist', hi:'Company investable कब होती है — checklist', gu:'Investable company checklist' },
+        time:'5 min',
+        definition:{ en:'Before deep analysis, a quick 5-point checklist filters out 80% of poor investments in 5 minutes. (1) Is the business model clear and sustainable? (2) Has revenue grown consistently for 3+ years? (3) Is the company profitable with positive cash flow? (4) Is debt manageable (D/E below 1.5 for most sectors)? (5) Is promoter holding above 40% and not declining significantly? All 5 must pass before spending more research time.', hi:'5-point checklist 5 minutes में 80% poor investments eliminate करती है: (1) Business model clear? (2) Revenue 3+ years consistently grown? (3) Profitable, positive cash flow? (4) Debt manageable (D/E <1.5)? (5) Promoter holding >40% और declining नहीं? सब 5 pass होने चाहिए।', gu:'5-point checklist — 5 minutes — 80% bad investments out: (1) Business model clear? (2) Revenue 3+ years growth? (3) Profitable + cash flow? (4) D/E <1.5? (5) Promoter >40%?' },
+        psychology:{ en:'Most investors waste time analysing bad businesses in detail. The checklist is a filter, not a conclusion. Its purpose is to save time — eliminate the 80% with obvious problems so you can spend your research time on the 20% worth investigating. Charlie Munger: "Invert, always invert." Instead of looking for reasons to buy, first look for reasons to reject. The stock that survives all your reasons to reject it is worth studying seriously.', hi:'ज़्यादातर investors bad businesses analyze करने में समय waste करते हैं। Checklist = filter, conclusion नहीं। Charlie Munger: "Invert, always invert।" Buy करने के reasons खोजने से पहले reject करने के reasons खोजें।', gu:'Checklist = filter, not conclusion. Munger: "Invert, always invert." Find reasons to REJECT first. Survivor = worth studying.' },
+        svgId:'faSVG8',
+        example:{ en:'Apply the checklist to two well-known stocks. HDFC Bank: Clear business model ✓ | Revenue growing 15%+ YoY ✓ | Profitable, positive cash flow ✓ | D/E appropriate for bank ✓ | Promoter stable ✓ → All 5 pass → worth deep research. Vodafone Idea: Business model challenged by Jio ✗ | Revenue declining ✗ | Losses every quarter ✗ | D/E >10 ✗ | Promoter declining ✗ → All 5 fail → stop here, move on.', hi:'HDFC Bank: सब 5 pass → deep research worth it। Vodafone Idea: सब 5 fail → यहाँ रुको, आगे बढ़ो। Checklist = time saver।', gu:'HDFC Bank: 5/5 pass → research. Vodafone Idea: 0/5 pass → move on. Checklist saves time.' },
+        mistake:{ en:'Skipping the checklist because "this stock is different." The stocks that excite people most are usually the ones that most need the checklist. If a stock is on every WhatsApp group and every influencer list — apply the checklist before buying. FOMO is the enemy of the checklist.', hi:'"यह stock different है।" कहकर checklist skip करना। जो stocks सबसे ज़्यादा excite करते हैं, वही सबसे ज़्यादा checklist की ज़रूरत होती है। FOMO = checklist का दुश्मन।', gu:'"This stock is different" = worst reason to skip checklist. Exciting stocks need checklist most. FOMO = enemy of checklist.' },
+        xref:'See also: Fundamentals F22 (Debt ratios), F28 (Promoter holding) — details on checklist points 4 and 5.',
+        exercise:{ en:['Apply the 5-point checklist to 5 stocks you have been thinking about','Write pass/fail for each of the 5 criteria for each stock','Most serious investors find 3 out of 5 stocks fail immediately','This is the checklist working correctly — not a problem','Only research further the stocks that pass all 5'] },
+        quiz:{ en:{ q:'A company passes 3 of 5 checklist items but fails on high debt (D/E of 4.5) and promoter has been selling shares for 3 consecutive quarters. Should you invest?', opts:['Yes — 3 out of 5 is a strong pass','No — high debt with promoter selling is a serious combination. Promoter selling while debt is high often signals the insider knows something investors do not','Yes — revenue growth overrides debt concerns','Promoter selling is irrelevant if revenue is growing'], correct:1, explain:'When insiders (promoters) sell consistently while debt is elevated, they may be signalling that the business cannot service its debt, or that fundamentals are deteriorating. This is one of the clearest warning signs in fundamental analysis.' } }
+      }
+    ]
+  },
+  {
+    id:'fs2', num:2,
+    title:{ en:'Level 2 — Financial Statements', hi:'Level 2 — Financial Statements', gu:'Level 2 — Financial Statements' },
+    subtitle:{ en:'Income statement, balance sheet, cash flow', hi:'Income statement, balance sheet, cash flow', gu:'Income statement, balance sheet, cash flow' },
+    color:'#1458a8', bg:'var(--bl)', lessons:[], locked:true
+  },
+  {
+    id:'fs3', num:3,
+    title:{ en:'Level 3 — Core Ratios', hi:'Level 3 — Core Ratios', gu:'Level 3 — Core Ratios' },
+    subtitle:{ en:'EPS, PE, ROE, ROCE, debt ratios', hi:'EPS, PE, ROE, ROCE, debt ratios', gu:'EPS, PE, ROE, ROCE' },
+    color:'#7048e8', bg:'var(--pl)', lessons:[], locked:true
+  },
+  {
+    id:'fs4', num:4,
+    title:{ en:'Level 4 — Business Quality', hi:'Level 4 — Business Quality', gu:'Level 4 — Business Quality' },
+    subtitle:{ en:'Moat, management, promoters, governance', hi:'Moat, management, promoters, governance', gu:'Moat, management, promoters' },
+    color:'#c01a1a', bg:'var(--rl)', lessons:[], locked:true
+  },
+  {
+    id:'fs5', num:5,
+    title:{ en:'Level 5 — Valuation & Macro', hi:'Level 5 — Valuation & Macro', gu:'Level 5 — Valuation & Macro' },
+    subtitle:{ en:'Intrinsic value, DCF, margin of safety, industry', hi:'Intrinsic value, DCF, margin of safety', gu:'Intrinsic value, DCF, margin of safety' },
+    color:'#b35c00', bg:'var(--al)', lessons:[], locked:true
+  }
+];
+
+// ── FA SVG GENERATORS ─────────────────────────────────────────
+function getFASVG(id) {
+  const svgs = {
+    faSVG1:`<svg viewBox="0 0 300 140" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:140px">
+      <defs><style>.wt{fill:#fff;font-size:9px;font-family:sans-serif}.wts{fill:rgba(255,255,255,0.45);font-size:8px;font-family:sans-serif}</style></defs>
+      <rect x="10" y="10" width="130" height="120" rx="8" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/>
+      <text x="75" y="28" class="wt" text-anchor="middle" fill="rgba(255,255,255,0.6)">STOCK PRICE</text>
+      <polyline points="20,110 35,95 50,105 65,80 80,90 95,60 110,70 125,45" fill="none" stroke="#e03131" stroke-width="1.5" stroke-dasharray="4,2"/>
+      <text x="75" y="125" class="wts" text-anchor="middle">Volatile, emotional</text>
+      <rect x="160" y="10" width="130" height="120" rx="8" fill="rgba(18,120,66,0.12)" stroke="#127842" stroke-width="0.5"/>
+      <text x="225" y="28" class="wt" text-anchor="middle" fill="#4ade80">BUSINESS VALUE</text>
+      <polyline points="170,110 185,105 200,100 215,90 230,82 245,72 260,60 275,50" fill="none" stroke="#127842" stroke-width="2"/>
+      <text x="225" y="125" class="wts" text-anchor="middle">Steady, real growth</text>
+    </svg>`,
+    faSVG2:`<svg viewBox="0 0 300 140" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:140px">
+      <defs><style>.wt{fill:#fff;font-size:9px;font-family:sans-serif}.wts{fill:rgba(255,255,255,0.45);font-size:8px;font-family:sans-serif}</style></defs>
+      <rect x="8" y="20" width="82" height="100" rx="6" fill="rgba(18,120,66,0.15)" stroke="#127842" stroke-width="0.5"/>
+      <text x="49" y="38" class="wt" text-anchor="middle" fill="#4ade80">INVESTING</text>
+      <text x="49" y="52" class="wts" text-anchor="middle">Years</text>
+      <text x="49" y="64" class="wts" text-anchor="middle">Business quality</text>
+      <text x="49" y="76" class="wts" text-anchor="middle">Valuation</text>
+      <text x="49" y="88" class="wts" text-anchor="middle">FA tools</text>
+      <text x="49" y="110" class="wts" text-anchor="middle" fill="rgba(255,255,255,0.3)">Jhunjhunwala</text>
+      <rect x="109" y="20" width="82" height="100" rx="6" fill="rgba(20,88,168,0.15)" stroke="#1458a8" stroke-width="0.5"/>
+      <text x="150" y="38" class="wt" text-anchor="middle" fill="#60a5fa">TRADING</text>
+      <text x="150" y="52" class="wts" text-anchor="middle">Days-weeks</text>
+      <text x="150" y="64" class="wts" text-anchor="middle">Price movement</text>
+      <text x="150" y="76" class="wts" text-anchor="middle">Charts, patterns</text>
+      <text x="150" y="88" class="wts" text-anchor="middle">Risk mgmt</text>
+      <text x="150" y="110" class="wts" text-anchor="middle" fill="rgba(255,255,255,0.3)">Discipline</text>
+      <rect x="210" y="20" width="82" height="100" rx="6" fill="rgba(192,26,26,0.15)" stroke="#c01a1a" stroke-width="0.5"/>
+      <text x="251" y="38" class="wt" text-anchor="middle" fill="#f87171">SPECULATION</text>
+      <text x="251" y="52" class="wts" text-anchor="middle">Hours-days</text>
+      <text x="251" y="64" class="wts" text-anchor="middle">Tips, rumours</text>
+      <text x="251" y="76" class="wts" text-anchor="middle">Hope-based</text>
+      <text x="251" y="88" class="wts" text-anchor="middle">No framework</text>
+      <text x="251" y="110" class="wts" text-anchor="middle" fill="#f87171">Highest risk</text>
+    </svg>`,
+    faSVG3:`<svg viewBox="0 0 300 140" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:140px">
+      <defs><style>.wt{fill:#fff;font-size:9px;font-family:sans-serif}.wts{fill:rgba(255,255,255,0.45);font-size:8px;font-family:sans-serif}</style></defs>
+      <rect x="8" y="10" width="85" height="120" rx="6" fill="rgba(18,120,66,0.1)" stroke="#127842" stroke-width="0.5"/>
+      <text x="51" y="28" class="wt" text-anchor="middle" fill="#4ade80">PRODUCT</text>
+      <text x="51" y="44" style="font-size:20px;fill:#fff" text-anchor="middle">🏭</text>
+      <text x="51" y="72" class="wts" text-anchor="middle">Makes goods</text>
+      <text x="51" y="84" class="wts" text-anchor="middle">Sells direct</text>
+      <text x="51" y="96" class="wts" text-anchor="middle">Asian Paints</text>
+      <text x="51" y="108" class="wts" text-anchor="middle">Maruti</text>
+      <rect x="108" y="10" width="84" height="120" rx="6" fill="rgba(20,88,168,0.1)" stroke="#1458a8" stroke-width="0.5"/>
+      <text x="150" y="28" class="wt" text-anchor="middle" fill="#60a5fa">SERVICE</text>
+      <text x="150" y="44" style="font-size:20px;fill:#fff" text-anchor="middle">👨‍💼</text>
+      <text x="150" y="72" class="wts" text-anchor="middle">Sells expertise</text>
+      <text x="150" y="84" class="wts" text-anchor="middle">Recurring</text>
+      <text x="150" y="96" class="wts" text-anchor="middle">TCS</text>
+      <text x="150" y="108" class="wts" text-anchor="middle">HDFC Bank</text>
+      <rect x="207" y="10" width="85" height="120" rx="6" fill="rgba(95,61,196,0.1)" stroke="#7048e8" stroke-width="0.5"/>
+      <text x="250" y="28" class="wt" text-anchor="middle" fill="#a78bfa">PLATFORM</text>
+      <text x="250" y="44" style="font-size:20px;fill:#fff" text-anchor="middle">🔄</text>
+      <text x="250" y="72" class="wts" text-anchor="middle">Connects buyers</text>
+      <text x="250" y="84" class="wts" text-anchor="middle">Network effect</text>
+      <text x="250" y="96" class="wts" text-anchor="middle">Zomato</text>
+      <text x="250" y="108" class="wts" text-anchor="middle">Nykaa, NSE</text>
+    </svg>`,
+    faSVG4:`<svg viewBox="0 0 300 140" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:140px">
+      <defs><style>.wt{fill:#fff;font-size:9px;font-family:sans-serif}.wts{fill:rgba(255,255,255,0.45);font-size:8px;font-family:sans-serif}</style></defs>
+      <text x="150" y="14" class="wt" text-anchor="middle" fill="rgba(255,255,255,0.6)">₹1,000 Cr Revenue — where does it go?</text>
+      <rect x="10" y="22" width="280" height="22" rx="4" fill="rgba(18,120,66,0.3)" stroke="#127842" stroke-width="0.5"/>
+      <text x="150" y="37" class="wt" text-anchor="middle" fill="#4ade80">REVENUE ₹1,000 Cr (100%)</text>
+      <rect x="10" y="50" width="200" height="20" rx="4" fill="rgba(192,26,26,0.25)" stroke="#c01a1a" stroke-width="0.5"/>
+      <text x="110" y="64" class="wts" text-anchor="middle">Cost of Goods Sold ₹600 Cr (60%)</text>
+      <rect x="210" y="50" width="80" height="20" rx="4" fill="rgba(18,120,66,0.4)" stroke="#127842" stroke-width="0.5"/>
+      <text x="250" y="64" class="wts" text-anchor="middle" fill="#4ade80">Gross ₹400</text>
+      <rect x="10" y="76" width="140" height="18" rx="4" fill="rgba(192,26,26,0.2)" stroke="#c01a1a" stroke-width="0.5"/>
+      <text x="80" y="89" class="wts" text-anchor="middle">Operating Expenses ₹250</text>
+      <rect x="155" y="76" width="135" height="18" rx="4" fill="rgba(18,120,66,0.5)" stroke="#127842" stroke-width="0.5"/>
+      <text x="222" y="89" class="wts" text-anchor="middle" fill="#4ade80">Op. Profit ₹150 (15%)</text>
+      <rect x="10" y="100" width="60" height="18" rx="4" fill="rgba(192,26,26,0.2)" stroke="#c01a1a" stroke-width="0.5"/>
+      <text x="40" y="113" class="wts" text-anchor="middle">Tax ₹50</text>
+      <rect x="75" y="100" width="60" height="18" rx="4" fill="rgba(192,26,26,0.2)" stroke="#c01a1a" stroke-width="0.5"/>
+      <text x="105" y="113" class="wts" text-anchor="middle">Interest ₹20</text>
+      <rect x="140" y="100" width="150" height="18" rx="4" fill="#127842"/>
+      <text x="215" y="113" class="wt" text-anchor="middle" fill="#fff">Net Profit ₹80 (8%)</text>
+    </svg>`,
+    faSVG5:`<svg viewBox="0 0 300 140" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:140px">
+      <defs><style>.wt{fill:#fff;font-size:9px;font-family:sans-serif}.wts{fill:rgba(255,255,255,0.45);font-size:8px;font-family:sans-serif}</style></defs>
+      <text x="90" y="14" class="wts" text-anchor="middle">SHORT RUN</text>
+      <text x="90" y="26" class="wt" text-anchor="middle" fill="rgba(255,255,255,0.7)">Voting Machine</text>
+      <polyline points="20,130 35,80 50,110 65,55 80,100 95,45 110,90 125,40 140,70" fill="none" stroke="#e03131" stroke-width="1.5"/>
+      <text x="90" y="138" class="wts" text-anchor="middle">Sentiment drives price</text>
+      <line x1="160" y1="10" x2="160" y2="140" stroke="rgba(255,255,255,0.15)" stroke-width="0.5" stroke-dasharray="4,3"/>
+      <text x="230" y="14" class="wts" text-anchor="middle">LONG RUN</text>
+      <text x="230" y="26" class="wt" text-anchor="middle" fill="#4ade80">Weighing Machine</text>
+      <polyline points="170,130 190,120 210,108 230,92 250,78 270,62 285,48" fill="none" stroke="#127842" stroke-width="2"/>
+      <text x="230" y="138" class="wts" text-anchor="middle">Business value wins</text>
+    </svg>`,
+    faSVG6:`<svg viewBox="0 0 300 140" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:140px">
+      <defs><style>.wt{fill:#fff;font-size:9px;font-family:sans-serif}.wts{fill:rgba(255,255,255,0.45);font-size:8px;font-family:sans-serif}</style></defs>
+      <rect x="10" y="10" width="280" height="120" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/>
+      <text x="150" y="26" class="wt" text-anchor="middle" fill="rgba(255,255,255,0.7)">ANNUAL REPORT STRUCTURE</text>
+      <rect x="20" y="32" width="260" height="16" rx="3" fill="rgba(20,88,168,0.3)" stroke="#1458a8" stroke-width="0.5"/>
+      <text x="150" y="43" class="wts" text-anchor="middle" fill="#60a5fa">Chairman Letter (Pages 1-15) — management narrative</text>
+      <rect x="20" y="52" width="260" height="16" rx="3" fill="rgba(18,120,66,0.3)" stroke="#127842" stroke-width="0.5"/>
+      <text x="150" y="63" class="wts" text-anchor="middle" fill="#4ade80">MD&A (Pages 40-80) — detailed business review</text>
+      <rect x="20" y="72" width="260" height="16" rx="3" fill="rgba(95,61,196,0.3)" stroke="#7048e8" stroke-width="0.5"/>
+      <text x="150" y="83" class="wts" text-anchor="middle" fill="#a78bfa">Financial Statements (Pages 150-200) — numbers</text>
+      <rect x="20" y="92" width="260" height="16" rx="3" fill="rgba(192,26,26,0.3)" stroke="#c01a1a" stroke-width="0.5"/>
+      <text x="150" y="103" class="wts" text-anchor="middle" fill="#f87171">Notes to Accounts (Pages 200-400) — the real story</text>
+      <text x="150" y="122" class="wts" text-anchor="middle">← Flattering  ·  Read all sections  ·  Revealing →</text>
+    </svg>`,
+    faSVG7:`<svg viewBox="0 0 300 140" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:140px">
+      <defs><style>.wt{fill:#fff;font-size:9px;font-family:sans-serif}.wts{fill:rgba(255,255,255,0.45);font-size:8px;font-family:sans-serif}</style></defs>
+      <text x="70" y="14" class="wts" text-anchor="middle">EXPECTED</text>
+      <text x="70" y="26" class="wt" text-anchor="middle" fill="rgba(255,255,255,0.6)">₹1,200 Cr profit</text>
+      <rect x="10" y="35" width="120" height="20" rx="4" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.2)" stroke-width="0.5"/>
+      <text x="70" y="49" class="wts" text-anchor="middle">Analyst consensus</text>
+      <text x="70" y="75" class="wts" text-anchor="middle">ACTUAL</text>
+      <text x="70" y="87" class="wt" text-anchor="middle" fill="#f87171">₹1,150 Cr profit</text>
+      <rect x="10" y="95" width="120" height="20" rx="4" fill="rgba(192,26,26,0.2)" stroke="#c01a1a" stroke-width="0.5"/>
+      <text x="70" y="109" class="wts" text-anchor="middle">MISS → Stock −8%</text>
+      <text x="220" y="26" class="wt" text-anchor="middle" fill="rgba(255,255,255,0.6)">₹1,000 Cr profit</text>
+      <text x="220" y="14" class="wts" text-anchor="middle">EXPECTED</text>
+      <rect x="160" y="35" width="120" height="20" rx="4" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.2)" stroke-width="0.5"/>
+      <text x="220" y="49" class="wts" text-anchor="middle">Analyst consensus</text>
+      <text x="220" y="75" class="wts" text-anchor="middle">ACTUAL</text>
+      <text x="220" y="87" class="wt" text-anchor="middle" fill="#4ade80">₹1,050 Cr profit</text>
+      <rect x="160" y="95" width="120" height="20" rx="4" fill="rgba(18,120,66,0.2)" stroke="#127842" stroke-width="0.5"/>
+      <text x="220" y="109" class="wts" text-anchor="middle" fill="#4ade80">BEAT → Stock +10%</text>
+      <text x="150" y="130" class="wts" text-anchor="middle">Result vs Expectation — not absolute number</text>
+    </svg>`,
+    faSVG8:`<svg viewBox="0 0 300 140" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:140px">
+      <defs><style>.wt{fill:#fff;font-size:9px;font-family:sans-serif}.wts{fill:rgba(255,255,255,0.45);font-size:8px;font-family:sans-serif}</style></defs>
+      <text x="150" y="14" class="wt" text-anchor="middle" fill="rgba(255,255,255,0.6)">5-POINT INVESTABILITY CHECKLIST</text>
+      ${[
+        ['1. Business model clear?', '#127842'],
+        ['2. Revenue growing 3+ years?', '#127842'],
+        ['3. Profitable + positive cash flow?', '#127842'],
+        ['4. Debt/Equity below 1.5?', '#127842'],
+        ['5. Promoter holding stable 40%+?', '#127842']
+      ].map(([label, col], i) => `
+      <rect x="10" y="${24 + i*22}" width="200" height="18" rx="4" fill="rgba(18,120,66,0.12)" stroke="${col}" stroke-width="0.5"/>
+      <text x="20" y="${36 + i*22}" class="wts" fill="#fff">${label}</text>
+      <rect x="218" y="${24 + i*22}" width="36" height="18" rx="4" fill="rgba(18,120,66,0.3)" stroke="#127842" stroke-width="0.5"/>
+      <text x="236" y="${36 + i*22}" class="wts" text-anchor="middle" fill="#4ade80">PASS</text>
+      <rect x="258" y="${24 + i*22}" width="36" height="18" rx="4" fill="rgba(192,26,26,0.15)" stroke="#c01a1a" stroke-width="0.5"/>
+      <text x="276" y="${36 + i*22}" class="wts" text-anchor="middle" fill="#f87171">FAIL</text>`
+      ).join('')}
+    </svg>`
+  };
+  return svgs[id] || '<div style="color:rgba(255,255,255,0.3);text-align:center;padding:30px;font-size:11px">Chart visualization</div>';
+}
+
+// ── FA LESSON READER ──────────────────────────────────────────
+let faCurrentLesson = null;
+
+function openFALesson(levelIdx, lessonIdx) {
+  const level  = FA_SCHOOL_LEVELS[levelIdx];
+  const lesson = level.lessons[lessonIdx];
+  if (!lesson) return;
+  faCurrentLesson = { levelIdx, lessonIdx, lesson, level };
+
+  const t     = lesson.title[lang]      || lesson.title.en;
+  const def   = lesson.definition[lang] || lesson.definition.en;
+  const psy   = lesson.psychology[lang] || lesson.psychology.en;
+  const eg    = lesson.example[lang]    || lesson.example.en;
+  const mis   = lesson.mistake[lang]    || lesson.mistake.en;
+  const ex    = lesson.exercise[lang]   || lesson.exercise.en || [];
+  const q     = lesson.quiz.en;
+  const done  = uniProgress.faDone[lesson.id];
+  const lvlTitle = level.title[lang] || level.title.en;
+  const doneLvl  = level.lessons.filter(l => uniProgress.faDone[l.id]).length;
+  const totalLvl = level.lessons.length;
+
+  const html = `
+  <div id="faLessonReader" style="position:fixed;inset:0;background:var(--bg);z-index:500;overflow-y:auto;padding-bottom:80px">
+    <div style="background:var(--card);padding:12px 16px 10px;border-bottom:0.5px solid var(--border2);display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:10">
+      <button onclick="closeFALesson()" style="width:32px;height:32px;border-radius:50%;background:var(--bg);border:none;font-size:16px;cursor:pointer;color:var(--text)">←</button>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:10px;font-weight:700;color:${level.color};text-transform:uppercase;letter-spacing:0.7px;margin-bottom:2px">📈 ${lvlTitle} · ${lesson.num}</div>
+        <div style="font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t}</div>
+      </div>
+      <div style="background:var(--gl);color:var(--gm);font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;flex-shrink:0">+20 XP</div>
+    </div>
+    <div style="background:var(--card);padding:8px 16px;border-bottom:0.5px solid var(--border2)">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <span style="font-size:10px;color:var(--muted)">${lvlTitle}</span>
+        <span style="font-size:10px;font-weight:600">${doneLvl}/${totalLvl} lessons</span>
+      </div>
+      <div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden">
+        <div style="height:100%;width:${Math.round((doneLvl/totalLvl)*100)}%;background:${level.color};border-radius:2px"></div>
+      </div>
+    </div>
+    <div style="padding:10px 0">
+
+      <div style="background:var(--card);margin:0 12px 10px;border-radius:14px;border:0.5px solid var(--border);overflow:hidden">
+        <div style="padding:12px 14px 10px;display:flex;align-items:center;gap:10px">
+          <div style="width:34px;height:34px;border-radius:10px;background:var(--bl);display:flex;align-items:center;justify-content:center;font-size:16px">📖</div>
+          <div><div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;color:var(--b);margin-bottom:2px">Definition</div><div style="font-size:12px;font-weight:700;color:var(--text)">What is it?</div></div>
+        </div>
+        <div style="padding:0 14px 14px;border-top:0.5px solid var(--border2);font-size:12px;line-height:1.8;color:var(--text)">${def}</div>
+      </div>
+
+      <div style="background:var(--card);margin:0 12px 10px;border-radius:14px;border:0.5px solid var(--border);overflow:hidden">
+        <div style="padding:12px 14px 10px;display:flex;align-items:center;gap:10px">
+          <div style="width:34px;height:34px;border-radius:10px;background:#f3e8ff;display:flex;align-items:center;justify-content:center;font-size:16px">🧠</div>
+          <div><div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;color:#7048e8;margin-bottom:2px">The Psychology</div><div style="font-size:12px;font-weight:700;color:var(--text)">Why does this exist?</div></div>
+        </div>
+        <div style="padding:0 14px 14px;border-top:0.5px solid var(--border2);font-size:12px;line-height:1.8;color:var(--text)">${psy}</div>
+      </div>
+
+      <div style="background:var(--card);margin:0 12px 10px;border-radius:14px;border:0.5px solid var(--border);overflow:hidden">
+        <div style="padding:10px 14px;display:flex;align-items:center;gap:10px;background:#17181a">
+          <div style="width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;font-size:16px">📊</div>
+          <div><div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;color:rgba(255,255,255,0.4);margin-bottom:2px">Visual</div><div style="font-size:12px;font-weight:700;color:#fff">See how it works</div></div>
+        </div>
+        <div style="background:#17181a;padding:14px 12px">${getFASVG(lesson.svgId)}</div>
+      </div>
+
+      <div style="background:var(--card);margin:0 12px 10px;border-radius:14px;border:0.5px solid var(--border);overflow:hidden">
+        <div style="padding:12px 14px 10px;display:flex;align-items:center;gap:10px">
+          <div style="width:34px;height:34px;border-radius:10px;background:var(--al);display:flex;align-items:center;justify-content:center;font-size:16px">🇮🇳</div>
+          <div><div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;color:var(--a);margin-bottom:2px">Indian Example</div><div style="font-size:12px;font-weight:700;color:var(--text)">Real case. Real numbers.</div></div>
+        </div>
+        <div style="padding:0 14px 14px;border-top:0.5px solid var(--border2)">
+          <div style="background:var(--al);border-left:3px solid var(--a);border-radius:0 8px 8px 0;padding:10px 12px;font-size:11px;line-height:1.75;color:var(--text);margin-top:10px">${eg}</div>
+        </div>
+      </div>
+
+      <div style="background:var(--card);margin:0 12px 10px;border-radius:14px;border:0.5px solid var(--border);overflow:hidden">
+        <div style="padding:12px 14px 10px;display:flex;align-items:center;gap:10px">
+          <div style="width:34px;height:34px;border-radius:10px;background:var(--rl);display:flex;align-items:center;justify-content:center;font-size:16px">⚠️</div>
+          <div><div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;color:var(--r);margin-bottom:2px">Common Mistake</div><div style="font-size:12px;font-weight:700;color:var(--text)">What 80% get wrong</div></div>
+        </div>
+        <div style="padding:0 14px 14px;border-top:0.5px solid var(--border2)">
+          <div style="background:var(--rl);border-left:3px solid var(--r);border-radius:0 8px 8px 0;padding:10px 12px;font-size:11px;line-height:1.75;color:var(--text);margin-top:10px">${mis}</div>
+        </div>
+      </div>
+
+      ${lesson.xref ? `<div style="margin:0 12px 10px;background:var(--bl);border-radius:10px;padding:10px 13px;display:flex;gap:10px;border:0.5px solid rgba(20,88,168,0.2)">
+        <span style="font-size:14px;flex-shrink:0">🔗</span>
+        <span style="font-size:11px;color:var(--b);line-height:1.6">${lesson.xref}</span>
+      </div>` : ''}
+
+      <div style="background:var(--card);margin:0 12px 10px;border-radius:14px;border:0.5px solid var(--border);overflow:hidden">
+        <div style="padding:12px 14px 10px;display:flex;align-items:center;gap:10px">
+          <div style="width:34px;height:34px;border-radius:10px;background:var(--gl);display:flex;align-items:center;justify-content:center;font-size:16px">🎯</div>
+          <div><div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;color:var(--gm);margin-bottom:2px">Exercise</div><div style="font-size:12px;font-weight:700;color:var(--text)">Try it live right now</div></div>
+        </div>
+        <div style="padding:0 14px 14px;border-top:0.5px solid var(--border2)">
+          <div style="display:flex;flex-direction:column;gap:7px;margin-top:10px">
+            ${ex.map((step, i) => `<div style="display:flex;gap:10px;align-items:flex-start">
+              <div style="width:20px;height:20px;border-radius:50%;background:var(--gm);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">${i+1}</div>
+              <div style="font-size:11px;color:var(--text);line-height:1.65;flex:1">${step}</div>
+            </div>`).join('')}
+          </div>
+          <button onclick="showPage('research');closeFALesson()" style="width:100%;background:var(--gm);color:#fff;border:none;border-radius:10px;padding:12px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:14px">Open Research tab →</button>
+        </div>
+      </div>
+
+      <div style="background:var(--card);margin:0 12px 10px;border-radius:14px;border:0.5px solid var(--border);overflow:hidden">
+        <div style="background:#1a1917;padding:14px">
+          <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px">🧠 Test your understanding</div>
+          <div style="font-size:13px;font-weight:700;color:#fff;line-height:1.45;font-family:'DM Serif Display',Georgia,serif">${q.q}</div>
+        </div>
+        <div style="padding:12px 14px" id="faQuizOpts">
+          ${q.opts.map((opt, oi) => `<button class="fa-quiz-opt" onclick="faAnswer(${oi},${q.correct},'${lesson.id}',this)"
+            style="display:flex;align-items:flex-start;gap:10px;width:100%;text-align:left;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;background:var(--bg);font-family:'DM Sans',sans-serif;cursor:pointer;margin-bottom:7px;transition:all 0.15s">
+            <span style="width:22px;height:22px;border-radius:50%;background:var(--border);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--muted)">${String.fromCharCode(65+oi)}</span>
+            <span style="font-size:12px;color:var(--text);line-height:1.45;padding-top:2px">${opt}</span>
+          </button>`).join('')}
+        </div>
+        <div id="faQuizExplain" style="display:none;margin:0 14px 14px;border-radius:10px;padding:10px 13px;font-size:11px;line-height:1.7"></div>
+      </div>
+    </div>
+  </div>
+  <div style="position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:0.5px solid var(--border2);padding:10px 16px 24px;display:flex;gap:10px;z-index:501">
+    <button onclick="closeFALesson()" style="background:var(--bg);border:none;border-radius:10px;padding:13px 16px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text);font-family:'DM Sans',sans-serif">← Back</button>
+    <button id="faNextBtn" onclick="faNextLesson()" style="flex:1;background:var(--gm);border:none;border-radius:10px;padding:13px;font-size:13px;font-weight:700;cursor:pointer;color:#fff;font-family:'DM Sans',sans-serif">Complete &amp; Continue →</button>
+  </div>`;
+
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+function closeFALesson() {
+  const reader = document.getElementById('faLessonReader');
+  if (reader) reader.remove();
+  const tc = document.getElementById('uniContent');
+  if (tc) tc.innerHTML = buildFundamentalsSchool();
+  document.querySelectorAll('.uni-mode').forEach(b => b.classList.remove('on'));
+  const btn = document.querySelector('.uni-mode[onclick*="fundamentals"]');
+  if (btn) btn.classList.add('on');
+}
+
+function faAnswer(chosen, correct, lessonId, el) {
+  document.querySelectorAll('.fa-quiz-opt').forEach(b => { b.onclick = null; b.style.cursor = 'default'; });
+  if (chosen === correct) {
+    el.style.borderColor = 'var(--gm)'; el.style.background = 'var(--gl)';
+    el.querySelector('span').style.background = 'var(--gm)'; el.querySelector('span').style.color = '#fff'; el.querySelector('span').textContent = '✓';
+  } else {
+    el.style.borderColor = 'var(--r)'; el.style.background = 'var(--rl)';
+    el.querySelector('span').style.background = 'var(--r)'; el.querySelector('span').style.color = '#fff'; el.querySelector('span').textContent = '✗';
+    const opts = document.querySelectorAll('.fa-quiz-opt');
+    opts[correct].style.borderColor = 'var(--gm)'; opts[correct].style.background = 'var(--gl)';
+    opts[correct].querySelector('span').style.background = 'var(--gm)'; opts[correct].querySelector('span').style.color = '#fff'; opts[correct].querySelector('span').textContent = '✓';
+  }
+  const level  = FA_SCHOOL_LEVELS[faCurrentLesson.levelIdx];
+  const lesson = level.lessons[faCurrentLesson.lessonIdx];
+  const exp    = document.getElementById('faQuizExplain');
+  if (exp) {
+    exp.style.display = 'block';
+    if (chosen === correct) {
+      exp.style.background = 'var(--gl)'; exp.style.borderLeft = '3px solid var(--gm)'; exp.style.color = 'var(--g)';
+      exp.textContent = '✅ Correct! +20 XP — ' + lesson.quiz.en.explain;
+      if (!uniProgress.faDone[lessonId]) { uniProgress.faDone[lessonId] = true; awardXP(20, 'Fundamentals'); }
+      const nb = document.getElementById('faNextBtn');
+      if (nb) { nb.textContent = '🎉 +20 XP — Next Lesson →'; nb.style.background = 'var(--gd)'; }
+    } else {
+      exp.style.background = 'var(--rl)'; exp.style.borderLeft = '3px solid var(--r)'; exp.style.color = 'var(--text)';
+      exp.textContent = lesson.quiz.en.explain;
+    }
+    exp.style.borderRadius = '10px'; exp.style.padding = '10px 13px';
+  }
+  saveUni();
+}
+
+function faNextLesson() {
+  if (!faCurrentLesson) return;
+  const { levelIdx, lessonIdx, lesson } = faCurrentLesson;
+  const level = FA_SCHOOL_LEVELS[levelIdx];
+  if (!uniProgress.faDone[lesson.id]) { uniProgress.faDone[lesson.id] = true; awardXP(20, 'Fundamentals'); saveUni(); }
+  const nextIdx = lessonIdx + 1;
+  if (nextIdx < level.lessons.length) {
+    document.getElementById('faLessonReader')?.remove();
+    openFALesson(levelIdx, nextIdx);
+  } else {
+    closeFALesson(); awardXP(50, 'Level Complete'); saveUni();
+  }
+}
+
+function buildFundamentalsSchool() {
+  const totalDone = Object.keys(uniProgress.faDone).length;
+  const totalLessons = FA_SCHOOL_LEVELS.reduce((a, l) => a + (l.lessons?.length || 0), 0);
+
+  function isFALevelUnlocked(idx) { return true; }
+
+  const T = {
+    en:{ eye:'Fundamentals School', title:'Business analysis — from first principles to valuation.', sub:`${totalDone}/${totalLessons} lessons complete · 5 levels · 20 XP per lesson` },
+    hi:{ eye:'Fundamentals School', title:'Business analysis — basics से valuation तक।', sub:`${totalDone}/${totalLessons} lessons पूरे` },
+    gu:{ eye:'Fundamentals School', title:'Business analysis — basics to valuation.', sub:`${totalDone}/${totalLessons} lessons` },
+  }[lang] || { eye:'Fundamentals School', title:'Business analysis.', sub:'' };
 
   return `
     <div class="u-mode-header">
@@ -6296,16 +6773,51 @@ function buildFundamentalsSchool() {
       <div class="u-mode-title">${T.title}</div>
       <div class="u-mode-sub">${T.sub}</div>
     </div>
-    <div style="background:var(--al);border-radius:var(--r12);padding:12px 14px;margin-bottom:12px;border:0.5px solid rgba(179,92,0,0.2)">
-      <div style="font-size:11px;font-weight:700;color:var(--a);margin-bottom:4px">🚧 Coming in the next session</div>
-      <div style="font-size:11px;color:var(--text);line-height:1.6">Fundamentals School is being built. Complete Chart School Level 1 first — each school unlocks new combined scenarios in the Combined Setups mode.</div>
-    </div>
-    ${levels.map(l => `
-      <div style="background:var(--card);border-radius:var(--r14);border:0.5px solid var(--border);margin-bottom:8px;padding:13px 14px;display:flex;align-items:center;gap:12px;opacity:0.5">
-        <div style="width:32px;height:32px;border-radius:8px;background:${l.bg};color:${l.color};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800">${l.num}</div>
-        <div style="flex:1"><div style="font-size:12px;font-weight:700;color:var(--text)">${l.title}</div><div style="font-size:10px;color:var(--muted);margin-top:1px">${l.sub}</div></div>
-        <div style="font-size:16px">🔒</div>
-      </div>`).join('')}`;
+    ${FA_SCHOOL_LEVELS.map((level, lidx) => {
+      const unlocked  = isFALevelUnlocked(lidx);
+      const lvlTitle  = level.title[lang] || level.title.en;
+      const lvlSub    = level.subtitle[lang] || level.subtitle.en;
+      const doneLvl   = (level.lessons||[]).filter(l => uniProgress.faDone[l.id]).length;
+      const totalLvl  = level.lessons?.length || 8;
+      const pct       = Math.round((doneLvl/totalLvl)*100);
+      const allDone   = doneLvl === totalLvl && totalLvl > 0;
+      return `
+        <div style="background:var(--card);border-radius:var(--r16);border:0.5px solid var(--border);margin-bottom:10px;overflow:hidden">
+          <div style="padding:13px 14px;display:flex;align-items:center;gap:12px">
+            <div style="width:36px;height:36px;border-radius:10px;background:${level.bg};color:${level.color};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0">${level.num}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px">${lvlTitle}</div>
+              <div style="font-size:10px;color:var(--muted)">${lvlSub}</div>
+            </div>
+            ${allDone ? '<div style="font-size:9px;font-weight:700;color:var(--gm);background:var(--gl);padding:3px 9px;border-radius:20px">✓ Done</div>' : `<div style="font-size:10px;font-weight:600;color:var(--muted)">${doneLvl}/${totalLvl}</div>`}
+          </div>
+          <div style="height:3px;background:var(--border);margin:0 14px">
+            <div style="height:100%;width:${pct}%;background:${level.color};border-radius:2px;transition:width 0.4s"></div>
+          </div>
+          ${unlocked && level.lessons?.length ? `
+          <div style="padding:8px 0">
+            ${level.lessons.map((lesson, idx) => {
+              const done = uniProgress.faDone[lesson.id];
+              const lt   = lesson.title[lang] || lesson.title.en;
+              return `<div onclick="openFALesson(${lidx},${idx})"
+                style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:0.5px solid var(--border2);cursor:pointer;transition:background 0.15s"
+                onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
+                <div style="width:24px;height:24px;border-radius:50%;background:${done?'var(--gm)':'var(--bg)'};border:1.5px solid ${done?'var(--gm)':'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:${done?'#fff':'var(--muted)'};flex-shrink:0">
+                  ${done ? '✓' : lesson.num.replace('F','')}
+                </div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:12px;font-weight:${done?'600':'500'};color:var(--text);line-height:1.3">${lt}</div>
+                  <div style="font-size:10px;color:var(--muted);margin-top:1px">⏱ ${lesson.time} · 20 XP</div>
+                </div>
+                <div style="font-size:16px;color:var(--muted)">›</div>
+              </div>`;
+            }).join('')}
+          </div>` : `
+          <div style="padding:12px 14px;text-align:center">
+            <div style="font-size:11px;color:var(--muted)">Coming soon — content being prepared</div>
+          </div>`}
+        </div>`;
+    }).join('')}`;
 }
 
 function buildWhyMode() {
@@ -8397,7 +8909,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const shWrap = document.getElementById('startHereWrap');
   if (shWrap) shWrap.innerHTML = buildStartHereCard();
 
-  // Pre-warm the server session immediately so it's cached before data calls fire
+  // Pre-warm the server session immediately so it is cached before data calls fire
   api('warmup').catch(() => {});
 
   // Load all data immediately
