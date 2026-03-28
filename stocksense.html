@@ -923,11 +923,10 @@ button{font-family:"DM Sans",sans-serif;cursor:pointer}
 
     <!-- 5 Mode selector — scrollable chips -->
     <div class="uni-modes" id="uniModes">
-      <div class="uni-mode on" onclick="switchUniMode('story',this)">📖 Stories</div>
-      <div class="uni-mode" onclick="switchUniMode('chart',this)">📊 Charts</div>
-      <div class="uni-mode" onclick="switchUniMode('why',this)">🤔 Why?</div>
-      <div class="uni-mode" onclick="switchUniMode('dojo',this)">🥊 Dojo</div>
-      <div class="uni-mode" onclick="switchUniMode('deep',this)">🔬 Deep Dive</div>
+      <div class="uni-mode on" onclick="switchUniMode('story',this)">📖 Case Studies</div>
+      <div class="uni-mode" onclick="switchUniMode('chartschool',this)">📊 Chart School</div>
+      <div class="uni-mode" onclick="switchUniMode('fundamentals',this)">📈 Fundamentals</div>
+      <div class="uni-mode" onclick="switchUniMode('why',this)">🤔 Why Machine</div>
     </div>
 
     <!-- Mode content -->
@@ -1399,9 +1398,9 @@ function applyLang() {
 
   // Translate University mode labels
   const uniModeLabels = {
-    en: ['📖 Stories','📊 Charts','🤔 Why?','🥊 Dojo','🔬 Deep Dive'],
-    hi: ['📖 कहानियाँ','📊 चार्ट','🤔 क्यों?','🥊 Dojo','🔬 गहरी जानकारी'],
-    gu: ['📖 વાર્તાઓ','📊 ચાર્ટ','🤔 કેમ?','🥊 Dojo','🔬 ઊંડી સમઝ'],
+    en: ['📖 Case Studies','📊 Chart School','📈 Fundamentals','🤔 Why Machine'],
+    hi: ['📖 Case Studies','📊 Chart School','📈 Fundamentals','🤔 क्यों?'],
+    gu: ['📖 Case Studies','📊 Chart School','📈 Fundamentals','🤔 કેમ?'],
   };
   const labels = uniModeLabels[lang] || uniModeLabels.en;
   document.querySelectorAll('.uni-mode').forEach((btn, i) => {
@@ -4556,11 +4555,10 @@ function switchUniMode(mode, el) {
   }
   const content = document.getElementById('uniContent');
   if (!content) return;
-  if      (mode === 'story') content.innerHTML = buildStoryMode();
-  else if (mode === 'chart') content.innerHTML = buildChartMode();
-  else if (mode === 'why')   content.innerHTML = buildWhyMode();
-  else if (mode === 'dojo')  content.innerHTML = buildDojoMode();
-  else if (mode === 'deep')  content.innerHTML = buildDeepMode();
+  if      (mode === 'story')        content.innerHTML = buildStoryMode();
+  else if (mode === 'chartschool')  content.innerHTML = buildChartSchool();
+  else if (mode === 'fundamentals') content.innerHTML = buildFundamentalsSchool();
+  else if (mode === 'why')          content.innerHTML = buildWhyMode();
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -5385,6 +5383,919 @@ const WHY_CHAINS = {
   ]
 };
 
+// ═══════════════════════════════════════════════════════════════
+// CHART SCHOOL — 40 lessons, 5 levels
+// Level 1: Foundations (C1-C8) — built in full
+// Levels 2-5: Architecture ready, content coming
+// ═══════════════════════════════════════════════════════════════
+
+const CHART_SCHOOL_LEVELS = [
+  {
+    id: 'cs1', num: 1,
+    title: { en:'Level 1 — Foundations', hi:'Level 1 — नींव', gu:'Level 1 — પાયો' },
+    subtitle: { en:'How markets, charts, and price work', hi:'Markets और charts कैसे काम करते हैं', gu:'Markets અને charts કેવી રીતે કામ કરે' },
+    color: '#127842', bg: 'var(--gl)',
+    lessons: [
+      {
+        id:'c1', num:'C1',
+        title:{ en:'What the stock market actually is', hi:'Stock market असल में क्या है', gu:'Stock market ખરેખર શું છે' },
+        time:'4 min',
+        definition:{
+          en:'The stock market is a marketplace where people buy and sell small pieces of ownership in companies. When you buy 1 share of TCS, you own a tiny fraction of that company — its profits, its growth, its future.',
+          hi:'Stock market वो जगह है जहाँ लोग companies के छोटे-छोटे ownership pieces खरीदते और बेचते हैं। TCS का 1 share खरीदना = उस company का एक छोटा हिस्सा आपका।',
+          gu:'Stock market = companies ના ownership ના નાના ટુકડા ખરીદ-વેચ. TCS નો 1 share = company નો નાનો ભાગ.'
+        },
+        psychology:{
+          en:'Why do prices move? Because millions of people disagree about what a company is worth right now. That disagreement — buyer vs seller — creates price movement every second the market is open. Price is the constantly updating verdict of millions of opinions.',
+          hi:'Prices क्यों move करते हैं? क्योंकि लाखों लोग disagree करते हैं कि company अभी कितनी worth है। वो disagreement — buyer vs seller — हर second price movement create करता है।',
+          gu:'Prices કેમ move? Millions of people disagree about company value. That disagreement = price movement every second.'
+        },
+        svgId:'marketSVG',
+        example:{
+          en:'You bought 1 share of Infosys in 2003 for ₹150. Today it is worth ₹1,500+. You still own the same fraction of the same company. The business grew, so your piece grew. That is equity investing — owning a piece of a real business.',
+          hi:'2003 में Infosys का 1 share ₹150 में खरीदा। आज ₹1,500+। वही company का वही fraction। Business बढ़ा, आपका piece बढ़ा।',
+          gu:'2003 — Infosys 1 share ₹150. આજ ₹1,500+. Same company, same fraction. Business grew → your piece grew.'
+        },
+        mistake:{
+          en:'"The stock market is gambling." Wrong. Gambling has negative expected returns by design. Owning shares of good businesses has returned 13% per year on average for 20 years in India. The Nifty 50 went from 1,000 in 1999 to 22,000+ in 2024. That is not luck — it is ownership of growing businesses.',
+          hi:'"Stock market gambling है।" गलत। Gambling में हमेशा घाटा होता है by design। Nifty 50 ने 20 साल में 13% per year average दिया। यह luck नहीं — growing businesses की ownership है।',
+          gu:'"Stock market gambling." Wrong. Nifty 50 — 1999 1,000 → 2024 22,000+. Luck नहीं — growing businesses ना ownership.'
+        },
+        xref:{ en:'See also: Fundamentals F2 — Investing vs trading vs speculation — understanding the difference before you begin.', hi:'देखें: Fundamentals F2 — Investing vs trading vs speculation', gu:'જુઓ: Fundamentals F2 — Investing vs trading' },
+        exercise:{
+          en:['Open the Research tab', 'Search TCS', 'Look at the 5Y chart', 'Notice how the price grew as TCS revenues grew every year — that is what business ownership looks like over time'],
+          hi:['Research tab खोलें','TCS search करें','5Y chart देखें','Notice करें कि price कैसे TCS की revenues के साथ बढ़ा'],
+          gu:['Research tab ખોલો','TCS search','5Y chart','Price TCS revenue સાથે grow — business ownership']
+        },
+        quiz:{
+          en:{q:'You buy 100 shares of a company. The company\'s profit doubles over 5 years. The stock price also roughly doubles. Why did this happen?',opts:['Because people speculated on the stock','Because owning equity means sharing in the company\'s profit growth — your wealth grew with the business','Because the market is random','Because inflation caused prices to rise'],correct:1,explain:'Equity means ownership. When the business earns more, the company is worth more, and each share represents more value. This is the fundamental reason equities beat fixed deposits over the long term — businesses grow, and owners share in that growth.'}
+        }
+      },
+      {
+        id:'c2', num:'C2',
+        title:{ en:'Why charts exist — 3 principles', hi:'Charts क्यों exist करते हैं', gu:'Charts કેમ exist' },
+        time:'4 min',
+        definition:{
+          en:'A chart is a visual record of every price at which a stock changed hands, plotted over time. It compresses thousands of individual trades into one picture. Three principles make charts work: (1) Price discounts everything. (2) Prices move in trends. (3) History repeats.',
+          hi:'Chart हर उस price का visual record है जिस पर stock ने हाथ बदले, time के साथ। 3 principles: (1) Price सब discount करता है। (2) Prices trends में move करते हैं। (3) History repeat करती है।',
+          gu:'Chart = time पर price નો visual record. 3 principles: (1) Price everything discount. (2) Trends. (3) History repeats.'
+        },
+        psychology:{
+          en:'Principle 1: Every known fact about a company — earnings, management, sector outlook — is already reflected in the price. The chart shows you the net result of all that information being processed by millions of traders. Principle 2: Money moves in trends because institutions accumulate over weeks, not in one trade. Principle 3: Human emotions — fear and greed — are constant across centuries. The same patterns form again and again because people always react similarly to similar situations.',
+          hi:'Principle 1: Company के बारे में हर known fact price में already reflect है। Principle 2: Money trends में move करता है क्योंकि institutions weeks में accumulate करते हैं। Principle 3: Fear और greed constant हैं — same patterns बार-बार बनते हैं।',
+          gu:'P1: Every fact = price में. P2: Institutions weeks में buy — trend create. P3: Fear/greed same = patterns repeat.'
+        },
+        svgId:'principlesSVG',
+        example:{
+          en:'March 2020. Every stock chart in the world crashed simultaneously. Not because each company suddenly became worthless — because millions of traders all felt the same fear simultaneously. The chart captured mass human psychology in one picture. And then every chart recovered, because the fear passed and the businesses survived.',
+          hi:'March 2020। हर stock chart एक साथ crash हुआ। Companies worthless नहीं हुई — बस लाखों traders ने एक साथ same fear feel किया। Chart ने mass human psychology को capture किया। फिर सब recover हुए।',
+          gu:'March 2020 — every chart crashed. Companies worthless ना — million traders same fear felt. Chart = mass psychology.'
+        },
+        mistake:{
+          en:'"Charts can predict the future." Wrong. Charts show probability, not certainty. They tell you what has historically happened in similar situations and what is more likely than not — not what will definitely happen. A chart that says "this pattern usually goes up" does not guarantee it will go up. It means the odds favour upward movement based on history.',
+          hi:'"Charts future predict करते हैं।" गलत। Charts probability दिखाते हैं, certainty नहीं। History में similar situations में क्या हुआ — guarantee नहीं।',
+          gu:'"Charts predict future." Wrong. Charts = probability, not certainty. History में similar situation में क्या — guarantee नहीं.'
+        },
+        xref:{ en:'See also: Fundamentals F1 — What fundamental analysis is — the complement to charts in understanding a stock.' },
+        exercise:{
+          en:['Open Research tab → search any large-cap stock','Look at the 1Y chart','Ask: where did everyone panic? (sharp drops)','Ask: where did everyone get excited? (sharp rallies)','Those reactions are human psychology made visible']
+        },
+        quiz:{
+          en:{q:'The Nifty 50 drops 2% today. A friend says "this is unpredictable randomness." What does technical analysis\'s first principle say about this?',opts:['Agree — markets are random','Disagree — prices move in trends, not randomly. The 2% drop reflects all current information being processed','Agree — price movements cannot be studied','Disagree — the chart already predicted this exact drop'],correct:1,explain:'The first principle of technical analysis is that prices move in trends, not randomly. While any single day\'s movement has noise, the overall direction of prices over days, weeks, and months tends to be directional — driven by accumulation or distribution by large players.'}
+        }
+      },
+      {
+        id:'c3', num:'C3',
+        title:{ en:'Price, time, and volume', hi:'Price, time, और volume', gu:'Price, time અને volume' },
+        time:'5 min',
+        definition:{
+          en:'Every chart has three dimensions. Price (Y-axis — vertical): what a share costs. Time (X-axis — horizontal): when it cost that. Volume (bars at the bottom): how many shares changed hands. Together these answer: what happened, when, and how many people cared. Volume is the most important and most ignored.',
+          hi:'हर chart के 3 dimensions: Price (Y-axis) — share की cost। Time (X-axis) — कब। Volume (नीचे bars) — कितने shares traded। मिलकर बताते हैं: क्या, कब, और कितने लोग care करते थे। Volume सबसे important और सबसे ignored।',
+          gu:'3 dimensions: Price (Y), Time (X), Volume (bottom bars). Together: what, when, how many cared. Volume = most important, most ignored.'
+        },
+        psychology:{
+          en:'Volume is the conviction behind price. High volume = many participants agreed on this price. Low volume = very few people cared about this move. A stock rising on high volume = strong hands buying with conviction. A stock rising on low volume = a few traders pushing price with little real demand behind it. One will last. One will reverse.',
+          hi:'Volume = price के पीछे conviction। High volume = many participants agree। Low volume = बहुत कम care करते हैं। High volume rise = strong conviction। Low volume rise = कुछ traders, real demand नहीं।',
+          gu:'Volume = conviction. High volume = many agree. Low volume = few care. High volume rise = real. Low volume rise = fake.'
+        },
+        svgId:'volumeSVG',
+        example:{
+          en:'Nifty 50 crossed 18,000 for the first time in September 2021. Volume on NSE that day was 2-3x the 30-day average — meaning enormous conviction behind that move. Compare that to a brief touch of 18,000 in a low-liquidity holiday session when volume was 40% of normal. First break: real and sustained. Second: reversed immediately. Same price level. Completely different story told by volume.',
+          hi:'Nifty ने September 2021 में पहली बार 18,000 cross किया। NSE volume = 30-day average का 2-3x। Holiday session में brief touch — volume 40% of normal। Same price, completely different story।',
+          gu:'Nifty 18,000 first cross — volume 2-3x average. Holiday touch — volume 40%. Same price, different story.'
+        },
+        mistake:{
+          en:'"High volume = good." Not exactly. High volume on an UP day = buying conviction. High volume on a DOWN day = selling conviction (usually bad). Always combine volume with direction. The question is not "was volume high?" but "was volume high in the direction I want?"',
+          hi:'"High volume = good।" हमेशा नहीं। Up day पर high volume = buying conviction। Down day पर high volume = selling conviction। हमेशा direction के साथ combine करें।',
+          gu:'"High volume = good." Not always. Up day high volume = buying. Down day high volume = selling. Always combine with direction.'
+        },
+        xref:{ en:'See also: Chart C38 — OBV and volume profile — advanced volume analysis tools.' },
+        exercise:{
+          en:['Open Research tab → any large-cap stock','Look at the volume bars at the bottom of the chart','Find the 3 biggest volume bars in the last year','What was the price doing on those 3 days?','Were they up days or down days — what does that tell you?']
+        },
+        quiz:{
+          en:{q:'A stock rises 4% in one session. Volume is 30% of its 30-day average. Another day, the same stock rises 4% on 300% of average volume. Which move is more likely to be sustained?',opts:['The first — low volume means less selling pressure','The second — high volume on an up move shows strong conviction from many participants','Both are equally reliable','Neither — percentage moves are all that matter'],correct:1,explain:'Volume confirms conviction. When price rises on low volume, very few participants were involved — the move lacks broad support and often reverses. When price rises on high volume, many participants agree on the direction, making the move far more likely to continue.'}}
+      },
+      {
+        id:'c4', num:'C4',
+        title:{ en:'Chart types overview', hi:'Chart types का overview', gu:'Chart types overview' },
+        time:'4 min',
+        definition:{
+          en:'Five main chart types used by traders and investors worldwide: Line chart (closing prices only — clean and simple), Bar/OHLC chart (Open, High, Low, Close for each period — more detail), Candlestick chart (same as bar but colour-coded — the most popular), Heikin Ashi (smoothed candlestick — filters noise), Renko (price-only chart — no time axis). Each serves a different purpose.',
+          hi:'5 main chart types: Line (सिर्फ closing prices — simple), Bar/OHLC (Open, High, Low, Close — ज़्यादा detail), Candlestick (bar जैसा पर color-coded — सबसे popular), Heikin Ashi (smoothed — noise filter), Renko (price-only — no time)।',
+          gu:'5 types: Line (closing only), Bar/OHLC (OHLC), Candlestick (color-coded, most popular), Heikin Ashi (smooth), Renko (price only).'
+        },
+        psychology:{
+          en:'Different questions need different charts. "What is the 10-year trend of Sensex?" → Line chart — one clean sweep. "What happened during today\'s trading?" → Candlestick — shows every intraday battle. "Is the uptrend intact despite recent volatility?" → Heikin Ashi — filters daily noise and shows the underlying trend. The chart type is a lens — choose the right lens for the question.',
+          hi:'Different questions → different charts। 10-year Sensex trend? → Line। Today\'s trading? → Candlestick। Uptrend intact despite volatility? → Heikin Ashi। Chart type एक lens है — सही question के लिए सही lens।',
+          gu:'Different questions → different charts. 10Y trend → Line. Today trading → Candlestick. Trend despite noise → Heikin Ashi.'
+        },
+        svgId:'chartTypesSVG',
+        example:{
+          en:'Sensex on a line chart from 2004–2024 shows one clean picture: three bull markets and two major crashes (2008, 2020), with a clear overall upward slope. The same 20 years on a daily candlestick chart gives you 5,000 individual candles of noise. Same information — completely different visual clarity depending on what question you are asking.',
+          hi:'Sensex 2004-2024 line chart: 3 bull markets, 2 major crashes — एक clean picture। Same data daily candlestick: 5,000 individual candles of noise। Same information — सही lens choose करना matter करता है।',
+          gu:'Sensex 2004-2024: Line = 1 clean picture. Daily candlestick = 5,000 candles of noise. Same data, different lens.'
+        },
+        mistake:{
+          en:'Using the same chart type for everything. A long-term investor using a 1-minute candlestick chart will see their 5-year thesis as chaos. A day trader using a line chart will miss every intraday entry and exit signal. Match the chart type to your timeframe and question.',
+          hi:'सब कुछ के लिए same chart type use करना। Long-term investor + 1-minute candlestick = chaos। Day trader + line chart = missed signals। Timeframe और question के हिसाब से chart choose करें।',
+          gu:'Same chart for everything = wrong. Match chart type to timeframe + question.'
+        },
+        xref:{ en:'See also: Chart C39 — Multi-timeframe analysis — using different chart types and timeframes together.' },
+        exercise:{
+          en:['Open Research tab → any index (Nifty 50)','The default chart is a line chart','Notice how clear the long-term trend is','Now imagine 5,000 daily candles — same data, much harder to read','This is why line charts exist for big-picture views']
+        },
+        quiz:{
+          en:{q:'A long-term investor wants to check if the Sensex uptrend from 2014-2024 is intact. Which chart type is most appropriate?',opts:['1-minute candlestick chart — maximum detail','Daily candlestick — standard for stock analysis','Monthly line chart — shows the decade-long trend clearly without noise','Weekly Renko — filters all daily movement'],correct:2,explain:'For a 10-year trend question, a monthly line chart gives the clearest answer — it shows the overall direction without the noise of daily price fluctuations. A 1-minute chart would show 600,000 candles for the same period — impossible to read. Match the timeframe of your question to the timeframe of your chart.'}}
+      },
+      {
+        id:'c5', num:'C5',
+        title:{ en:'How to read a candlestick', hi:'Candlestick कैसे पढ़ें', gu:'Candlestick કેવી રીતે વાંચો' },
+        time:'5 min',
+        definition:{
+          en:'A candlestick has four parts: Open (where price started the session), Close (where it ended), High (highest point reached), Low (lowest point reached). The body connects open to close. The wicks (shadows) show the high and low extremes. Green body = close above open — bulls won. Red body = close below open — bears won.',
+          hi:'Candlestick के 4 parts: Open (session की शुरुआत), Close (अंत), High (सबसे ऊपर), Low (सबसे नीचे)। Body = open से close। Wicks = high और low extremes। Green = bulls जीते। Red = bears जीते।',
+          gu:'4 parts: Open, Close, High, Low. Body = open to close. Wicks = extremes. Green = bulls won. Red = bears won.'
+        },
+        psychology:{
+          en:'Each candlestick is a complete story of one battle between buyers and sellers. A long green body = bulls dominated from open to close — nobody disagreed. A long lower wick on a red candle = bears tried to push much lower but buyers fought back — bulls were not completely defeated. A small body with long wicks both sides = indecision — neither side won decisively. Reading candles is reading the psychology of millions of market participants compressed into one bar.',
+          hi:'हर candlestick buyers और sellers के एक battle की complete story है। Long green body = bulls dominated। Long lower wick on red = bears tried lower, buyers fought back। Small body, long wicks = indecision। Candles पढ़ना = millions of participants की psychology पढ़ना।',
+          gu:'Each candle = 1 battle story. Long green = bulls dominated. Long wick = fight back. Small body + long wicks = indecision.'
+        },
+        svgId:'candleAnatomySVG',
+        example:{
+          en:'HDFC Bank on its quarterly results day. After beating profit estimates by 15%, the stock formed a long green candle with tiny wicks — open near the low, close near the high. This means: from 9:15 AM to 3:30 PM, buyers were in complete control without a single moment of doubt. Now compare to a Doji candle — open and close almost identical, long wicks both sides — total indecision, often after an RBI announcement when no one knew which way the market would go.',
+          hi:'HDFC Bank quarterly results day। Profit estimates 15% beat → long green candle, tiny wicks। 9:15 से 3:30 तक buyers complete control। Compare: Doji candle — open = close, long wicks — total indecision (RBI announcement के बाद)।',
+          gu:'HDFC Bank results day — long green, tiny wicks = bulls in control all day. Doji = open=close, long wicks = indecision.'
+        },
+        mistake:{
+          en:'Reading each candle in isolation. A green candle in a downtrend means something completely different from a green candle in an uptrend. Context — what came before — is everything. One green candle in 3 weeks of red candles is not a reversal signal. It is just one day where buyers temporarily won. Always ask: what was the trend before this candle appeared?',
+          hi:'हर candle को isolation में पढ़ना। Downtrend में green candle ≠ uptrend में green candle। Context = everything। 3 हफ्ते के red candles में एक green = reversal नहीं। हमेशा पूछें: इस candle से पहले trend क्या था?',
+          gu:'Candle alone = meaningless. Context = everything. 3 weeks of red + 1 green = NOT reversal. Ask: trend before?'
+        },
+        xref:{ en:'See also: Chart C17 to C24 — Candlestick Mastery — all single, double, and triple candle patterns.' },
+        exercise:{
+          en:['Open Research tab → any stock','Look at the 5 most recent candles','For each: is it green or red?','How long is the body vs the wicks?','Long body = conviction. Long wicks = a battle happened.','Which candle shows the most conviction? Which shows the most uncertainty?']
+        },
+        quiz:{
+          en:{q:'A candle has a tiny green body at the bottom of its range, a very short lower wick, and a very long upper wick (3x the body length). What does this tell you?',opts:['Strong bullish — the close is green','Buyers opened strong but sellers pushed back hard by close — the long upper wick shows rejection of higher prices','Indecision — treat as neutral','This is a hammer pattern — always buy'],correct:1,explain:'A long upper wick means the price traded much higher during the session but sellers pushed it back down significantly by close. Even though the candle closed green (slightly above open), the long upper wick shows that sellers were aggressive at higher prices — this is NOT a bullish signal despite the green colour. Context and wick analysis matter more than just the colour.'}}
+      },
+      {
+        id:'c6', num:'C6',
+        title:{ en:'How to read trend', hi:'Trend कैसे पढ़ें', gu:'Trend કેવી રીતે વાંચો' },
+        time:'5 min',
+        definition:{
+          en:'A trend is a sustained directional movement in price. Uptrend: the market consistently makes higher highs (each rally exceeds the previous) and higher lows (each pullback stays above the previous pullback). Downtrend: lower highs and lower lows consistently. Sideways: neither. Identifying the trend is the first job of any technical analyst.',
+          hi:'Trend = price में sustained directional movement। Uptrend: consistently higher highs और higher lows। Downtrend: lower highs और lower lows। Sideways: neither। Trend identify करना = technical analyst का पहला काम।',
+          gu:'Trend = sustained directional movement. Uptrend: HH + HL. Downtrend: LH + LL. Sideways: neither. First job = identify trend.'
+        },
+        psychology:{
+          en:'Trends exist because of momentum. Institutions — FIIs, mutual funds — do not buy or sell all at once. They accumulate over weeks or months, which creates a sustained price direction. When FIIs are buying Nifty, they buy every dip for months. That creates the "higher lows" pattern — each pullback finds buyers earlier than the last. When they stop buying and start selling, the higher lows pattern breaks — the first warning of a trend change.',
+          hi:'Trends exist क्योंकि money में momentum होता है। Institutions हफ्तों-महीनों में accumulate करते हैं। FIIs जब Nifty buy करते हैं, हर dip पर buy करते हैं — यही "higher lows" pattern बनाता है। जब वो sell करना शुरू करते हैं, pattern breaks — trend change की पहली warning।',
+          gu:'Trends = institutional momentum. FIIs buy every dip = higher lows. When they sell = pattern breaks = trend change warning.'
+        },
+        svgId:'trendSVG',
+        example:{
+          en:'Nifty 50 from March 2020 to October 2021. Every single correction (lower low from the previous high) stopped at a higher price than the previous correction. Oct 2020 low: 11,200. Feb 2021 low: 14,200. Jun 2021 low: 15,450. Each low was higher than the last — textbook uptrend. The day this pattern broke — October 2021 — the index formed its first lower high. That was the first structural warning before the 2022 correction.',
+          hi:'Nifty March 2020 → October 2021। हर correction higher low पर रुका। Oct 2020: 11,200। Feb 2021: 14,200। Jun 2021: 15,450। Pattern break हुआ October 2021 में — first lower high — 2022 correction से पहले पहली warning।',
+          gu:'Nifty 2020-2021 uptrend: Oct 2020 low 11,200 → Feb 2021 14,200 → Jun 2021 15,450. Pattern broke Oct 2021 = first warning.'
+        },
+        mistake:{
+          en:'Calling a trend from two data points. Two higher highs alone is not a confirmed uptrend. You need to see the full HH-HL-HH-HL sequence with at least 3 swing points confirming the pattern. One higher high could be a spike. Three higher highs with corresponding higher lows — that is a trend.',
+          hi:'सिर्फ 2 data points से trend call करना। 2 higher highs अकेले confirmed uptrend नहीं है। HH-HL-HH-HL pattern में कम से कम 3 swing points चाहिए। एक higher high = spike हो सकता है। तीन higher highs + higher lows = trend।',
+          gu:'2 points = not a trend. Need HH-HL-HH-HL (3+ swings). 1 HH = spike. 3 HH + HL = trend.'
+        },
+        xref:{ en:'See also: Chart C9/C10 — Market structure in detail — higher highs/lows and lower highs/lows.' },
+        exercise:{
+          en:['Open Research tab → Nifty 50 → 1Y chart','Identify the most recent swing high (a peak)','Identify the swing high before that','Is the recent high above or below the previous?','Do the same for the lows','Answer: is Nifty in an uptrend, downtrend, or sideways right now?']
+        },
+        quiz:{
+          en:{q:'A stock makes a new all-time high, then pulls back. Then makes another new high. Then pulls back to a level LOWER than the first pullback. What does this second pullback breaking lower tell you?',opts:['Nothing — one lower low is not significant','A lower low in an uptrend is the first warning of potential structural change — it breaks the "higher lows" requirement of an uptrend','The stock is still in an uptrend because it made new highs','Always buy the second pullback'],correct:1,explain:'An uptrend requires BOTH higher highs AND higher lows. When the second pullback goes lower than the first, the higher lows pattern has been broken. This is the first structural warning that the uptrend may be weakening. It does not confirm a downtrend — you need to see a lower high form as well — but it is the first crack in the uptrend structure.'}}
+      },
+      {
+        id:'c7', num:'C7',
+        title:{ en:'Support and resistance', hi:'Support और Resistance', gu:'Support અને Resistance' },
+        time:'5 min',
+        definition:{
+          en:'Support: a price level where buying has historically been strong enough to stop a falling price and push it back up. Resistance: a price level where selling has historically been strong enough to stop a rising price and push it back down. These are not magic lines — they are price zones where large numbers of traders made decisions before and will make decisions again.',
+          hi:'Support: वो price level जहाँ historically buying इतनी strong रही कि falling price रुक गई और ऊपर गई। Resistance: जहाँ selling इतनी strong रही कि rising price रुक गई और नीचे गई। Magic lines नहीं — zones जहाँ traders ने पहले decisions लिए।',
+          gu:'Support = price ज্যां buyers historically strong. Resistance = sellers strong. Not magic lines — zones of past decisions.'
+        },
+        psychology:{
+          en:'Three groups create support simultaneously: (1) Traders who bought here before and are buying more — averaging down. (2) Traders who missed it last time and are waiting to buy at this level. (3) Traders who sold too early and want back in at their original price. All three create buying pressure at the same level. The more people watch a level, the more reliably it holds — a self-fulfilling prophecy.',
+          hi:'3 groups support create करते हैं: (1) पहले यहाँ खरीदने वाले — और खरीद रहे हैं। (2) पिछली बार miss करने वाले — इस level पर wait कर रहे हैं। (3) जल्दी sell करने वाले — original price पर वापस आना चाहते हैं। तीनों same level पर buying pressure बनाते हैं।',
+          gu:'3 groups create support: (1) Previous buyers averaging down. (2) Those who missed, waiting. (3) Early sellers wanting back. All 3 = buying pressure at same level.'
+        },
+        svgId:'supportSVG',
+        example:{
+          en:'Nifty 50 and the 18,000 level in 2022–2023. This level was tested as support at least 4 times over 8 months. Each time, buyers stepped in. Then in October 2022 it broke decisively below 18,000 — and 18,000 immediately became resistance. Old support became new ceiling. This "role reversal" is because the same traders who bought at 18,000 support (now sitting on losses) will sell the moment price returns to 18,000 — their breakeven.',
+          hi:'Nifty 18,000 — 2022-2023 में 8 महीनों में 4 बार test हुआ। October 2022 में break हुआ — 18,000 immediately resistance बना। Old support = new ceiling। क्यों? जिन्होंने 18,000 पर support पर खरीदा था (अब loss में) वो 18,000 पर वापस आने पर sell करेंगे।',
+          gu:'Nifty 18,000 — 2022-23 — 4 बार test. Oct 2022 break → 18,000 became resistance. Role reversal: old buyers = new sellers.'
+        },
+        mistake:{
+          en:'Drawing support and resistance as single thin lines. They are zones — typically 0.5–1.5% wide. Price rarely turns at the exact same rupee. Nifty at 18,000 support might bounce from 17,920 one time and 18,080 the next. Both are valid bounces from the same zone. Draw rectangles, not lines. The more precise you try to be, the more you will be frustrated by "near misses."',
+          hi:'Support/resistance को thin lines की तरह draw करना। ये zones हैं — 0.5-1.5% wide। Price exactly same rupee पर turn नहीं करती। Nifty 18,000 support: कभी 17,920, कभी 18,080 पर bounce। Rectangles draw करें, lines नहीं।',
+          gu:'S/R = zones (0.5-1.5%), not lines. Nifty 18,000 → bounce 17,920 or 18,080. Both valid. Draw rectangles.'
+        },
+        xref:{ en:'See also: Fundamentals F7 — Quarterly results — how earnings announcements cause stocks to gap through support/resistance instantly.' },
+        exercise:{
+          en:['Open Research tab → HDFCBANK → 1Y chart','Find a price level the stock has bounced from at least twice','That is your support zone','Find a level it has been rejected from at least twice','That is your resistance zone','Did either zone eventually break? What happened after?']
+        },
+        quiz:{
+          en:{q:'Nifty bounced from 22,000 three times over 6 months. Then it fell below 22,000 on massive volume and closed well below. What is 22,000 likely to be going forward?',opts:['Still support — three bounces means it is a strong floor','Resistance — the old support becomes resistance after a decisive break. Traders who bought at 22,000 will sell there to break even','A neutral zone — neither support nor resistance after a break','The level has no significance anymore'],correct:1,explain:'Role reversal is one of the most important concepts in support and resistance. When support breaks decisively on high volume, it becomes resistance. Traders who bought at 22,000 support are now sitting on losses. When price returns to 22,000 (their entry price), they sell to break even — this selling becomes the new resistance. The level has emotional significance to thousands of traders.'}}
+      },
+      {
+        id:'c8', num:'C8',
+        title:{ en:'Volume basics', hi:'Volume basics', gu:'Volume basics' },
+        time:'4 min',
+        definition:{
+          en:'Volume is the total number of shares that traded hands during a period. It appears as vertical bars at the bottom of every price chart. High volume = many participants, strong conviction about the price. Low volume = few participants, weak conviction. The single most important insight about volume: volume leads price. Institutions accumulate in volume before price moves.',
+          hi:'Volume = किसी period में कितने shares trade हुए। Price chart के नीचे vertical bars के रूप में। High volume = many participants, strong conviction। Low volume = few participants, weak conviction। Volume का सबसे important insight: volume precedes price — institutions price move से पहले volume में accumulate करते हैं।',
+          gu:'Volume = traded shares. Bottom bars. High = conviction. Low = weak. Volume leads price — institutions accumulate before move.'
+        },
+        psychology:{
+          en:'Institutions — mutual funds, FIIs, insurance companies — manage billions. They cannot buy ₹500 crore of one stock in a single day without moving the price dramatically against themselves. So they buy gradually, over days or weeks. This gradual buying shows up as above-average volume even when price appears flat. OBV (On Balance Volume) tracks this. When OBV rises while price is flat, institutions are quietly accumulating before the breakout.',
+          hi:'Institutions — mutual funds, FIIs — billions manage करते हैं। एक दिन में ₹500 crore एक stock में नहीं खरीद सकते। इसलिए gradually buy करते हैं — weeks में। यह above-average volume में दिखता है even when price flat हो। OBV इसे track करता है।',
+          gu:'Institutions = billions. Cannot buy all at once. Gradually buy over weeks = above-average volume. OBV tracks this quiet accumulation.'
+        },
+        svgId:'volumeBasicsSVG',
+        example:{
+          en:'Zomato in early 2023. Price was flat between ₹55-₹70 for months — boring sideways action. But volume on up days was consistently higher than on down days. OBV was quietly rising. This was institutional accumulation before the first profitable quarter was announced. In June 2023, Zomato broke out on 4x average volume and ran from ₹70 to ₹140+ within 3 months. Volume told the story months before the price did.',
+          hi:'Zomato early 2023। Price ₹55-70 में flat, boring sideways। लेकिन up days पर volume consistently down days से ज़्यादा था। OBV quietly rising था। यह institutional accumulation था। June 2023 में Zomato ₹70 से ₹140+ — volume ने months पहले story बता दी थी।',
+          gu:'Zomato 2023 — price flat ₹55-70, but up day volume > down day volume. OBV rising quietly. June 2023 breakout 4x volume → ₹140+.'
+        },
+        mistake:{
+          en:'"Ignore volume — just watch price." This is like reading a WhatsApp message without checking how many people received it. A stock rising 5% on 10,000 shares means almost nothing. The same stock rising 5% on 5,000,000 shares is a completely different event — institutions moved. Volume is the context that tells you whether to trust the price move.',
+          hi:'"Volume ignore करो — सिर्फ price देखो।" यह WhatsApp message read करने जैसा है without checking कितने लोगों को गया। 10,000 shares पर 5% rise = almost nothing। 5,000,000 shares पर 5% = institutions moved। Volume वो context है जो बताता है price move को trust करें या नहीं।',
+          gu:'"Ignore volume." Like reading WhatsApp without checking recipients. 10,000 shares 5% = nothing. 5M shares 5% = institutions moved.'
+        },
+        xref:{ en:'See also: Chart C38 — OBV, VWAP, and volume profile — the advanced tools built on this foundation.' },
+        exercise:{
+          en:['Open Research tab → any large-cap stock','Look at the volume bars at the bottom','Find the single highest volume bar in the last year','What was price doing that day? Up or down?','Find the day before a major price move — was volume building up?','This is how institutions leave footprints before moves']
+        },
+        quiz:{
+          en:{q:'A stock has been flat for 3 weeks. Suddenly, over 5 consecutive days, the volume is 3-4x average but price barely moves. What is most likely happening?',opts:['Technical glitch in volume data','Institutions are quietly accumulating — buying large quantities without pushing price up, preparing for a future move','Random noise — ignore it','The stock is about to crash'],correct:1,explain:'When volume is abnormally high but price barely moves, it means supply (selling) and demand (buying) are roughly equal at this level. But if OBV is rising (more volume on up days), it means buyers are absorbing every share offered. This quiet accumulation by large players often precedes a significant price move. Volume spikes without price movement = smart money at work.'}}
+      }
+    ]
+  },
+  {
+    id: 'cs2', num: 2,
+    title: { en:'Level 2 — Chart Reading', hi:'Level 2 — Chart Reading', gu:'Level 2 — Chart Reading' },
+    subtitle: { en:'Market structure, trendlines, breakouts', hi:'Market structure, trendlines, breakouts', gu:'Market structure, trendlines, breakouts' },
+    color: '#1458a8', bg: 'var(--bl)',
+    lessons: [], locked: true
+  },
+  {
+    id: 'cs3', num: 3,
+    title: { en:'Level 3 — Candlestick Mastery', hi:'Level 3 — Candlestick Mastery', gu:'Level 3 — Candlestick Mastery' },
+    subtitle: { en:'Every pattern from Doji to Three White Soldiers', hi:'हर pattern', gu:'દરેક pattern' },
+    color: '#7048e8', bg: 'var(--pl)',
+    lessons: [], locked: true
+  },
+  {
+    id: 'cs4', num: 4,
+    title: { en:'Level 4 — Chart Patterns', hi:'Level 4 — Chart Patterns', gu:'Level 4 — Chart Patterns' },
+    subtitle: { en:'Double top to Cup and Handle', hi:'Double top से Cup and Handle', gu:'Double top to Cup and Handle' },
+    color: '#c01a1a', bg: 'var(--rl)',
+    lessons: [], locked: true
+  },
+  {
+    id: 'cs5', num: 5,
+    title: { en:'Level 5 — Indicators & Trading System', hi:'Level 5 — Indicators & Trading System', gu:'Level 5 — Indicators & Trading System' },
+    subtitle: { en:'RSI, MACD, Bollinger Bands, position sizing', hi:'RSI, MACD, Bollinger Bands', gu:'RSI, MACD, Bollinger Bands' },
+    color: '#b35c00', bg: 'var(--al)',
+    lessons: [], locked: true
+  }
+];
+
+// ── SVG GENERATORS for Chart School ──────────────────────────
+function getChartSVG(id) {
+  const svgs = {
+    marketSVG: `<svg viewBox="0 0 300 140" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:140px">
+      <defs><style>.wt{fill:#fff;font-size:9px;font-family:sans-serif}</style></defs>
+      <text x="10" y="18" class="wt" fill="rgba(255,255,255,0.5)">BUYER</text>
+      <rect x="8" y="24" width="56" height="28" rx="6" fill="rgba(18,120,66,0.3)" stroke="#127842" stroke-width="1"/>
+      <text x="36" y="41" class="wt" text-anchor="middle" fill="#4ade80">₹1,500</text>
+      <text x="140" y="18" class="wt" fill="rgba(255,255,255,0.5)" text-anchor="middle">PRICE</text>
+      <rect x="108" y="24" width="64" height="28" rx="6" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+      <text x="140" y="41" class="wt" text-anchor="middle" fill="#fff">TCS Share</text>
+      <text x="230" y="18" class="wt" fill="rgba(255,255,255,0.5)">SELLER</text>
+      <rect x="236" y="24" width="56" height="28" rx="6" fill="rgba(192,26,26,0.3)" stroke="#c01a1a" stroke-width="1"/>
+      <text x="264" y="41" class="wt" text-anchor="middle" fill="#f87171">₹1,500</text>
+      <line x1="64" y1="38" x2="108" y2="38" stroke="#127842" stroke-width="1.5" marker-end="url(#ga)"/>
+      <line x1="236" y1="38" x2="172" y2="38" stroke="#c01a1a" stroke-width="1.5" marker-end="url(#ra)"/>
+      <defs><marker id="ga" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#127842"/></marker></defs>
+      <defs><marker id="ra" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><path d="M6,0 L0,3 L6,6 Z" fill="#c01a1a"/></marker></defs>
+      <text x="150" y="80" class="wt" text-anchor="middle" fill="rgba(255,255,255,0.6)">Nifty 50 — 1999 to 2024</text>
+      <polyline points="10,130 40,120 70,110 90,105 110,108 120,90 140,72 160,65 175,70 185,55 200,45 220,35 240,30 260,25 280,20" fill="none" stroke="#127842" stroke-width="2"/>
+      <text x="270" y="17" class="wt" fill="#4ade80">+2,200%</text>
+    </svg>`,
+
+    principlesSVG: `<svg viewBox="0 0 300 150" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:150px">
+      <defs><style>.wt{fill:#fff;font-size:9px;font-family:sans-serif}.wts{fill:rgba(255,255,255,0.5);font-size:8px;font-family:sans-serif}</style></defs>
+      <rect x="8" y="12" width="86" height="52" rx="8" fill="rgba(18,120,66,0.2)" stroke="#127842" stroke-width="1"/>
+      <text x="51" y="28" class="wt" text-anchor="middle" fill="#4ade80" font-weight="bold">Principle 1</text>
+      <text x="51" y="40" class="wts" text-anchor="middle">Price discounts</text>
+      <text x="51" y="50" class="wts" text-anchor="middle">everything</text>
+      <text x="51" y="62" class="wts" text-anchor="middle">All facts → in price</text>
+      <rect x="107" y="12" width="86" height="52" rx="8" fill="rgba(20,88,168,0.2)" stroke="#1458a8" stroke-width="1"/>
+      <text x="150" y="28" class="wt" text-anchor="middle" fill="#60a5fa" font-weight="bold">Principle 2</text>
+      <text x="150" y="40" class="wts" text-anchor="middle">Prices move</text>
+      <text x="150" y="50" class="wts" text-anchor="middle">in trends</text>
+      <text x="150" y="62" class="wts" text-anchor="middle">Not randomly</text>
+      <rect x="206" y="12" width="86" height="52" rx="8" fill="rgba(95,61,196,0.2)" stroke="#7048e8" stroke-width="1"/>
+      <text x="249" y="28" class="wt" text-anchor="middle" fill="#a78bfa" font-weight="bold">Principle 3</text>
+      <text x="249" y="40" class="wts" text-anchor="middle">History tends</text>
+      <text x="249" y="50" class="wts" text-anchor="middle">to repeat</text>
+      <text x="249" y="62" class="wts" text-anchor="middle">Same psychology</text>
+      <text x="150" y="90" class="wts" text-anchor="middle">March 2020 — every chart crashed simultaneously</text>
+      <polyline points="20,140 50,130 80,120 100,118 110,100 120,108 140,115 155,100 170,95 185,110 200,100 220,105 240,98 270,95 290,88" fill="none" stroke="#c01a1a" stroke-width="1.5"/>
+      <text x="18" y="145" class="wts" fill="rgba(255,255,255,0.3)">Jan</text>
+      <text x="108" y="145" class="wts" fill="#f87171">Mar crash</text>
+      <text x="220" y="145" class="wts" fill="#4ade80">Recovery</text>
+    </svg>`,
+
+    volumeSVG: `<svg viewBox="0 0 300 150" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:150px">
+      <defs><style>.wt{fill:#fff;font-size:9px;font-family:sans-serif}.wts{fill:rgba(255,255,255,0.5);font-size:8px;font-family:sans-serif}</style></defs>
+      <text x="10" y="12" class="wts">Price</text>
+      <polyline points="20,90 50,75 80,60 100,65 120,50 140,55 160,40 180,45 200,35 220,30 240,38 260,28 280,22" fill="none" stroke="#127842" stroke-width="1.5"/>
+      <line x1="10" y1="100" x2="290" y2="100" stroke="rgba(255,255,255,0.15)" stroke-width="0.5"/>
+      <text x="10" y="115" class="wts">Volume</text>
+      <rect x="18" y="122" width="12" height="20" rx="2" fill="rgba(18,120,66,0.5)"/>
+      <rect x="38" y="118" width="12" height="24" rx="2" fill="rgba(18,120,66,0.7)"/>
+      <rect x="58" y="115" width="12" height="27" rx="2" fill="#127842"/>
+      <rect x="78" y="120" width="12" height="22" rx="2" fill="rgba(192,26,26,0.5)"/>
+      <rect x="98" y="116" width="12" height="26" rx="2" fill="#127842"/>
+      <rect x="118" y="128" width="12" height="14" rx="2" fill="rgba(18,120,66,0.3)"/>
+      <rect x="138" y="125" width="12" height="17" rx="2" fill="rgba(18,120,66,0.4)"/>
+      <rect x="158" y="108" width="12" height="34" rx="2" fill="#127842"/>
+      <text x="152" y="105" class="wts" fill="#4ade80">↑ High vol</text>
+      <rect x="178" y="130" width="12" height="12" rx="2" fill="rgba(255,255,255,0.15)"/>
+      <rect x="198" y="107" width="12" height="35" rx="2" fill="#127842"/>
+      <rect x="218" y="120" width="12" height="22" rx="2" fill="rgba(192,26,26,0.4)"/>
+      <rect x="238" y="130" width="12" height="12" rx="2" fill="rgba(255,255,255,0.15)"/>
+      <rect x="258" y="105" width="12" height="37" rx="2" fill="#127842"/>
+      <text x="252" y="102" class="wts" fill="#4ade80">Breakout!</text>
+    </svg>`,
+
+    chartTypesSVG: `<svg viewBox="0 0 300 150" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:150px">
+      <defs><style>.wt{fill:#fff;font-size:8px;font-family:sans-serif}.wts{fill:rgba(255,255,255,0.4);font-size:7px;font-family:sans-serif}</style></defs>
+      <!-- Line chart mini -->
+      <rect x="8" y="8" width="52" height="60" rx="4" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.12)" stroke-width="0.5"/>
+      <text x="34" y="18" class="wt" text-anchor="middle" fill="rgba(255,255,255,0.7)">Line</text>
+      <polyline points="15,55 22,48 29,42 36,45 43,38 50,32" fill="none" stroke="#127842" stroke-width="1.5"/>
+      <!-- Candlestick mini -->
+      <rect x="68" y="8" width="52" height="60" rx="4" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.12)" stroke-width="0.5"/>
+      <text x="94" y="18" class="wt" text-anchor="middle" fill="rgba(255,255,255,0.7)">Candle</text>
+      <rect x="78" y="38" width="8" height="16" rx="1" fill="#e03131"/>
+      <line x1="82" y1="32" x2="82" y2="56" stroke="#e03131" stroke-width="1"/>
+      <rect x="92" y="32" width="8" height="20" rx="1" fill="#1db368"/>
+      <line x1="96" y1="26" x2="96" y2="54" stroke="#1db368" stroke-width="1"/>
+      <rect x="106" y="30" width="8" height="18" rx="1" fill="#1db368"/>
+      <line x1="110" y1="25" x2="110" y2="50" stroke="#1db368" stroke-width="1"/>
+      <!-- Bar chart mini -->
+      <rect x="128" y="8" width="52" height="60" rx="4" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.12)" stroke-width="0.5"/>
+      <text x="154" y="18" class="wt" text-anchor="middle" fill="rgba(255,255,255,0.7)">Bar/OHLC</text>
+      <line x1="140" y1="30" x2="140" y2="55" stroke="#fff" stroke-width="1.5"/>
+      <line x1="137" y1="38" x2="140" y2="38" stroke="#fff" stroke-width="1.5"/>
+      <line x1="140" y1="46" x2="143" y2="46" stroke="#fff" stroke-width="1.5"/>
+      <line x1="152" y1="26" x2="152" y2="52" stroke="#fff" stroke-width="1.5"/>
+      <line x1="149" y1="34" x2="152" y2="34" stroke="#fff" stroke-width="1.5"/>
+      <line x1="152" y1="42" x2="155" y2="42" stroke="#fff" stroke-width="1.5"/>
+      <line x1="164" y1="28" x2="164" y2="50" stroke="#fff" stroke-width="1.5"/>
+      <line x1="161" y1="36" x2="164" y2="36" stroke="#fff" stroke-width="1.5"/>
+      <line x1="164" y1="40" x2="167" y2="40" stroke="#fff" stroke-width="1.5"/>
+      <!-- Heikin Ashi mini -->
+      <rect x="188" y="8" width="52" height="60" rx="4" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.12)" stroke-width="0.5"/>
+      <text x="214" y="18" class="wt" text-anchor="middle" fill="rgba(255,255,255,0.7)">Heikin Ashi</text>
+      <rect x="196" y="44" width="8" height="14" rx="1" fill="#1db368"/>
+      <line x1="200" y1="38" x2="200" y2="60" stroke="#1db368" stroke-width="1"/>
+      <rect x="208" y="36" width="8" height="14" rx="1" fill="#1db368"/>
+      <line x1="212" y1="30" x2="212" y2="52" stroke="#1db368" stroke-width="1"/>
+      <rect x="220" y="28" width="8" height="14" rx="1" fill="#1db368"/>
+      <line x1="224" y1="22" x2="224" y2="44" stroke="#1db368" stroke-width="1"/>
+      <text x="214" y="68" class="wts" text-anchor="middle">Smooth trend</text>
+      <!-- Renko mini -->
+      <rect x="248" y="8" width="44" height="60" rx="4" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.12)" stroke-width="0.5"/>
+      <text x="270" y="18" class="wt" text-anchor="middle" fill="rgba(255,255,255,0.7)">Renko</text>
+      <rect x="256" y="50" width="10" height="10" rx="1" fill="#1db368" stroke="#4ade80" stroke-width="0.5"/>
+      <rect x="266" y="40" width="10" height="10" rx="1" fill="#1db368" stroke="#4ade80" stroke-width="0.5"/>
+      <rect x="276" y="30" width="10" height="10" rx="1" fill="#1db368" stroke="#4ade80" stroke-width="0.5"/>
+      <text x="270" y="68" class="wts" text-anchor="middle">Price only</text>
+      <!-- Bottom labels -->
+      <text x="34" y="78" class="wts" text-anchor="middle">Investor</text>
+      <text x="94" y="78" class="wts" text-anchor="middle">Trader</text>
+      <text x="154" y="78" class="wts" text-anchor="middle">Analyst</text>
+    </svg>`,
+
+    candleAnatomySVG: `<svg viewBox="0 0 300 150" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:150px">
+      <defs><style>.wt{fill:#fff;font-size:9px;font-family:sans-serif}.wts{fill:rgba(255,255,255,0.5);font-size:8px;font-family:sans-serif}.arrow{fill:rgba(255,255,255,0.4)}</style></defs>
+      <!-- Bullish candle -->
+      <text x="60" y="15" class="wt" text-anchor="middle" fill="#4ade80">BULLISH</text>
+      <line x1="60" y1="22" x2="60" y2="40" stroke="#1db368" stroke-width="2"/>
+      <rect x="46" y="40" width="28" height="60" rx="2" fill="#1db368" stroke="#4ade80" stroke-width="1"/>
+      <line x1="60" y1="100" x2="60" y2="118" stroke="#1db368" stroke-width="2"/>
+      <!-- Labels bullish -->
+      <line x1="75" y1="26" x2="100" y2="26" stroke="rgba(255,255,255,0.2)" stroke-width="0.5"/>
+      <text x="102" y="29" class="wts">High</text>
+      <line x1="75" y1="40" x2="100" y2="40" stroke="rgba(255,255,255,0.2)" stroke-width="0.5"/>
+      <text x="102" y="43" class="wts" fill="#4ade80">Close (higher)</text>
+      <line x1="75" y1="70" x2="100" y2="70" stroke="rgba(255,255,255,0.2)" stroke-width="0.5"/>
+      <text x="102" y="73" class="wts">Body</text>
+      <line x1="75" y1="100" x2="100" y2="100" stroke="rgba(255,255,255,0.2)" stroke-width="0.5"/>
+      <text x="102" y="103" class="wts" fill="#4ade80">Open (lower)</text>
+      <line x1="75" y1="118" x2="100" y2="118" stroke="rgba(255,255,255,0.2)" stroke-width="0.5"/>
+      <text x="102" y="121" class="wts">Low</text>
+      <!-- Bearish candle -->
+      <text x="220" y="15" class="wt" text-anchor="middle" fill="#f87171">BEARISH</text>
+      <line x1="220" y1="22" x2="220" y2="40" stroke="#e03131" stroke-width="2"/>
+      <rect x="206" y="40" width="28" height="60" rx="2" fill="#e03131" stroke="#f87171" stroke-width="1"/>
+      <line x1="220" y1="100" x2="220" y2="118" stroke="#e03131" stroke-width="2"/>
+      <!-- Labels bearish -->
+      <text x="156" y="29" class="wts" text-anchor="end">High</text>
+      <line x1="158" y1="26" x2="205" y2="26" stroke="rgba(255,255,255,0.2)" stroke-width="0.5"/>
+      <text x="156" y="43" class="wts" text-anchor="end" fill="#f87171">Open (higher)</text>
+      <line x1="158" y1="40" x2="205" y2="40" stroke="rgba(255,255,255,0.2)" stroke-width="0.5"/>
+      <text x="156" y="103" class="wts" text-anchor="end" fill="#f87171">Close (lower)</text>
+      <line x1="158" y1="100" x2="205" y2="100" stroke="rgba(255,255,255,0.2)" stroke-width="0.5"/>
+      <text x="156" y="121" class="wts" text-anchor="end">Low</text>
+      <line x1="158" y1="118" x2="205" y2="118" stroke="rgba(255,255,255,0.2)" stroke-width="0.5"/>
+      <!-- Bottom note -->
+      <text x="150" y="140" class="wts" text-anchor="middle">Wicks show battle extremes · Body shows who won</text>
+    </svg>`,
+
+    trendSVG: `<svg viewBox="0 0 300 150" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:150px">
+      <defs><style>.wt{fill:#fff;font-size:8px;font-family:sans-serif}.wts{fill:rgba(255,255,255,0.45);font-size:7px;font-family:sans-serif}</style></defs>
+      <text x="75" y="14" class="wt" text-anchor="middle" fill="#4ade80">UPTREND</text>
+      <!-- Uptrend: HH HL HH HL -->
+      <polyline points="10,120 30,95 50,105 75,75 95,88 120,55 140,68 160,40" fill="none" stroke="#127842" stroke-width="1.5" stroke-dasharray="3,2"/>
+      <!-- HH markers -->
+      <circle cx="30" cy="95" r="3" fill="#1db368"/>
+      <circle cx="75" cy="75" r="3" fill="#1db368"/>
+      <circle cx="120" cy="55" r="3" fill="#1db368"/>
+      <circle cx="160" cy="40" r="3" fill="#1db368"/>
+      <text x="30" y="90" class="wts" text-anchor="middle" fill="#4ade80">HH</text>
+      <text x="75" y="70" class="wts" text-anchor="middle" fill="#4ade80">HH</text>
+      <text x="120" y="50" class="wts" text-anchor="middle" fill="#4ade80">HH</text>
+      <!-- HL markers -->
+      <circle cx="50" cy="105" r="3" fill="rgba(18,120,66,0.7)"/>
+      <circle cx="95" cy="88" r="3" fill="rgba(18,120,66,0.7)"/>
+      <circle cx="140" cy="68" r="3" fill="rgba(18,120,66,0.7)"/>
+      <text x="50" y="116" class="wts" text-anchor="middle">HL</text>
+      <text x="95" y="100" class="wts" text-anchor="middle">HL</text>
+      <text x="140" y="80" class="wts" text-anchor="middle">HL</text>
+      <!-- Downtrend: LH LL -->
+      <text x="240" y="14" class="wt" text-anchor="middle" fill="#f87171">DOWNTREND</text>
+      <polyline points="185,30 205,55 225,42 248,75 265,60 285,90" fill="none" stroke="#c01a1a" stroke-width="1.5" stroke-dasharray="3,2"/>
+      <circle cx="205" cy="55" r="3" fill="#e03131"/>
+      <circle cx="248" cy="75" r="3" fill="#e03131"/>
+      <text x="205" y="50" class="wts" text-anchor="middle" fill="#f87171">LH</text>
+      <text x="248" y="70" class="wts" text-anchor="middle" fill="#f87171">LH</text>
+      <circle cx="225" cy="42" r="3" fill="rgba(192,26,26,0.6)"/>
+      <circle cx="265" cy="60" r="3" fill="rgba(192,26,26,0.6)"/>
+      <text x="225" y="52" class="wts" text-anchor="middle">LL</text>
+      <text x="265" y="72" class="wts" text-anchor="middle">LL</text>
+    </svg>`,
+
+    supportSVG: `<svg viewBox="0 0 300 150" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:150px">
+      <defs><style>.wt{fill:#fff;font-size:8px;font-family:sans-serif}.wts{fill:rgba(255,255,255,0.45);font-size:7px;font-family:sans-serif}</style></defs>
+      <line x1="10" y1="115" x2="290" y2="115" stroke="#127842" stroke-width="1.5" stroke-dasharray="5,3"/>
+      <text x="200" y="127" class="wt" fill="#4ade80">SUPPORT ZONE</text>
+      <line x1="10" y1="42" x2="290" y2="42" stroke="#e03131" stroke-width="1.5" stroke-dasharray="5,3"/>
+      <text x="190" y="36" class="wt" fill="#f87171">RESISTANCE ZONE</text>
+      <!-- Bounces from support -->
+      <polyline points="20,58 35,80 50,95 65,115 75,108 85,90 100,75" fill="none" stroke="#e03131" stroke-width="1.5"/>
+      <text x="22" y="118" class="wts" fill="#4ade80">↑ Bounce 1</text>
+      <polyline points="100,75 115,88 130,105 142,115 152,108 162,88 175,68" fill="none" stroke="#127842" stroke-width="1.5"/>
+      <text x="130" y="128" class="wts" fill="#4ade80">↑ Bounce 2</text>
+      <!-- Hit resistance -->
+      <polyline points="175,68 190,55 205,46 215,42 222,50 232,65 248,80" fill="none" stroke="#127842" stroke-width="1.5"/>
+      <text x="210" y="44" class="wts" fill="#f87171">↓ Rejection</text>
+      <!-- Role reversal indicator -->
+      <polyline points="248,80 258,92 265,105 272,120 280,130" fill="none" stroke="#e03131" stroke-width="1.5" stroke-dasharray="3,2"/>
+      <text x="255" y="108" class="wts" fill="rgba(255,255,255,0.4)">Break!</text>
+    </svg>`,
+
+    volumeBasicsSVG: `<svg viewBox="0 0 300 150" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:150px">
+      <defs><style>.wt{fill:#fff;font-size:8px;font-family:sans-serif}.wts{fill:rgba(255,255,255,0.45);font-size:7px;font-family:sans-serif}</style></defs>
+      <!-- Price line: flat then breakout -->
+      <text x="10" y="12" class="wts">Price</text>
+      <polyline points="20,70 45,72 70,68 95,71 120,69 145,70 165,65 175,45 195,38 215,32 240,28 265,24" fill="none" stroke="#127842" stroke-width="1.5"/>
+      <text x="170" y="42" class="wts" fill="#4ade80">Breakout!</text>
+      <rect x="160" y="44" width="50" height="18" rx="3" fill="rgba(18,120,66,0.15)" stroke="#127842" stroke-width="0.5"/>
+      <!-- Volume bars -->
+      <line x1="10" y1="90" x2="290" y2="90" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/>
+      <text x="10" y="103" class="wts">Volume</text>
+      <!-- Low volume flat period -->
+      <rect x="20" y="128" width="10" height="14" rx="1" fill="rgba(255,255,255,0.15)"/>
+      <rect x="35" y="125" width="10" height="17" rx="1" fill="rgba(255,255,255,0.15)"/>
+      <rect x="50" y="130" width="10" height="12" rx="1" fill="rgba(255,255,255,0.15)"/>
+      <rect x="65" y="126" width="10" height="16" rx="1" fill="rgba(255,255,255,0.15)"/>
+      <rect x="80" y="129" width="10" height="13" rx="1" fill="rgba(255,255,255,0.15)"/>
+      <rect x="95" y="127" width="10" height="15" rx="1" fill="rgba(255,255,255,0.15)"/>
+      <rect x="110" y="131" width="10" height="11" rx="1" fill="rgba(255,255,255,0.15)"/>
+      <rect x="125" y="128" width="10" height="14" rx="1" fill="rgba(255,255,255,0.15)"/>
+      <rect x="140" y="130" width="10" height="12" rx="1" fill="rgba(255,255,255,0.15)"/>
+      <text x="80" y="122" class="wts" text-anchor="middle">Low volume — flat price</text>
+      <!-- High volume breakout -->
+      <rect x="158" y="105" width="12" height="37" rx="1" fill="#127842"/>
+      <rect x="174" y="98" width="12" height="44" rx="1" fill="#127842"/>
+      <rect x="190" y="102" width="12" height="40" rx="1" fill="#127842"/>
+      <rect x="206" y="112" width="12" height="30" rx="1" fill="rgba(18,120,66,0.7)"/>
+      <rect x="222" y="118" width="12" height="24" rx="1" fill="rgba(18,120,66,0.5)"/>
+      <text x="185" y="143" class="wt" text-anchor="middle" fill="#4ade80">Volume surge = conviction</text>
+    </svg>`
+  };
+  return svgs[id] || `<div style="color:rgba(255,255,255,0.3);text-align:center;padding:30px;font-size:11px">Chart visualization</div>`;
+}
+
+// ── CHART SCHOOL LESSON READER ────────────────────────────────
+let csCurrentLesson = null;
+let csCurrentLevelIdx = 0;
+
+function openChartLesson(levelIdx, lessonIdx) {
+  const level  = CHART_SCHOOL_LEVELS[levelIdx];
+  const lesson = level.lessons[lessonIdx];
+  if (!lesson) return;
+  csCurrentLesson = { levelIdx, lessonIdx, lesson, level };
+
+  const t = lesson.title[lang] || lesson.title.en;
+  const def = lesson.definition[lang] || lesson.definition.en;
+  const psy = lesson.psychology[lang] || lesson.psychology.en;
+  const eg  = lesson.example[lang] || lesson.example.en;
+  const mis = lesson.mistake[lang] || lesson.mistake.en;
+  const xref = lesson.xref?.en || '';
+  const ex  = lesson.exercise[lang] || lesson.exercise.en || [];
+  const q   = lesson.quiz.en;
+  const done = uniProgress.chartDone[lesson.id];
+  const lvlTitle = level.title[lang] || level.title.en;
+
+  // Total lessons in level, current position
+  const totalInLevel = level.lessons.length;
+  const doneLvl = level.lessons.filter(l => uniProgress.chartDone[l.id]).length;
+
+  const html = `
+  <div id="csLessonReader" style="position:fixed;inset:0;background:var(--bg);z-index:500;overflow-y:auto;padding-bottom:80px">
+    <!-- Header -->
+    <div style="background:var(--card);padding:12px 16px 10px;border-bottom:0.5px solid var(--border2);display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:10">
+      <button onclick="closeChartLesson()" style="width:32px;height:32px;border-radius:50%;background:var(--bg);border:none;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text)">←</button>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:10px;font-weight:700;color:${level.color};text-transform:uppercase;letter-spacing:0.7px;margin-bottom:2px">📊 ${lvlTitle} · ${lesson.num}</div>
+        <div style="font-size:13px;font-weight:700;color:var(--text);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t}</div>
+      </div>
+      <div style="background:var(--gl);color:var(--gm);font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;flex-shrink:0">+20 XP</div>
+    </div>
+    <!-- Progress bar -->
+    <div style="background:var(--card);padding:8px 16px;border-bottom:0.5px solid var(--border2)">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <span style="font-size:10px;color:var(--muted)">${lvlTitle}</span>
+        <span style="font-size:10px;font-weight:600;color:var(--text)">${doneLvl}/${totalInLevel} lessons</span>
+      </div>
+      <div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden">
+        <div style="height:100%;width:${Math.round((doneLvl/totalInLevel)*100)}%;background:${level.color};border-radius:2px;transition:width 0.3s"></div>
+      </div>
+    </div>
+    <!-- Sections -->
+    <div style="padding:10px 0">
+
+      <!-- Definition -->
+      <div style="background:var(--card);margin:0 12px 10px;border-radius:14px;border:0.5px solid var(--border);overflow:hidden">
+        <div style="padding:12px 14px 10px;display:flex;align-items:center;gap:10px">
+          <div style="width:34px;height:34px;border-radius:10px;background:var(--bl);display:flex;align-items:center;justify-content:center;font-size:16px">📖</div>
+          <div>
+            <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;color:var(--b);margin-bottom:2px">Definition</div>
+            <div style="font-size:12px;font-weight:700;color:var(--text)">What is it?</div>
+          </div>
+        </div>
+        <div style="padding:0 14px 14px;border-top:0.5px solid var(--border2);font-size:12px;line-height:1.8;color:var(--text)">${def}</div>
+      </div>
+
+      <!-- Psychology -->
+      <div style="background:var(--card);margin:0 12px 10px;border-radius:14px;border:0.5px solid var(--border);overflow:hidden">
+        <div style="padding:12px 14px 10px;display:flex;align-items:center;gap:10px">
+          <div style="width:34px;height:34px;border-radius:10px;background:#f3e8ff;display:flex;align-items:center;justify-content:center;font-size:16px">🧠</div>
+          <div>
+            <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;color:#7048e8;margin-bottom:2px">The Psychology</div>
+            <div style="font-size:12px;font-weight:700;color:var(--text)">Why does this exist?</div>
+          </div>
+        </div>
+        <div style="padding:0 14px 14px;border-top:0.5px solid var(--border2);font-size:12px;line-height:1.8;color:var(--text)">${psy}</div>
+      </div>
+
+      <!-- SVG Chart -->
+      <div style="background:var(--card);margin:0 12px 10px;border-radius:14px;border:0.5px solid var(--border);overflow:hidden">
+        <div style="padding:10px 14px;display:flex;align-items:center;gap:10px;background:#17181a">
+          <div style="width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;font-size:16px">📊</div>
+          <div>
+            <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;color:rgba(255,255,255,0.4);margin-bottom:2px">Chart Visual</div>
+            <div style="font-size:12px;font-weight:700;color:#fff">See how it works</div>
+          </div>
+        </div>
+        <div style="background:#17181a;padding:14px 12px">${getChartSVG(lesson.svgId)}</div>
+      </div>
+
+      <!-- Indian Example -->
+      <div style="background:var(--card);margin:0 12px 10px;border-radius:14px;border:0.5px solid var(--border);overflow:hidden">
+        <div style="padding:12px 14px 10px;display:flex;align-items:center;gap:10px">
+          <div style="width:34px;height:34px;border-radius:10px;background:var(--al);display:flex;align-items:center;justify-content:center;font-size:16px">🇮🇳</div>
+          <div>
+            <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;color:var(--a);margin-bottom:2px">Indian Market Example</div>
+            <div style="font-size:12px;font-weight:700;color:var(--text)">Real case. Real numbers.</div>
+          </div>
+        </div>
+        <div style="padding:0 14px 14px;border-top:0.5px solid var(--border2)">
+          <div style="background:var(--al);border-left:3px solid var(--a);border-radius:0 8px 8px 0;padding:10px 12px;font-size:11px;line-height:1.7;color:var(--text);margin-top:10px">${eg}</div>
+        </div>
+      </div>
+
+      <!-- Common Mistake -->
+      <div style="background:var(--card);margin:0 12px 10px;border-radius:14px;border:0.5px solid var(--border);overflow:hidden">
+        <div style="padding:12px 14px 10px;display:flex;align-items:center;gap:10px">
+          <div style="width:34px;height:34px;border-radius:10px;background:var(--rl);display:flex;align-items:center;justify-content:center;font-size:16px">⚠️</div>
+          <div>
+            <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;color:var(--r);margin-bottom:2px">Common Mistake</div>
+            <div style="font-size:12px;font-weight:700;color:var(--text)">What 80% get wrong</div>
+          </div>
+        </div>
+        <div style="padding:0 14px 14px;border-top:0.5px solid var(--border2)">
+          <div style="background:var(--rl);border-left:3px solid var(--r);border-radius:0 8px 8px 0;padding:10px 12px;font-size:11px;line-height:1.7;color:var(--text);margin-top:10px">${mis}</div>
+        </div>
+      </div>
+
+      ${xref ? `
+      <!-- Cross Reference -->
+      <div style="margin:0 12px 10px;background:var(--bl);border-radius:10px;padding:10px 13px;display:flex;gap:10px;border:0.5px solid rgba(20,88,168,0.2)">
+        <span style="font-size:14px;flex-shrink:0">🔗</span>
+        <span style="font-size:11px;color:var(--b);line-height:1.6">${xref}</span>
+      </div>` : ''}
+
+      <!-- Exercise -->
+      <div style="background:var(--card);margin:0 12px 10px;border-radius:14px;border:0.5px solid var(--border);overflow:hidden">
+        <div style="padding:12px 14px 10px;display:flex;align-items:center;gap:10px">
+          <div style="width:34px;height:34px;border-radius:10px;background:var(--gl);display:flex;align-items:center;justify-content:center;font-size:16px">🎯</div>
+          <div>
+            <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;color:var(--gm);margin-bottom:2px">Practical Exercise</div>
+            <div style="font-size:12px;font-weight:700;color:var(--text)">Try it live right now</div>
+          </div>
+        </div>
+        <div style="padding:0 14px 14px;border-top:0.5px solid var(--border2)">
+          <div style="display:flex;flex-direction:column;gap:7px;margin-top:10px">
+            ${ex.map((step, i) => `
+              <div style="display:flex;gap:10px;align-items:flex-start">
+                <div style="width:20px;height:20px;border-radius:50%;background:var(--gm);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">${i+1}</div>
+                <div style="font-size:11px;color:var(--text);line-height:1.65;flex:1">${step}</div>
+              </div>`).join('')}
+          </div>
+          <button onclick="showPage('research');closeChartLesson()"
+            style="width:100%;background:var(--gm);color:#fff;border:none;border-radius:10px;padding:12px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:14px">
+            Open Research tab →
+          </button>
+        </div>
+      </div>
+
+      <!-- Quiz -->
+      <div style="background:var(--card);margin:0 12px 10px;border-radius:14px;border:0.5px solid var(--border);overflow:hidden">
+        <div style="background:#1a1917;padding:14px">
+          <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px">🧠 Test your understanding</div>
+          <div style="font-size:13px;font-weight:700;color:#fff;line-height:1.45;font-family:'DM Serif Display',Georgia,serif">${q.q}</div>
+        </div>
+        <div style="padding:12px 14px" id="csQuizOpts">
+          ${q.opts.map((opt, oi) => `
+            <button class="cs-quiz-opt" onclick="csAnswer(${oi},${q.correct},'${lesson.id}',this)"
+              style="display:flex;align-items:flex-start;gap:10px;width:100%;text-align:left;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;background:var(--bg);font-family:'DM Sans',sans-serif;cursor:pointer;margin-bottom:7px;transition:all 0.15s">
+              <span style="width:22px;height:22px;border-radius:50%;background:var(--border);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--muted)">${String.fromCharCode(65+oi)}</span>
+              <span style="font-size:12px;color:var(--text);line-height:1.45;padding-top:2px">${opt}</span>
+            </button>`).join('')}
+        </div>
+        <div id="csQuizExplain" class="quiz-result" style="margin:0 14px 14px;display:none;border-radius:10px;padding:10px 13px;font-size:11px;line-height:1.7"></div>
+      </div>
+
+    </div>
+  </div>
+  <!-- Bottom nav -->
+  <div style="position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:0.5px solid var(--border2);padding:10px 16px 24px;display:flex;gap:10px;z-index:501">
+    <button onclick="closeChartLesson()" style="background:var(--bg);border:none;border-radius:10px;padding:13px 16px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text);font-family:'DM Sans',sans-serif">← Back</button>
+    <button id="csNextBtn" onclick="csNextLesson()" style="flex:1;background:var(--gm);border:none;border-radius:10px;padding:13px;font-size:13px;font-weight:700;cursor:pointer;color:#fff;font-family:'DM Sans',sans-serif">Complete &amp; Continue →</button>
+  </div>`;
+
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+function closeChartLesson() {
+  const reader = document.getElementById('csLessonReader');
+  if (reader) reader.remove();
+  // Refresh chart school view
+  const tc = document.getElementById('tabContents') || document.getElementById('uniContent');
+  if (tc) tc.innerHTML = buildChartSchool();
+}
+
+function csAnswer(chosen, correct, lessonId, el) {
+  const opts = document.querySelectorAll('.cs-quiz-opt');
+  opts.forEach(b => { b.onclick = null; b.style.cursor = 'default'; });
+  const letters = document.querySelectorAll('.cs-quiz-opt span:first-child');
+  if (chosen === correct) {
+    el.style.borderColor = 'var(--gm)';
+    el.style.background = 'var(--gl)';
+    el.querySelector('span').style.background = 'var(--gm)';
+    el.querySelector('span').style.color = '#fff';
+    el.querySelector('span').textContent = '✓';
+  } else {
+    el.style.borderColor = 'var(--r)';
+    el.style.background = 'var(--rl)';
+    el.querySelector('span').style.background = 'var(--r)';
+    el.querySelector('span').style.color = '#fff';
+    el.querySelector('span').textContent = '✗';
+    opts[correct].style.borderColor = 'var(--gm)';
+    opts[correct].style.background = 'var(--gl)';
+    opts[correct].querySelector('span').style.background = 'var(--gm)';
+    opts[correct].querySelector('span').style.color = '#fff';
+    opts[correct].querySelector('span').textContent = '✓';
+  }
+  const explain = document.getElementById('csQuizExplain');
+  const level = CHART_SCHOOL_LEVELS[csCurrentLesson.levelIdx];
+  const lesson = level.lessons[csCurrentLesson.lessonIdx];
+  if (explain) {
+    explain.style.display = 'block';
+    if (chosen === correct) {
+      explain.style.background = 'var(--gl)';
+      explain.style.borderLeft = '3px solid var(--gm)';
+      explain.style.color = 'var(--g)';
+      explain.textContent = '✅ Correct! +20 XP — ' + lesson.quiz.en.explain;
+      // Award XP
+      if (!uniProgress.chartDone[lessonId]) {
+        uniProgress.chartDone[lessonId] = true;
+        awardXP(20, 'Chart School');
+      }
+      // Update button
+      const nextBtn = document.getElementById('csNextBtn');
+      if (nextBtn) { nextBtn.textContent = '🎉 +20 XP — Next Lesson →'; nextBtn.style.background = 'var(--gd)'; }
+    } else {
+      explain.style.background = 'var(--rl)';
+      explain.style.borderLeft = '3px solid var(--r)';
+      explain.style.color = 'var(--text)';
+      explain.textContent = lesson.quiz.en.explain;
+    }
+    explain.style.borderRadius = '10px';
+    explain.style.padding = '10px 13px';
+  }
+  saveUni();
+}
+
+function csNextLesson() {
+  if (!csCurrentLesson) return;
+  const { levelIdx, lessonIdx, lesson } = csCurrentLesson;
+  const level = CHART_SCHOOL_LEVELS[levelIdx];
+  // Mark done if quiz was answered (or just advance)
+  if (!uniProgress.chartDone[lesson.id]) {
+    uniProgress.chartDone[lesson.id] = true;
+    awardXP(20, 'Chart School');
+    saveUni();
+  }
+  // Next lesson in level?
+  const nextIdx = lessonIdx + 1;
+  if (nextIdx < level.lessons.length) {
+    const reader = document.getElementById('csLessonReader');
+    if (reader) reader.remove();
+    openChartLesson(levelIdx, nextIdx);
+  } else {
+    // Level complete
+    closeChartLesson();
+    awardXP(50, 'Level Complete');
+    saveUni();
+  }
+}
+
+// ── CHART SCHOOL HOME SCREEN ──────────────────────────────────
+function buildChartSchool() {
+  const totalDone = Object.keys(uniProgress.chartDone).length;
+  const totalLessons = CHART_SCHOOL_LEVELS.reduce((a, l) => a + (l.lessons?.length || 0), 0);
+
+  // Check if a level is unlocked (previous level complete)
+  function isLevelUnlocked(idx) {
+    return true; // TESTING MODE — all levels unlocked
+  }
+
+  const T = {
+    en:{ eye:'Chart School', title:'Complete technical analysis — from first principles to trading systems.', sub:`${totalDone}/${totalLessons} lessons complete · 5 levels · 20 XP per lesson` },
+    hi:{ eye:'Chart School', title:'Complete technical analysis — basics से trading system तक।', sub:`${totalDone}/${totalLessons} lessons पूरे` },
+    gu:{ eye:'Chart School', title:'Complete technical analysis — basics to trading system.', sub:`${totalDone}/${totalLessons} lessons` },
+  }[lang] || { eye:'Chart School', title:'Complete technical analysis.', sub:'' };
+
+  return `
+    <div class="u-mode-header">
+      <div class="u-mode-eyebrow">${T.eye}</div>
+      <div class="u-mode-title">${T.title}</div>
+      <div class="u-mode-sub">${T.sub}</div>
+    </div>
+    ${CHART_SCHOOL_LEVELS.map((level, lidx) => {
+      const unlocked = isLevelUnlocked(lidx);
+      const lvlTitle = level.title[lang] || level.title.en;
+      const lvlSub   = level.subtitle[lang] || level.subtitle.en;
+      const doneLvl  = (level.lessons||[]).filter(l => uniProgress.chartDone[l.id]).length;
+      const totalLvl = level.lessons?.length || 8;
+      const pct      = Math.round((doneLvl / totalLvl) * 100);
+      const allDone  = doneLvl === totalLvl && totalLvl > 0;
+
+      return `
+        <div style="background:var(--card);border-radius:var(--r16);border:0.5px solid var(--border);margin-bottom:10px;overflow:hidden;${!unlocked?'opacity:0.55':''}">
+          <!-- Level header -->
+          <div style="padding:13px 14px;display:flex;align-items:center;gap:12px">
+            <div style="width:36px;height:36px;border-radius:10px;background:${level.bg};color:${level.color};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0">${level.num}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px">${lvlTitle}</div>
+              <div style="font-size:10px;color:var(--muted)">${lvlSub}</div>
+            </div>
+            ${!unlocked ? '<div style="font-size:16px">🔒</div>' : allDone ? '<div style="font-size:9px;font-weight:700;color:var(--gm);background:var(--gl);padding:3px 9px;border-radius:20px">✓ Done</div>' : `<div style="font-size:10px;font-weight:600;color:var(--muted)">${doneLvl}/${totalLvl}</div>`}
+          </div>
+          <!-- Progress bar -->
+          <div style="height:3px;background:var(--border);margin:0 14px">
+            <div style="height:100%;width:${pct}%;background:${level.color};border-radius:2px;transition:width 0.4s"></div>
+          </div>
+          <!-- Lessons list -->
+          ${unlocked && level.lessons?.length ? `
+          <div style="padding:8px 0">
+            ${level.lessons.map((lesson, idx) => {
+              const done = uniProgress.chartDone[lesson.id];
+              const lt = lesson.title[lang] || lesson.title.en;
+              return `
+                <div onclick="openChartLesson(${lidx},${idx})"
+                  style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:0.5px solid var(--border2);cursor:pointer;transition:background 0.15s"
+                  onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
+                  <div style="width:24px;height:24px;border-radius:50%;background:${done?'var(--gm)':'var(--bg)'};border:1.5px solid ${done?'var(--gm)':'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:${done?'#fff':'var(--muted)'};flex-shrink:0">
+                    ${done ? '✓' : lesson.num.replace('C','')}
+                  </div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:12px;font-weight:${done?'600':'500'};color:var(--text);line-height:1.3">${lt}</div>
+                    <div style="font-size:10px;color:var(--muted);margin-top:1px">⏱ ${lesson.time} · 20 XP</div>
+                  </div>
+                  <div style="font-size:16px;color:var(--muted)">›</div>
+                </div>`;
+            }).join('')}
+          </div>` : !unlocked ? `
+          <div style="padding:12px 14px;text-align:center">
+            <div style="font-size:11px;color:var(--muted)">Complete Level ${level.num - 1} to unlock</div>
+          </div>` : `
+          <div style="padding:12px 14px;text-align:center">
+            <div style="font-size:11px;color:var(--muted)">Coming soon — Level ${level.num} content being prepared</div>
+          </div>`}
+        </div>`;
+    }).join('')}`;
+}
+
+// ── FUNDAMENTALS SCHOOL (architecture — content coming) ───────
+function buildFundamentalsSchool() {
+  const T = {
+    en:{ eye:'Fundamentals School', title:'Business analysis, financial statements, and valuation.', sub:'40 lessons · 5 levels · Coming soon — Chart School first' },
+    hi:{ eye:'Fundamentals School', title:'Business analysis, financial statements, और valuation।', sub:'40 lessons · Coming soon' },
+    gu:{ eye:'Fundamentals School', title:'Business analysis, financial statements, valuation.', sub:'40 lessons · Coming soon' },
+  }[lang] || { eye:'Fundamentals School', title:'Business analysis and valuation.', sub:'' };
+
+  const levels = [
+    { num:1, title:'Level 1 — Business Basics', sub:'What FA is, investing vs trading, annual reports', color:'#127842', bg:'var(--gl)' },
+    { num:2, title:'Level 2 — Financial Statements', sub:'Income statement, balance sheet, cash flow', color:'#1458a8', bg:'var(--bl)' },
+    { num:3, title:'Level 3 — Core Ratios', sub:'EPS, PE, ROE, ROCE, debt ratios', color:'#7048e8', bg:'var(--pl)' },
+    { num:4, title:'Level 4 — Business Quality', sub:'Moat, management, promoters, governance', color:'#c01a1a', bg:'var(--rl)' },
+    { num:5, title:'Level 5 — Valuation & Macro', sub:'Intrinsic value, DCF, margin of safety, industry', color:'#b35c00', bg:'var(--al)' },
+  ];
+
+  return `
+    <div class="u-mode-header">
+      <div class="u-mode-eyebrow">${T.eye}</div>
+      <div class="u-mode-title">${T.title}</div>
+      <div class="u-mode-sub">${T.sub}</div>
+    </div>
+    <div style="background:var(--al);border-radius:var(--r12);padding:12px 14px;margin-bottom:12px;border:0.5px solid rgba(179,92,0,0.2)">
+      <div style="font-size:11px;font-weight:700;color:var(--a);margin-bottom:4px">🚧 Coming in the next session</div>
+      <div style="font-size:11px;color:var(--text);line-height:1.6">Fundamentals School is being built. Complete Chart School Level 1 first — each school unlocks new combined scenarios in the Combined Setups mode.</div>
+    </div>
+    ${levels.map(l => `
+      <div style="background:var(--card);border-radius:var(--r14);border:0.5px solid var(--border);margin-bottom:8px;padding:13px 14px;display:flex;align-items:center;gap:12px;opacity:0.5">
+        <div style="width:32px;height:32px;border-radius:8px;background:${l.bg};color:${l.color};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800">${l.num}</div>
+        <div style="flex:1"><div style="font-size:12px;font-weight:700;color:var(--text)">${l.title}</div><div style="font-size:10px;color:var(--muted);margin-top:1px">${l.sub}</div></div>
+        <div style="font-size:16px">🔒</div>
+      </div>`).join('')}`;
+}
+
 function buildWhyMode() {
   const chains = WHY_CHAINS[lang] || WHY_CHAINS.en;
   const T = {
@@ -6172,7 +7083,7 @@ function updateSLSim(val) {
 
 function resetLearnProgress() {
   if (!confirm('Reset all learning progress?')) return;
-  uniProgress = { lessons:0, xp:0, streak:0, lastDay:'', dojoToday:{}, storyDone:{}, deepDone:{} };
+  uniProgress = { lessons:0, xp:0, streak:0, lastDay:'', dojoToday:{}, storyDone:{}, deepDone:{}, chartDone:{}, faDone:{} };
   saveUni();
   buildLearn();
 }
