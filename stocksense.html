@@ -806,19 +806,43 @@ button{font-family:"DM Sans",sans-serif;cursor:pointer}
 <!-- ═══════════════════════════════════════════════════════════ -->
 <div class="page" id="page-learn">
   <div class="pw">
-    <!-- University welcome header -->
-    <div class="uni-welcome">
-      <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,0.4);letter-spacing:0.8px;text-transform:uppercase;margin-bottom:4px">StockSense University</div>
-      <div style="font-size:20px;font-weight:700;font-family:'DM Serif Display',serif;color:#fff;margin-bottom:4px" id="uniGreeting">Good morning 👋</div>
-      <div style="font-size:11px;color:rgba(255,255,255,0.55);line-height:1.5">From zero to stock market expert — in your own language, at your own pace. Free forever.</div>
-      <div style="display:flex;gap:10px;margin-top:14px">
-        <div class="uni-stat"><div class="uni-stat-num" id="uniLessons">0</div><div class="uni-stat-lbl">Lessons Done</div></div>
-        <div class="uni-stat"><div class="uni-stat-num" id="uniStreak">0</div><div class="uni-stat-lbl">Day Streak 🔥</div></div>
-        <div class="uni-stat"><div class="uni-stat-num" id="uniScore">0</div><div class="uni-stat-lbl">XP Earned</div></div>
+    <!-- University welcome header — premium design -->
+    <div style="
+      background:linear-gradient(145deg,#0a2e18 0%,#0d3d22 60%,#081e10 100%);
+      border-radius:20px;
+      padding:20px 18px 16px;
+      margin-bottom:14px;
+      position:relative;
+      overflow:hidden;
+      border:1px solid rgba(18,120,66,0.2);
+      box-shadow:0 4px 20px rgba(0,0,0,0.15);
+    ">
+      <!-- Decorative ring -->
+      <div style="position:absolute;top:-40px;right:-40px;width:140px;height:140px;border-radius:50%;border:1px solid rgba(18,120,66,0.12)"></div>
+      <div style="position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;background:rgba(18,120,66,0.06)"></div>
+
+      <div style="font-size:9px;font-weight:700;color:rgba(18,120,66,0.85);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:5px">StockSense University</div>
+      <div style="font-size:19px;font-weight:700;font-family:'DM Serif Display',serif;color:#fff;margin-bottom:4px;line-height:1.25" id="uniGreeting">Good morning 👋</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.45);line-height:1.5;margin-bottom:16px">From zero to stock market expert — free, in your language.</div>
+
+      <!-- Stats row — premium cards -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+        <div style="background:rgba(255,255,255,0.06);border-radius:12px;padding:10px 8px;text-align:center;border:1px solid rgba(255,255,255,0.06)">
+          <div style="font-size:22px;font-weight:800;font-family:'DM Serif Display',serif;color:#fff;line-height:1" id="uniLessons">0</div>
+          <div style="font-size:9px;color:rgba(255,255,255,0.4);margin-top:4px;letter-spacing:0.3px;text-transform:uppercase" class="uni-stat-lbl">Lessons</div>
+        </div>
+        <div style="background:rgba(179,92,0,0.15);border-radius:12px;padding:10px 8px;text-align:center;border:1px solid rgba(179,92,0,0.2)">
+          <div style="font-size:22px;font-weight:800;font-family:'DM Serif Display',serif;color:#f97316;line-height:1" id="uniStreak">0</div>
+          <div style="font-size:9px;color:rgba(255,255,255,0.4);margin-top:4px;letter-spacing:0.3px;text-transform:uppercase" class="uni-stat-lbl">Streak 🔥</div>
+        </div>
+        <div style="background:rgba(18,120,66,0.15);border-radius:12px;padding:10px 8px;text-align:center;border:1px solid rgba(18,120,66,0.2)">
+          <div style="font-size:22px;font-weight:800;font-family:'DM Serif Display',serif;color:#4ade80;line-height:1" id="uniScore">0</div>
+          <div style="font-size:9px;color:rgba(255,255,255,0.4);margin-top:4px;letter-spacing:0.3px;text-transform:uppercase" class="uni-stat-lbl">XP</div>
+        </div>
       </div>
     </div>
 
-    <!-- 5 Mode selector -->
+    <!-- 5 Mode selector — scrollable chips -->
     <div class="uni-modes" id="uniModes">
       <div class="uni-mode on" onclick="switchUniMode('story',this)">📖 Stories</div>
       <div class="uni-mode" onclick="switchUniMode('chart',this)">📊 Charts</div>
@@ -830,7 +854,7 @@ button{font-family:"DM Sans",sans-serif;cursor:pointer}
     <!-- Mode content -->
     <div id="uniContent"></div>
 
-    <div class="disc">⚠️ StockSense University is educational content only. Not investment advice. Always consult a financial advisor before investing real money.</div>
+    <div class="disc">⚠️ StockSense University is for education only. Not investment advice. Consult a financial advisor before investing real money.</div>
   </div>
 </div>
 
@@ -1293,6 +1317,37 @@ function applyLang() {
   ['mt-gainers','mt-losers','mt-volume'].forEach((id,i) => {
     const el = document.getElementById(id); if(el) el.textContent = [t('moversG'),t('moversL'),t('moversV')][i];
   });
+
+  // Translate University mode labels
+  const uniModeLabels = {
+    en: ['📖 Stories','📊 Charts','🤔 Why?','🥊 Dojo','🔬 Deep Dive'],
+    hi: ['📖 कहानियाँ','📊 चार्ट','🤔 क्यों?','🥊 Dojo','🔬 गहरी जानकारी'],
+    gu: ['📖 વાર્તાઓ','📊 ચાર્ટ','🤔 કેમ?','🥊 Dojo','🔬 ઊંડી સમઝ'],
+  };
+  const labels = uniModeLabels[lang] || uniModeLabels.en;
+  document.querySelectorAll('.uni-mode').forEach((btn, i) => {
+    if (labels[i]) btn.textContent = labels[i];
+  });
+
+  // Translate University stats labels
+  const uniStatLabels = {
+    en: ['Lessons Done','Day Streak 🔥','XP Earned'],
+    hi: ['सबक पूरे','दिन Streak 🔥','XP अर्जित'],
+    gu: ['Lessons પૂર્ણ','Day Streak 🔥','XP મળ્યો'],
+  };
+  const sLabels = uniStatLabels[lang] || uniStatLabels.en;
+  ['uniLessons','uniStreak','uniScore'].forEach((id, i) => {
+    const el = document.getElementById(id);
+    if (el?.parentElement) {
+      const lbl = el.parentElement.querySelector('.uni-stat-lbl');
+      if (lbl && sLabels[i]) lbl.textContent = sLabels[i];
+    }
+  });
+
+  // Rebuild Start Here card with correct language
+  const shWrap = document.getElementById('startHereWrap');
+  if (shWrap) shWrap.innerHTML = buildStartHereCard();
+
   if(currentSym && currentStock) renderStock(currentSym, currentStock);
   buildLearn();
 }
@@ -1623,6 +1678,13 @@ async function loadStock(sym) {
 
   if (!live || (live.price <= 0 && !STOCKS[sym])) {
     const nb2 = document.getElementById('nfBox'); if(nb2) nb2.classList.add('v');
+    // Show helpful error with retry
+    const nfTitle = document.getElementById('nfTitle');
+    const nfSub   = document.getElementById('nfSub');
+    if (nfTitle) nfTitle.textContent = `"${sym}" — Data Unavailable`;
+    if (nfSub) nfSub.innerHTML = `Yahoo Finance did not return data for this symbol.<br>
+      <span style="color:var(--b);cursor:pointer;font-weight:600" onclick="loadStock('${sym}')">↻ Tap to retry</span> · 
+      <span style="color:var(--muted);font-size:10px">Try: TCS · HDFCBANK · RELIANCE · INFY</span>`;
     return;
   }
   // Always hide nfBox when we have any data
@@ -2001,62 +2063,91 @@ function generateChartInsight(prices, volumes, rsiVals, range) {
 
 async function renderPriceChart(sym, range) {
   lastChartSym = sym; lastChartRange = range;
-  // Also update relative strength
   loadRelativeStrength(sym, range);
   ['1W','1M','3M','6M','1Y','3Y','5Y'].forEach(r => {
     const b = document.getElementById('btn-'+r);
     if(b) { b.style.background = r===range?'var(--gm)':'var(--bg)'; b.style.color = r===range?'#fff':'var(--muted)'; }
   });
-  const RMAP = {'1W':'5d|1d','1M':'1mo|1d','3M':'3mo|1d','6M':'6mo|1wk','1Y':'1y|1wk','3Y':'3y|1mo','5Y':'5y|1mo'};
+
+  // Range → Yahoo params. 1W uses 1mo|1d to ensure data even when market is closed
+  const RMAP = {'1W':'1mo|1d','1M':'1mo|1d','3M':'3mo|1d','6M':'6mo|1wk','1Y':'1y|1wk','3Y':'3y|1mo','5Y':'5y|1mo'};
   const [r,i] = (RMAP[range]||'1y|1wk').split('|');
-  const data = await api('history', { symbol: sym, range: r, interval: i });
+
   const ctx = document.getElementById('priceChart'); if(!ctx) return;
+
+  // Show loading state
+  ctx.parentElement.style.position = 'relative';
+  let loadDiv = document.getElementById('chartLoadMsg');
+  if (!loadDiv) {
+    loadDiv = document.createElement('div');
+    loadDiv.id = 'chartLoadMsg';
+    loadDiv.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted);background:var(--bg);border-radius:8px;z-index:2';
+    ctx.parentElement.appendChild(loadDiv);
+  }
+  loadDiv.textContent = '⏳ Loading chart…';
+  loadDiv.style.display = 'flex';
+
+  const data = await api('history', { symbol: sym, range: r, interval: i });
 
   if (chartInst)   { chartInst.destroy();   chartInst   = null; }
   if (volChartInst){ volChartInst.destroy(); volChartInst= null; }
   if (rsiChartInst){ rsiChartInst.destroy(); rsiChartInst= null; }
 
+  // If no data AND 1W, try 1mo as fallback
+  let prices_data = data;
   if (!data?.prices?.length) {
-    ctx.parentElement.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-size:12px">Chart data unavailable</div>';
+    prices_data = await api('history', { symbol: sym, range: '1mo', interval: '1d' });
+  }
+
+  if (loadDiv) loadDiv.style.display = 'none';
+
+  if (!prices_data?.prices?.length) {
+    ctx.parentElement.innerHTML = `
+      <div style="text-align:center;padding:30px 20px;color:var(--muted)">
+        <div style="font-size:24px;margin-bottom:8px">📊</div>
+        <div style="font-size:12px;font-weight:600;margin-bottom:4px">Chart data unavailable</div>
+        <div style="font-size:10px">Market may be closed or data delayed.<br>Try a different range or come back during market hours.</div>
+      </div>`;
     return;
   }
 
-  lastChartData = data;
-  const prices  = data.prices.map(p => p.close);
-  const opens   = data.prices.map(p => p.open  || p.close);
-  const highs   = data.prices.map(p => p.high  || p.close);
-  const lows    = data.prices.map(p => p.low   || p.close);
-  const volumes = data.prices.map(p => p.volume || 0);
-  const labels  = data.prices.map(p => p.date);
-  const rsiVals = calcRSI(prices);
-  const up      = prices[prices.length-1] >= prices[0];
-  const color   = up ? '#1a7c4a' : '#c0392b';
-  const defOpts = { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false}}, scales:{x:{display:false}} };
-
-  // Build datasets
-  const datasets = [];
-
-  if (chartType === 'candle') {
-    // Candlestick simulation using floating bar chart
-    datasets.push({
-      label: 'OHLC',
-      data: prices.map((c, idx) => ({ x: labels[idx], o: opens[idx], h: highs[idx], l: lows[idx], c: c })),
-      backgroundColor: prices.map((c, idx) => c >= opens[idx] ? 'rgba(26,124,74,0.8)' : 'rgba(192,57,43,0.8)'),
-      borderColor: prices.map((c, idx) => c >= opens[idx] ? '#1a7c4a' : '#c0392b'),
-      borderWidth: 1,
-      barPercentage: 0.6,
-    });
-  } else {
-    // Line chart
-    datasets.push({ label: 'Price', data: prices, borderColor: color, borderWidth: 2, pointRadius: 0, tension: 0.3, fill: true, backgroundColor: up ? 'rgba(26,124,74,0.08)' : 'rgba(192,57,43,0.08)' });
+  // For 1W range, show only last 5 trading days from the 1mo data
+  let priceArr = prices_data.prices;
+  if (range === '1W' && priceArr.length > 5) {
+    priceArr = priceArr.slice(-5);
   }
 
-  // Moving averages
-  const maColors = { 20: 'rgba(26,95,168,0.9)', 50: 'rgba(212,135,10,0.9)', 200: 'rgba(107,107,101,0.7)' };
+  lastChartData = { ...prices_data, prices: priceArr };
+  const prices  = priceArr.map(p => p.close);
+  const opens   = priceArr.map(p => p.open  || p.close);
+  const highs   = priceArr.map(p => p.high  || p.close);
+  const lows    = priceArr.map(p => p.low   || p.close);
+  const volumes = priceArr.map(p => p.volume || 0);
+  const labels  = priceArr.map(p => p.date);
+  const rsiVals = calcRSI(prices);
+  const up      = prices[prices.length-1] >= prices[0];
+  const color   = up ? 'var(--gm)' : 'var(--r)';
+  const colorHex= up ? '#127842' : '#c01a1a';
+  const defOpts = { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false}}, scales:{x:{display:false}} };
+
+  const datasets = [];
+  if (chartType === 'candle') {
+    datasets.push({
+      label: 'OHLC',
+      data: prices.map((c, idx) => ({ x: labels[idx], o: opens[idx], h: highs[idx], l: lows[idx], c })),
+      backgroundColor: prices.map((c, idx) => c >= opens[idx] ? 'rgba(18,120,66,0.8)' : 'rgba(192,26,26,0.8)'),
+      borderColor: prices.map((c, idx) => c >= opens[idx] ? '#127842' : '#c01a1a'),
+      borderWidth: 1, barPercentage: 0.6,
+    });
+  } else {
+    datasets.push({ label:'Price', data:prices, borderColor:colorHex, borderWidth:2, pointRadius:0, tension:0.3, fill:true, backgroundColor: up ? 'rgba(18,120,66,0.08)' : 'rgba(192,26,26,0.08)' });
+  }
+
+  const maColors = { 20:'rgba(26,95,168,0.9)', 50:'rgba(180,100,0,0.9)', 200:'rgba(90,90,85,0.7)' };
   [20, 50, 200].forEach(period => {
     if (activeMA[period] && prices.length >= period) {
       const maData = calcMA(prices, period);
-      datasets.push({ label: period + '-Day MA', data: maData, borderColor: maColors[period], borderWidth: 1.5, pointRadius: 0, tension: 0.3, fill: false, spanGaps: false });
+      datasets.push({ label:period+'-Day MA', data:maData, borderColor:maColors[period], borderWidth:1.5, pointRadius:0, tension:0.3, fill:false, spanGaps:false });
     }
   });
 
@@ -2066,51 +2157,46 @@ async function renderPriceChart(sym, range) {
     options: {
       ...defOpts,
       plugins: { ...defOpts.plugins, tooltip: { callbacks: { label: c => '₹' + (c.raw?.c || c.raw)?.toLocaleString('en-IN', { maximumFractionDigits: 2 }) } } },
-      scales: { x: { display: false }, y: { ticks: { font: { size: 9 }, color: '#6b6b65', callback: v => '₹' + (v >= 1000 ? (v/1000).toFixed(1)+'K' : v) }, grid: { color: '#f0efe9' } } }
+      scales: { x: { display: false }, y: { ticks: { font:{size:9}, color:'#5c5c57', callback: v => '₹'+(v>=1000?(v/1000).toFixed(1)+'K':v) }, grid: { color:'#f0efe9' } } }
     }
   });
 
-  // Volume chart
   const volCtx = document.getElementById('volumeChart');
   if (volCtx && volumes.some(v => v > 0)) {
     volChartInst = new Chart(volCtx.getContext('2d'), {
-      type: 'bar',
-      data: { labels, datasets: [{ data: volumes, backgroundColor: prices.map((p, idx) => idx===0?'#6b6b65':p>=prices[idx-1]?'rgba(26,124,74,0.6)':'rgba(192,57,43,0.6)'), borderWidth: 0 }] },
-      options: { ...defOpts, scales: { x: { display: false }, y: { ticks: { font: { size: 9 }, color: '#6b6b65', callback: v => v>=1e7?(v/1e7).toFixed(1)+'Cr':v>=1e5?(v/1e5).toFixed(0)+'L':v }, grid: { color: '#f0efe9' } } } }
+      type:'bar',
+      data:{ labels, datasets:[{ data:volumes, backgroundColor:prices.map((p,idx)=>idx===0?'#6b6b65':p>=prices[idx-1]?'rgba(18,120,66,0.6)':'rgba(192,26,26,0.6)'), borderWidth:0 }] },
+      options:{ ...defOpts, scales:{ x:{display:false}, y:{ ticks:{ font:{size:9}, color:'#5c5c57', callback: v=>v>=1e7?(v/1e7).toFixed(1)+'Cr':v>=1e5?(v/1e5).toFixed(0)+'L':v }, grid:{color:'#f0efe9'} } } }
     });
   }
 
-  // RSI chart
   const rsiCtx = document.getElementById('rsiChart');
   if (rsiCtx) {
     rsiChartInst = new Chart(rsiCtx.getContext('2d'), {
-      type: 'line',
-      data: { labels, datasets: [
-        { data: rsiVals, borderColor: '#d4870a', borderWidth: 1.5, pointRadius: 0, tension: 0.3, fill: false },
-        { data: labels.map(() => 70), borderColor: 'rgba(192,57,43,0.3)', borderWidth: 1, borderDash: [4,3], pointRadius: 0 },
-        { data: labels.map(() => 30), borderColor: 'rgba(26,124,74,0.3)', borderWidth: 1, borderDash: [4,3], pointRadius: 0 },
+      type:'line',
+      data:{ labels, datasets:[
+        { data:rsiVals, borderColor:'#b35c00', borderWidth:1.5, pointRadius:0, tension:0.3, fill:false },
+        { data:labels.map(()=>70), borderColor:'rgba(192,26,26,0.3)', borderWidth:1, borderDash:[4,3], pointRadius:0 },
+        { data:labels.map(()=>30), borderColor:'rgba(18,120,66,0.3)', borderWidth:1, borderDash:[4,3], pointRadius:0 },
       ]},
-      options: { ...defOpts, scales: { x: { display: false }, y: { min: 0, max: 100, ticks: { font: { size: 9 }, color: '#6b6b65', stepSize: 25 }, grid: { color: '#f0efe9' } } } }
+      options:{ ...defOpts, scales:{ x:{display:false}, y:{ min:0, max:100, ticks:{ font:{size:9}, color:'#5c5c57', stepSize:25 }, grid:{color:'#f0efe9'} } } }
     });
-    // Update RSI insight text
     const lastRSI = rsiVals.filter(v => v !== null).pop();
     const rsiEl = document.getElementById('rsiInsight');
     if (rsiEl && lastRSI) {
-      const rsiTxt = lastRSI > 70 ? `RSI: <b style="color:var(--r)">${lastRSI.toFixed(0)} — Overbought zone.</b> The stock has risen fast. Watch for potential pullback.`
-        : lastRSI < 30 ? `RSI: <b style="color:var(--g)">${lastRSI.toFixed(0)} — Oversold zone.</b> The stock has fallen fast. A bounce is possible.`
-        : `RSI: <b style="color:var(--a)">${lastRSI.toFixed(0)} — Neutral zone</b> (30–70). No extreme momentum in either direction.`;
+      const rsiTxt = lastRSI > 70
+        ? `RSI <b style="color:var(--r)">${lastRSI.toFixed(0)}</b> — Overbought. Stock has risen fast. Watch for pullback.`
+        : lastRSI < 30
+        ? `RSI <b style="color:var(--g)">${lastRSI.toFixed(0)}</b> — Oversold. Stock has fallen fast. Bounce possible.`
+        : `RSI <b style="color:var(--a)">${lastRSI.toFixed(0)}</b> — Neutral zone (30–70). No extreme momentum.`;
       rsiEl.innerHTML = rsiTxt;
     }
   }
 
-  // Generate and show chart intelligence
   const insight = generateChartInsight(prices, volumes, rsiVals, range);
   const insightEl  = document.getElementById('chartInsight');
   const insightCnt = document.getElementById('chartInsightContent');
-  if (insightEl && insightCnt && insight) {
-    insightCnt.innerHTML = insight;
-    insightEl.style.display = 'block';
-  }
+  if (insightEl && insightCnt && insight) { insightCnt.innerHTML = insight; insightEl.style.display = 'block'; }
 }
 
 // ── SCORE TAB — loads real fundamentals and scores them ──────────
@@ -2440,12 +2526,16 @@ function buildFinancialsTab(s) {
     },
     {
       label: 'Promoter Confidence', learnKey:'promoter',
-      val: promoter > 0 ? promoter+'%' : 'N/A',
-      status: pledge > 30 ? 'r' : promoter >= 50 ? 'g' : promoter >= 25 ? 'a' : 'r',
-      good:  `${promoter}% promoter holding — founders have significant skin in the game. Pledge: ${pledge}%`,
-      watch: `${promoter}% promoter holding — moderate founder commitment${pledge>0?' | Pledge: '+pledge+'%':''}`,
-      bad:   pledge > 30 ? `⚠️ ${pledge}% of promoter shares are pledged as loan collateral — high risk of forced selling if price falls` : `Only ${promoter}% promoter holding — low founder confidence signal`,
-      edu:   'Promoter holding = founders\' own stake. High holding = aligned with shareholders. Pledged shares = borrowed against shares — if price falls, lenders force-sell, driving price down further.'
+      val: promoter > 0 ? promoter+'%' : 'Widely Held',
+      status: promoter === 0 ? 'a' : pledge > 30 ? 'r' : promoter >= 50 ? 'g' : promoter >= 25 ? 'a' : 'r',
+      good:  `${promoter}% promoter holding — founders committed${pledge===0?' · No shares pledged ✓':' · Pledge: '+pledge+'%'}`,
+      watch: promoter === 0
+        ? `No single promoter — widely held company. FII: ${s.fii||0}% · DII: ${s.dii||0}%. Check FII/DII trend for institutional confidence.`
+        : `${promoter}% promoter holding — moderate commitment${pledge>0?' | Pledge: '+pledge+'%':''}`,
+      bad:   pledge > 30
+        ? `⚠️ ${pledge}% promoter shares pledged as collateral. Risk: if price falls → lenders force-sell → price falls more.`
+        : `Only ${promoter}% holding. Investigate why founders reduced their stake.`,
+      edu:   'For traditional companies: high promoter holding = founder confidence. For new-age companies (Zomato, Paytm): no promoter is normal — they were VC-funded. Check FII/DII holding instead.'
     },
     {
       label: '52-Week Position', learnKey:'support',
@@ -2457,13 +2547,13 @@ function buildFinancialsTab(s) {
       edu:   '52-week position shows where the current price sits between the year\'s high and low. 0% = at the year\'s low. 100% = at the year\'s high.'
     },
     {
-      label: 'FII Institutional Interest', learnKey:'fii',
-      val: s.fii > 0 ? s.fii+'%' : 'N/A',
+      label: 'FII + DII Backing', learnKey:'fii',
+      val: (s.fii > 0 || s.dii > 0) ? `FII ${s.fii||0}% · DII ${s.dii||0}%` : 'N/A',
       status: s.fii >= 15 ? 'g' : s.fii >= 5 ? 'a' : 'r',
-      good:  `${s.fii}% FII holding — strong foreign institutional interest. Global funds have researched and invested in this stock.`,
-      watch: `${s.fii}% FII holding — moderate international interest. Room to grow.`,
-      bad:   `Low FII holding (${s.fii||0}%) — limited international institutional coverage.`,
-      edu:   'FII (Foreign Institutional Investors) like Blackrock and Vanguard only invest after deep research. High FII holding means professionals globally believe in this company.'
+      good:  `FII ${s.fii||0}% + DII ${s.dii||0}% = ${(s.fii||0)+(s.dii||0)}% institutional. Strong institutional backing — professionals researched and invested.`,
+      watch: `FII ${s.fii||0}% + DII ${s.dii||0}% — moderate institutional interest. Room for more professional investors.`,
+      bad:   `Low institutional holding (FII ${s.fii||0}% + DII ${s.dii||0}%). Less professional research coverage — higher information risk.`,
+      edu:   'FII (Blackrock, Vanguard etc) + DII (LIC, Mutual Funds) = institutional investors. They invest only after deep research. High combined holding means the smart money believes in this company.'
     },
     {
       label: 'Market Size (Cap)', learnKey:'compound',
@@ -3014,15 +3104,26 @@ async function loadIndices() {
   if (grid) {
     const show = data.indices.filter(i => i.name !== 'INDIA VIX').slice(0,6);
     grid.innerHTML = show.map(idx => {
-      const up  = idx.changePct >= 0;
-      const abs = idx.change != null ? (up?'+':'')+Math.round(idx.change)+' pts' : '';
+      const up       = idx.changePct >= 0;
+      const pctStr   = (up?'+':'')+Math.abs(idx.changePct||0).toFixed(2)+'%';
+      const absStr   = idx.change != null ? (up?'+':'')+Math.round(idx.change).toLocaleString('en-IN')+' pts' : '';
       const safeName = idx.name.replace(/\s/g,'_').replace(/[^A-Za-z0-9_]/g,'');
-      return `<div class="idx-card" onclick="showIndexDetail('${idx.name.replace(/'/g,'').replace(/"/g,'')}','${idx.symbol||''}')" style="cursor:pointer;transition:box-shadow 0.15s" onmouseover="this.style.boxShadow='var(--shadow-lg)'" onmouseout="this.style.boxShadow=''">
-        <div class="idx-name">${idx.name}</div>
-        <div class="idx-val">${idx.value?.toLocaleString('en-IN',{maximumFractionDigits:0})}</div>
-        <div class="idx-chg ${up?'up':'dn'}">${up?'▲':'▼'} ${Math.abs(idx.changePct||0).toFixed(2)}%</div>
-        ${abs ? `<div style="font-size:9px;color:${up?'var(--g)':'var(--r)'};font-weight:600;margin-top:1px">${abs}</div>` : ''}
-        <div style="font-size:9px;color:var(--muted);margin-top:3px" id="yoy-${safeName}">↗ Tap for 1Y / 5Y history</div>
+      const col      = up ? 'var(--g)' : 'var(--r)';
+      const bgBadge  = up ? 'var(--gl)' : 'var(--rl)';
+      return `<div class="idx-card" onclick="showIndexDetail('${idx.name.replace(/'/g,'').replace(/"/g,'')}','${idx.symbol||''}')"
+        style="cursor:pointer;transition:all 0.15s;position:relative"
+        onmouseover="this.style.boxShadow='var(--shadow-lg)';this.style.transform='translateY(-1px)'"
+        onmouseout="this.style.boxShadow='';this.style.transform=''">
+        <div class="idx-name" style="font-size:10px;margin-bottom:5px">${idx.name}</div>
+        <div class="idx-val" style="font-size:17px;font-weight:800;margin-bottom:5px">${idx.value?.toLocaleString('en-IN',{maximumFractionDigits:0})}</div>
+        <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+          <span style="background:${bgBadge};color:${col};font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px">${up?'▲':'▼'} ${pctStr}</span>
+          ${absStr ? `<span style="font-size:9px;color:${col};font-weight:600">${absStr}</span>` : ''}
+        </div>
+        <div style="font-size:9px;color:var(--muted);margin-top:5px;display:flex;align-items:center;gap:4px">
+          <span id="yoy-${safeName}" style="flex:1">1Y: —</span>
+          <span style="color:var(--border)">›</span>
+        </div>
       </div>`;
     }).join('');
     loadIndexYoY();
@@ -4139,9 +4240,14 @@ function updateUniStats() {
   const el1 = document.getElementById('uniLessons');
   const el2 = document.getElementById('uniStreak');
   const el3 = document.getElementById('uniScore');
-  if (el1) el1.textContent = uniProgress.lessons || 0;
-  if (el2) el2.textContent = uniProgress.streak  || 0;
-  if (el3) el3.textContent = uniProgress.xp       || 0;
+  if (el1) { el1.textContent = uniProgress.lessons || 0; }
+  if (el2) { el2.textContent = uniProgress.streak  || 0; }
+  if (el3) { el3.textContent = uniProgress.xp       || 0; }
+  // Animate XP number on update
+  if (el3 && (uniProgress.xp || 0) > 0) {
+    el3.style.transform = 'scale(1.2)';
+    setTimeout(() => { if(el3) el3.style.transform = 'scale(1)'; }, 300);
+  }
 }
 
 function checkStreak() {
@@ -4673,6 +4779,42 @@ const WHY_CHAINS = {
       ],
       principle:'Stock prices are expectations, not reality. The market already knew TCS was growing — it had already priced that in. What moves the stock is whether growth was BETTER or WORSE than what was already expected. This is why understanding analyst estimates is crucial.'
     },
+    {
+      date:'Currency Impact',
+      title:'Why does the Rupee\'s value affect your portfolio?',
+      nodes:[
+        { icon:'💱', bg:'rgba(95,61,196,0.2)', cause:'RBI raises interest rates or FII inflows increase', effect:'More demand for rupees → rupee strengthens (fewer rupees per dollar)' },
+        { icon:'💻', bg:'rgba(192,26,26,0.2)', cause:'Stronger rupee hurts IT exports', effect:'TCS earns same $1B but gets fewer rupees → profit in INR terms falls' },
+        { icon:'🛢️', bg:'rgba(18,120,66,0.2)', cause:'Stronger rupee helps oil importers', effect:'India pays less in rupees to buy the same barrels of crude → OMCs benefit' },
+        { icon:'🏦', bg:'rgba(20,88,168,0.2)', cause:'Weaker rupee raises import costs → inflation', effect:'RBI may be forced to keep rates high to control inflation → banks under pressure' },
+        { icon:'🎯', bg:'rgba(179,92,0,0.2)', cause:'Rupee level determines sector rotation', effect:'Weak rupee → buy IT, Pharma (exporters). Strong rupee → buy Aviation, OMCs (importers benefit).' },
+      ],
+      principle:'The rupee is the hidden lever behind sector rotation. Every 1% move in USD/INR changes the P&L of exporters and importers by meaningful amounts. Tracking the rupee weekly is as important as tracking Nifty.'
+    },
+    {
+      date:'RBI & Interest Rates',
+      title:'How does the RBI\'s decision room move your stocks?',
+      nodes:[
+        { icon:'🏛️', bg:'rgba(20,88,168,0.2)', cause:'RBI Monetary Policy Committee meets every 2 months', effect:'Sets the repo rate — the rate at which banks borrow from RBI' },
+        { icon:'🏦', bg:'rgba(192,26,26,0.15)', cause:'RBI raises repo rate to fight inflation', effect:'Banks\' cost of funds rises → home loans, car loans, business loans get more expensive' },
+        { icon:'🏠', bg:'rgba(192,26,26,0.2)', cause:'Loan EMIs rise for consumers', effect:'Less money to spend → demand for cars, homes, consumer goods falls → those sectors hurt' },
+        { icon:'💹', bg:'rgba(18,120,66,0.2)', cause:'RBI cuts rates when economy slows', effect:'Cheaper loans → more borrowing → more spending → economic stimulus → markets rise' },
+        { icon:'📊', bg:'rgba(179,92,0,0.2)', cause:'Bond yields move with rate decisions', effect:'When rates rise → bond yields rise → bonds become more attractive vs equities → FIIs may rotate' },
+      ],
+      principle:'The RBI rate cycle is a 2–3 year journey. During rate hike cycles: avoid high-debt companies and rate-sensitive sectors. During rate cut cycles: buy banking, real estate, and consumer discretionary early — they benefit most as loans get cheaper.'
+    },
+    {
+      date:'Global Geopolitics',
+      title:'Why do wars and sanctions move Indian stocks?',
+      nodes:[
+        { icon:'⚔️', bg:'rgba(192,26,26,0.2)', cause:'War or geopolitical conflict erupts (e.g. Russia-Ukraine 2022)', effect:'Global risk appetite falls → FIIs sell emerging market equities including India' },
+        { icon:'🛢️', bg:'rgba(179,92,0,0.2)', cause:'Conflict disrupts oil supply chains', effect:'Crude oil price spikes → India\'s import bill surges → rupee weakens → inflation rises' },
+        { icon:'🌾', bg:'rgba(192,26,26,0.15)', cause:'Food and commodity supply disrupted', effect:'Russia-Ukraine supplied 30% of global wheat → food inflation globally → RBI forced to hike rates' },
+        { icon:'💎', bg:'rgba(18,120,66,0.2)', cause:'Safe-haven flows surge', effect:'Global investors buy gold, USD, Swiss Franc → gold price rises → India\'s gold imports rise → rupee under pressure' },
+        { icon:'🛡️', bg:'rgba(20,88,168,0.2)', cause:'Defence spending globally increases', effect:'India\'s domestic defence companies (HAL, BEL, Bharat Forge) see order books surge → those stocks rally' },
+      ],
+      principle:'Geopolitical events create chaos but also opportunities. During Russia-Ukraine crisis (2022): crude rose → OMCs suffered → but defence stocks rallied 30-50%. The key question: who wins and who loses from THIS specific disruption? Not all stocks fall in a crisis.'
+    },
   ],
   hi: [
     {
@@ -4773,6 +4915,34 @@ const DAILY_CHALLENGES = {
       correct:2,
       explain:'Reliance Industries: largest Indian company by market cap, diversified across O2C (oil to chemicals), Jio Platforms (telecom), Reliance Retail, and now new energy. Mukesh Ambani is promoter and India\'s richest person. Revenue at scale makes it unique in Indian markets.'
     },
+    {
+      id:'d6', type:'Morning Brief', typeColor:'var(--a)', typeIcon:'🌅',
+      q:'The RBI raises the repo rate by 0.25%. Which sector will likely be MOST hurt in the short term?',
+      opts:['IT Services','Real Estate and Housing Finance','Pharmaceuticals','FMCG'],
+      correct:1,
+      explain:'When RBI raises repo rate, borrowing becomes more expensive. Real estate is directly hit — home loan EMIs rise, fewer people can afford to buy homes, housing finance companies\' margins are squeezed. IT earns in USD and is largely unaffected by domestic interest rates.'
+    },
+    {
+      id:'d7', type:'Pattern Spotter', typeColor:'var(--b)', typeIcon:'🔍',
+      q:'A stock has been in a strong uptrend for 3 months. The last 5 candles show: three green candles to a new high, then two red candles with rising volume. What does this suggest?',
+      opts:['The uptrend is strengthening — buy more','Potential short-term reversal — sellers entering on high volume at the high','This is normal — just price consolidation','Volume doesn\'t matter, only price direction'],
+      correct:1,
+      explain:'Red candles with rising volume at the top of an uptrend = sellers are actively entering at these highs. This is a distribution pattern — institutions selling to retail buyers who are excited about new highs. Not a guaranteed reversal, but a signal to be cautious about adding new positions.'
+    },
+    {
+      id:'d8', type:'Stock Detective', typeColor:'#7048e8', typeIcon:'🕵️',
+      q:'Which company am I? → Sells tea, soap, shampoo, ice cream → Revenue growing 8-10% annually → Over 3 million retail outlets in India → Promoter is a Dutch-British multinational → P/E around 55-60x',
+      opts:['ITC Limited','Nestlé India','Hindustan Unilever','Marico'],
+      correct:2,
+      explain:'Hindustan Unilever (HUL): India\'s largest FMCG company. Products include Lipton tea, Lux soap, Dove shampoo, Kwality Wall\'s ice cream. Parent is Unilever (Anglo-Dutch). 3.5M+ retail touchpoints. Premium P/E justified by brand strength and distribution moat.'
+    },
+    {
+      id:'d9', type:'Morning Brief', typeColor:'var(--a)', typeIcon:'🌅',
+      q:'Rupee falls from ₹83 to ₹87 per USD (weakens by ~5%). Which Indian sector benefits MOST directly?',
+      opts:['Aviation (IndiGo, Air India)','IT Services (TCS, Infosys)','Oil Marketing Companies (HPCL, BPCL)','Real Estate'],
+      correct:1,
+      explain:'IT companies earn revenue in USD but incur costs in INR. When rupee weakens, the same dollar revenue translates to more rupees — automatically boosting profits without any operational change. TCS earning $3B revenue at ₹83/$ = ₹24,900 Cr. At ₹87/$ = ₹26,100 Cr. That\'s ₹1,200 Cr of extra profit from currency alone.'
+    },
   ],
   hi: [
     {
@@ -4802,8 +4972,14 @@ function buildDojoMode() {
   const days = ['M','T','W','T','F','S','S'];
   const today = new Date().getDay(); // 0=Sun
   const streakBar = days.map((d, i) => {
-    const cls = i === (today === 0 ? 6 : today - 1) ? 'today' : i < (today === 0 ? 6 : today - 1) ? 'done' : 'miss';
-    return `<div class="streak-day ${cls}"><span>${d}</span></div>`;
+    const isToday = i === (today === 0 ? 6 : today - 1);
+    const isDone  = !isToday && i < (today === 0 ? 6 : today - 1);
+    const bg  = isToday ? '#b35c00' : isDone ? '#127842' : 'var(--border)';
+    const col = (isToday || isDone) ? '#fff' : 'var(--muted)';
+    const shadow = isToday ? 'box-shadow:0 2px 8px rgba(179,92,0,0.35)' : '';
+    return `<div style="width:34px;height:34px;border-radius:8px;background:${bg};color:${col};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-direction:column;gap:1px;${shadow}">
+      <span>${d}</span>
+    </div>`;
   }).join('');
 
   const dojoLabel = lang === 'hi' ? 'Dojo — रोज़ 3 मिनट। रोज़ एक नया सवाल। Streak बनाओ।' :
@@ -5063,6 +5239,124 @@ const DEEP_TOPICS = [
       ]
     }
   },
+  // ── SEMESTER 2 ADDITIONS ──────────────────────────────────────
+  {
+    id:'dt6', sem:2, semColor:'#1458a8', semBg:'var(--bl)',
+    title:{ en:'ROE — The Most Important Profitability Ratio', hi:'ROE — सबसे ज़रूरी Profitability Ratio', gu:'ROE — સૌ મહત્ત્વનો Profitability Ratio' },
+    time:'3 min',
+    layers:{
+      en:[
+        { label:'⚡ 60-Second Version', icon:'⚡',
+          content:'ROE (Return on Equity) = Net Profit ÷ Shareholders Equity × 100. It measures how efficiently a company uses your money. If you invest ₹100 in a company, ROE of 20% means the company generates ₹20 of profit per year from your ₹100. Consistently high ROE = a genuinely good business.' },
+        { label:'📊 Real Indian Example', icon:'📊',
+          content:'<div class="deep-live-example">🎨 <b>Asian Paints ROE: ~25-30%</b> — Uses minimal assets, generates high profits. That\'s a moat.<br>🏦 <b>HDFC Bank ROE: ~16-18%</b> — Good for a large bank. Banks naturally have lower ROE due to capital requirements.<br>⚡ <b>NTPC ROE: ~12-14%</b> — Utility companies typically have lower ROE — stable but not exceptional.<br>🚀 <b>TCS ROE: ~50%+</b> — Software has near-zero physical assets. Extraordinary capital efficiency.<br><br>Rule of thumb: ROE consistently above 15% = good. Above 20% = excellent. Compare within sector.</div>' },
+        { label:'📖 The Full Picture', icon:'📖',
+          content:'ROE has one major limitation: debt can artificially inflate it. If a company borrows heavily and uses that debt to generate profit, ROE looks high — but the risk is also high. Always check ROE alongside Debt/Equity ratio.<br><br>Du Pont Formula breaks ROE into 3 parts:<br>• Net Profit Margin (how much profit per sale)<br>• Asset Turnover (how efficiently assets generate revenue)<br>• Financial Leverage (how much debt is used)<br><br>The best ROE comes from high margins and efficient assets — not from leverage.' },
+        { label:'🧠 Test Your Understanding', icon:'🧠',
+          quiz:{ q:'Company A has ROE 30% and Debt/Equity 0.1. Company B has ROE 30% and Debt/Equity 3.5. Which is the better business?', opts:['Both are equally good — same ROE','Company A — same returns with almost no debt means genuine business quality','Company B — higher debt means more ambition','Cannot determine without revenue data'], correct:1, explain:'Same ROE with very different debt levels tells you Company A earns its returns through genuine business quality — good margins and efficient operations. Company B\'s ROE is artificially boosted by heavy borrowing, which adds financial risk. Always check ROE + Debt/Equity together.' } }
+      ],
+      hi:[
+        { label:'⚡ 60 सेकंड', icon:'⚡', content:'ROE = Net Profit ÷ Shareholders Equity × 100. आपके ₹100 पर कंपनी कितना कमाती है। 20% ROE = ₹20 profit per year on ₹100 आपका। Consistently high ROE = genuinely good business.' },
+        { label:'📊 Real Example', icon:'📊', content:'<div class="deep-live-example">Asian Paints ~25-30% · HDFC Bank ~16-18% · TCS 50%+ · NTPC ~12-14%<br>Rule: 15%+ = good, 20%+ = excellent. Sector में compare करें।</div>' },
+        { label:'📖 पूरी तस्वीर', icon:'📖', content:'ROE की limitation: ज़्यादा debt ROE artificially बढ़ा देता है। Always Debt/Equity के साथ देखें। Best ROE = high margins + efficient assets, not leverage.' },
+        { label:'🧠 Test', icon:'🧠', quiz:{ q:'Company A: ROE 30%, D/E 0.1. Company B: ROE 30%, D/E 3.5. बेहतर कौन?', opts:['Both same — ROE equal','Company A — same return, almost no debt = genuine quality','Company B — ज़्यादा debt = ज़्यादा ambition','Revenue देखे बिना नहीं बता सकते'], correct:1, explain:'Same ROE, बहुत कम debt = Company A की business quality genuine है। Company B का ROE heavy borrowing से आया है — risk ज़्यादा है।' } }
+      ],
+      gu:[
+        { label:'⚡ 60 સેકન્ડ', icon:'⚡', content:'ROE = Net Profit ÷ Shareholders Equity × 100. 20% ROE = ₹100 માં ₹20 profit. High ROE = genuine business quality.' },
+        { label:'📊 Real Example', icon:'📊', content:'<div class="deep-live-example">Asian Paints ~25-30% · HDFC Bank ~16-18% · TCS 50%+ · NTPC ~12-14%</div>' },
+        { label:'📖 સંપૂર્ણ', icon:'📖', content:'ROE limitation: Debt ROE artificially વધારે. Always Debt/Equity સાથે check કરો.' },
+        { label:'🧠 Test', icon:'🧠', quiz:{ q:'Company A: ROE 30%, D/E 0.1. Company B: ROE 30%, D/E 3.5. Better?', opts:['Both same','Company A — same return, no debt = genuine','Company B — debt = ambition','Cannot say'], correct:1, explain:'Company A earns ROE through genuine quality. Company B uses heavy debt — higher risk.' } }
+      ]
+    }
+  },
+  {
+    id:'dt7', sem:2, semColor:'#1458a8', semBg:'var(--bl)',
+    title:{ en:'Debt — When It Helps and When It Kills', hi:'Debt — कब मदद करता है, कब मारता है', gu:'Debt — ક્યારે મદદ, ક્યારે ઘાતક' },
+    time:'4 min',
+    layers:{
+      en:[
+        { label:'⚡ 60-Second Version', icon:'⚡',
+          content:'Debt/Equity ratio = Total Debt ÷ Shareholders Equity. Under 0.5 = safe. 0.5–1.5 = manageable. Above 2 = investigate carefully. Above 3 = danger zone for most businesses. Exception: banks and NBFCs borrow to lend — high D/E is their business model, not a red flag.' },
+        { label:'📊 Real Indian Example', icon:'📊',
+          content:'<div class="deep-live-example">✅ <b>TCS D/E: ~0</b> — Zero debt. Software business. Revenue comes before costs. Perfect.<br>✅ <b>Asian Paints D/E: ~0.1</b> — Tiny debt. Self-funded growth. Moat reinforced.<br>⚠️ <b>Adani Ports D/E: ~1.5</b> — Infrastructure needs capital. Manageable if revenue is stable.<br>❌ <b>Vodafone Idea D/E: >10</b> — Debt killing a once-great business. Revenue declining, debt compounding.<br><br>Key insight: High debt is fine when interest can be paid 3–5x over from operating profit. When interest > operating profit = survival mode.</div>' },
+        { label:'📖 The Full Picture', icon:'📖',
+          content:'Three debt ratios to know:<br><br><b>Debt/Equity</b> — snapshot of leverage. Quick check.<br><b>Interest Coverage Ratio</b> = EBIT ÷ Interest Expense. How many times can the company pay interest? Below 2x = stress. Above 5x = comfortable.<br><b>Net Debt/EBITDA</b> = (Total Debt - Cash) ÷ EBITDA. How many years of operating profit to pay off all debt? Below 2x = healthy. Above 4x = stretched.<br><br>Sector context matters: Utilities, infrastructure, and real estate operate with higher debt than FMCG or IT. Always compare within sector.' },
+        { label:'🧠 Test Your Understanding', icon:'🧠',
+          quiz:{ q:'A company has D/E of 2.5x but Interest Coverage of 8x. Is this concerning?', opts:['Yes — D/E above 2 is always dangerous','No — high interest coverage means the company comfortably pays interest from operations','Cannot determine','Yes — they should pay down debt immediately'], correct:1, explain:'D/E of 2.5 looks high, but Interest Coverage of 8x means the company earns 8x what it needs to pay interest — very comfortable. This could be infrastructure or capital-intensive business where leverage is normal and serviceable. Always look at Interest Coverage alongside D/E.' } }
+      ],
+      hi:[
+        { label:'⚡ 60 सेकंड', icon:'⚡', content:'D/E = Total Debt ÷ Equity. 0.5 से कम = safe. 1.5 तक = manageable. 2 से ऊपर = investigate. Banks को छोड़ें — उनका business model ही debt पर है।' },
+        { label:'📊 Real Example', icon:'📊', content:'<div class="deep-live-example">TCS D/E ~0 ✅ · Asian Paints D/E ~0.1 ✅ · Adani Ports ~1.5 ⚠️ · Vodafone Idea >10 ❌</div>' },
+        { label:'📖 पूरी तस्वीर', icon:'📖', content:'3 ratios: D/E (snapshot) · Interest Coverage = EBIT ÷ Interest (2x से ऊपर = ok, 5x = comfortable) · Net Debt/EBITDA (4x से नीचे = healthy). Sector में compare करें।' },
+        { label:'🧠 Test', icon:'🧠', quiz:{ q:'D/E 2.5x, Interest Coverage 8x। Concern?', opts:['हाँ — D/E 2 से ऊपर always dangerous','नहीं — 8x interest coverage comfortable है','पता नहीं','हाँ — debt pay down करें'], correct:1, explain:'D/E high लगता है लेकिन 8x coverage का मतलब बहुत comfortable है। Infrastructure companies में ऐसा normal है।' } }
+      ],
+      gu:[
+        { label:'⚡ 60 સેકન્ડ', icon:'⚡', content:'D/E = Total Debt ÷ Equity. <0.5 safe · <1.5 manageable · >2 investigate · >3 danger. Banks exception.' },
+        { label:'📊 Real Example', icon:'📊', content:'<div class="deep-live-example">TCS ~0 ✅ · Asian Paints ~0.1 ✅ · Adani Ports ~1.5 ⚠️ · Vodafone >10 ❌</div>' },
+        { label:'📖 સંપૂર્ણ', icon:'📖', content:'3 ratios: D/E · Interest Coverage (EBIT÷Interest, 5x+ = comfortable) · Net Debt/EBITDA (<4x healthy).' },
+        { label:'🧠 Test', icon:'🧠', quiz:{ q:'D/E 2.5x, Interest Coverage 8x. Concern?', opts:['Yes — D/E 2+ always bad','No — 8x coverage = comfortable','Cannot say','Yes — pay debt'], correct:1, explain:'8x interest coverage = very comfortable. D/E 2.5 alone does not tell full story.' } }
+      ]
+    }
+  },
+  // ── SEMESTER 4 — STRATEGY ────────────────────────────────────
+  {
+    id:'dt8', sem:4, semColor:'#5f3dc4', semBg:'var(--pl)',
+    title:{ en:'How to Pick the Best Stock in an Index', hi:'Index में सबसे अच्छा Stock कैसे चुनें', gu:'Index માં Best Stock કેવી રીતે પસંદ કરો' },
+    time:'5 min',
+    layers:{
+      en:[
+        { label:'⚡ 60-Second Version', icon:'⚡',
+          content:'Finding the best stock in an index follows a 4-step filter: (1) Eliminate weak businesses — debt too high, margins declining, promoter selling. (2) Find the quality survivor — consistent ROE, growing revenue, promoter holding stable. (3) Check valuation — is P/E reasonable vs sector average? (4) Confirm with chart — is price in an uptrend? Above 200-day MA? This is top-down filtering, used by every professional analyst.' },
+        { label:'📊 Real Indian Example', icon:'📊',
+          content:'<div class="deep-live-example"><b>Finding the best IT stock from Nifty IT (step by step):</b><br><br>Step 1 — Filter by ROE >20%: TCS ✅, Infosys ✅, Wipro ⚠️, HCL ✅<br>Step 2 — Filter by D/E <0.5: All pass (IT is debt-free sector)<br>Step 3 — Filter by revenue growth >10% YoY: TCS ✅, Infosys ✅, HCL ✅<br>Step 4 — Filter by P/E below sector avg: Check live data<br>Step 5 — Chart: which is above 200-day MA with rising RSI?<br><br>Result: 2–3 stocks survive all filters. These are your highest-conviction candidates.</div>' },
+        { label:'📖 The Full Picture', icon:'📖',
+          content:'The professional framework is called GARP — Growth At a Reasonable Price. Not just growth (you overpay). Not just cheap (value trap). Growth + reasonable valuation + quality.<br><br>5 screens to run on any index:<br>• ROE > 15% for 3 consecutive years<br>• Revenue growth > 10% YoY for last 3 years<br>• Debt/Equity < 1 (or sector-appropriate)<br>• P/E < 1.2x sector average<br>• Promoter holding stable or increasing<br><br>Any stock that passes all 5 screens is worth deeper research. Most will fail 1 or 2.' },
+        { label:'🧠 Test Your Understanding', icon:'🧠',
+          quiz:{ q:'You are filtering Nifty FMCG stocks. After applying ROE, debt, and growth filters, 3 stocks remain. The next step is to:', opts:['Immediately buy all 3','Check P/E vs sector average, then look at each stock\'s chart for entry timing','Only buy the one with the lowest price','Ask a financial influencer which to buy'], correct:1, explain:'Filtering gives you quality candidates — it does not give buy signals. After fundamental screening, you check valuation (P/E vs sector) and then technical entry (chart, MA, RSI). Only then do you decide which stock and at what price.' } }
+      ],
+      hi:[
+        { label:'⚡ 60 सेकंड', icon:'⚡', content:'4 steps: (1) Weak businesses हटाएं (high debt, falling margins, promoter selling) (2) Quality survivors खोजें (ROE, revenue growth, stable promoter) (3) Valuation check (P/E vs sector avg) (4) Chart confirm (uptrend, 200-day MA ऊपर)' },
+        { label:'📊 Real Example', icon:'📊', content:'<div class="deep-live-example">Nifty IT filter: ROE>20% → TCS✅ Infosys✅ · Revenue>10% YoY → TCS✅ INFY✅ HCL✅ · P/E check → Live data · Chart → 200-day MA कौन ऊपर?</div>' },
+        { label:'📖 पूरी तस्वीर', icon:'📖', content:'GARP = Growth At Reasonable Price. 5 screens: ROE>15% (3 years) · Revenue>10% · D/E<1 · P/E<1.2x sector avg · Promoter stable/increasing. सब pass = deeper research के लायक।' },
+        { label:'🧠 Test', icon:'🧠', quiz:{ q:'3 stocks filter pass हो गए। अगला step?', opts:['तीनों खरीदें','P/E check करें, फिर chart से entry timing','सबसे कम price वाला खरीदें','Influencer से पूछें'], correct:1, explain:'Filtering = quality candidates, buy signal नहीं। Valuation + chart entry बाद में देखें।' } }
+      ],
+      gu:[
+        { label:'⚡ 60 સેકન્ડ', icon:'⚡', content:'4 steps: (1) Weak eliminate (2) Quality find: ROE, growth, promoter (3) Valuation: P/E vs sector (4) Chart: uptrend, 200-day MA' },
+        { label:'📊 Real Example', icon:'📊', content:'<div class="deep-live-example">Nifty IT: ROE>20% → TCS✅ INFY✅ · Revenue>10% → TCS✅ HCL✅ · P/E + Chart check</div>' },
+        { label:'📖 સંપૂર્ણ', icon:'📖', content:'GARP = Growth At Reasonable Price. 5 screens: ROE>15% · Revenue>10% · D/E<1 · P/E<1.2x sector · Promoter stable.' },
+        { label:'🧠 Test', icon:'🧠', quiz:{ q:'3 stocks filter pass. Next step?', opts:['Buy all 3','Check P/E + chart entry','Lowest price buy','Ask influencer'], correct:1, explain:'Filtering = quality candidates. Valuation + chart entry timing next.' } }
+      ]
+    }
+  },
+  {
+    id:'dt9', sem:4, semColor:'#5f3dc4', semBg:'var(--pl)',
+    title:{ en:'Portfolio Construction — How Many Stocks and How Much in Each', hi:'Portfolio — कितने Stocks, कितना पैसा', gu:'Portfolio — કેટલા Stocks, કેટલા પૈસા' },
+    time:'4 min',
+    layers:{
+      en:[
+        { label:'⚡ 60-Second Version', icon:'⚡',
+          content:'Most retail investors hold too many stocks (30+) and achieve worse results than if they had held 10–15 good ones. Concentration in quality beats diversification into mediocrity. Rule of thumb: 10–15 stocks across at least 5–6 sectors. Never more than 20% in any single stock. Never more than 40% in any single sector.' },
+        { label:'📊 Real Indian Example', icon:'📊',
+          content:'<div class="deep-live-example"><b>A ₹5 lakh portfolio — real construction example:</b><br><br>IT (20%): TCS ₹60K + Infosys ₹40K<br>Banking (20%): HDFC Bank ₹1L<br>FMCG (15%): Asian Paints ₹40K + HUL ₹35K<br>Pharma (15%): Sun Pharma ₹75K<br>Auto (10%): Maruti ₹50K<br>Energy (10%): Reliance ₹50K<br>Cash (10%): ₹50K for opportunities<br><br>12 stocks · 7 sectors · No single stock >20% · Clear rationale for each</div>' },
+        { label:'📖 The Full Picture', icon:'📖',
+          content:'Position sizing is more important than stock selection. You can pick the right stock and still lose money if you put 40% of your portfolio in it and it falls 30%.<br><br>Kelly Criterion (simplified): Never risk more than 5% of your portfolio on any single position.<br><br>Three types of positions:<br>• Core (60–70% of portfolio): Large-cap, proven businesses. Low volatility. Long term.<br>• Tactical (20–30%): Mid-cap growth stories. Higher conviction, higher risk.<br>• Speculative (0–10%): High-risk, high-reward. Small-cap, turnaround, sector bets. Only money you can afford to lose.' },
+        { label:'🧠 Test Your Understanding', icon:'🧠',
+          quiz:{ q:'You have ₹1 lakh. You are very confident about one stock. How much should you put in it?', opts:['₹1 lakh — full conviction','₹50,000 — 50% is reasonable for high conviction','₹20,000 maximum — never more than 20% in one stock','₹5,000 — always spread thin'], correct:2, explain:'Even with extremely high conviction, never more than 20% in a single stock. Markets are uncertain. You can be right about the business and wrong about the timing. Position sizing protects you from being right but still losing because of concentration.' } }
+      ],
+      hi:[
+        { label:'⚡ 60 सेकंड', icon:'⚡', content:'10–15 stocks, 5–6 sectors. कोई एक stock >20% नहीं। कोई एक sector >40% नहीं। Quality concentration beats mediocrity diversification.' },
+        { label:'📊 Real Example', icon:'📊', content:'<div class="deep-live-example">₹5L portfolio: IT 20% · Banking 20% · FMCG 15% · Pharma 15% · Auto 10% · Energy 10% · Cash 10%<br>12 stocks · 7 sectors · कोई stock >20% नहीं</div>' },
+        { label:'📖 पूरी तस्वीर', icon:'📖', content:'Position sizing > Stock selection. Kelly (simplified): कोई position >5% risk नहीं।<br>Core (60-70%): Large-cap, long term · Tactical (20-30%): Mid-cap growth · Speculative (0-10%): High risk, जो खो सकते हो।' },
+        { label:'🧠 Test', icon:'🧠', quiz:{ q:'₹1L है। एक stock में full confidence। कितना लगाएं?', opts:['₹1L — full conviction','₹50K — 50% reasonable','₹20K maximum — 20% से ज़्यादा नहीं','₹5K — spread thin'], correct:2, explain:'20% maximum per stock — हमेशा। Right stock, wrong timing = loss if concentrated.' } }
+      ],
+      gu:[
+        { label:'⚡ 60 સેકન્ડ', icon:'⚡', content:'10-15 stocks, 5-6 sectors. Single stock max 20%. Single sector max 40%.' },
+        { label:'📊 Real Example', icon:'📊', content:'<div class="deep-live-example">₹5L: IT 20% · Banking 20% · FMCG 15% · Pharma 15% · Auto 10% · Energy 10% · Cash 10%</div>' },
+        { label:'📖 સંપૂર્ણ', icon:'📖', content:'Core 60-70% (large-cap) · Tactical 20-30% (mid-cap) · Speculative 0-10% (high risk).' },
+        { label:'🧠 Test', icon:'🧠', quiz:{ q:'₹1L. Full confidence 1 stock. How much?', opts:['₹1L','₹50K','₹20K max','₹5K'], correct:2, explain:'Max 20% per stock. Right stock, wrong timing = loss if over-concentrated.' } }
+      ]
+    }
+  },
 ];
 
 function buildDeepMode() {
@@ -5080,6 +5374,7 @@ function buildDeepMode() {
     1:{ en:'Semester 1 — Foundation', hi:'सेमेस्टर 1 — नींव', gu:'Semester 1 — પાયો' },
     2:{ en:'Semester 2 — Reading Stocks', hi:'सेमेस्टर 2 — Stocks पढ़ना', gu:'Semester 2 — Stocks વાંચવા' },
     3:{ en:'Semester 3 — Risk & Protection', hi:'सेमेस्टर 3 — Risk Management', gu:'Semester 3 — Risk' },
+    4:{ en:'Semester 4 — Strategy & Portfolio', hi:'सेमेस्टर 4 — Strategy और Portfolio', gu:'Semester 4 — Strategy' },
   };
 
   return `
@@ -5338,33 +5633,136 @@ function learnLink(key, extraStyle = '') {
 
 // ── START HERE — New User Onboarding Card ────────────────────────
 function buildStartHereCard() {
-  const visited  = localStorage.getItem('ss_learnvisited');
   const lessons  = uniProgress?.lessons || 0;
-  if (visited && lessons > 2) return ''; // hide after they have started
+  if (lessons > 2) return ''; // hide after they've started
 
-  const greet = {
-    en: { title: 'New to stock markets? Start here.', sub: 'Take 3 minutes. Read one real story. Then explore with confidence.', btn1: '📖 Read your first story →', btn2: '🔍 Search any stock' },
-    hi: { title: 'शेयर बाज़ार में नए हैं? यहाँ से शुरू करें।', sub: '3 मिनट लें। एक असली कहानी पढ़ें। फिर आत्मविश्वास से explore करें।', btn1: '📖 पहली कहानी पढ़ें →', btn2: '🔍 कोई भी शेयर खोजें' },
-    gu: { title: 'શેર બજારમાં નવા છો? અહીંથી શરૂ કરો.', sub: '3 મિનિટ. એક સાચી વાર્તા. પછી confidence થી explore.', btn1: '📖 પ્રથમ વાર્તા વાંચો →', btn2: '🔍 કોઈ પણ શેર શોધો' },
+  const content = {
+    en: {
+      eyebrow: 'Welcome to StockSense',
+      title: 'Your stock market journey starts here.',
+      steps: [
+        { icon:'📖', label:'Read a story', sub:'5 real Indian stocks · 3 min each' },
+        { icon:'📊', label:'See it on a chart', sub:'Live charts · Moving averages · RSI' },
+        { icon:'🔍', label:'Research any stock', sub:'Search TCS, HDFCBANK, ZOMATO…' },
+      ],
+      btn1: 'Start with a story →',
+      btn2: 'Search a stock',
+      disc: 'Free forever · No login needed · EN / हिन्दी / ગુજ',
+    },
+    hi: {
+      eyebrow: 'StockSense में आपका स्वागत है',
+      title: 'शेयर बाज़ार की आपकी यात्रा यहाँ से शुरू होती है।',
+      steps: [
+        { icon:'📖', label:'एक कहानी पढ़ें', sub:'5 असली Indian stocks · 3 मिनट' },
+        { icon:'📊', label:'Chart पर देखें', sub:'Live charts · Moving averages · RSI' },
+        { icon:'🔍', label:'कोई भी stock खोजें', sub:'TCS, HDFCBANK, ZOMATO…' },
+      ],
+      btn1: 'कहानी से शुरू करें →',
+      btn2: 'Stock खोजें',
+      disc: 'बिल्कुल मुफ़्त · No login · EN / हिन्दी / ગુજ',
+    },
+    gu: {
+      eyebrow: 'StockSense માં આપનું સ્વાગત',
+      title: 'શેર બજારની તમારી સફર અહીંથી શરૂ.',
+      steps: [
+        { icon:'📖', label:'વાર્તા વાંચો', sub:'5 real Indian stocks · 3 min' },
+        { icon:'📊', label:'Chart પર જુઓ', sub:'Live charts · Moving averages · RSI' },
+        { icon:'🔍', label:'Stock શોધો', sub:'TCS, HDFCBANK, ZOMATO…' },
+      ],
+      btn1: 'વાર્તાથી શરૂ કરો →',
+      btn2: 'Stock શોધો',
+      disc: 'સંપૂર્ણ મફત · No login · EN / हिन्दी / ગુજ',
+    },
   };
-  const g = greet[lang] || greet.en;
+  const c = content[lang] || content.en;
 
-  return `
-    <div id="startHereCard" style="background:linear-gradient(135deg,#0b3d1e,#0d4d2a);border-radius:var(--r16);padding:18px;margin-bottom:14px;position:relative;overflow:hidden">
-      <div style="position:absolute;right:-15px;bottom:-15px;font-size:70px;opacity:0.08">🎓</div>
-      <div style="font-size:16px;font-weight:700;font-family:'DM Serif Display',serif;color:#fff;margin-bottom:5px">${g.title}</div>
-      <div style="font-size:11px;color:rgba(255,255,255,0.6);margin-bottom:14px;line-height:1.55">${g.sub}</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button onclick="showPage('learn');switchUniMode('story',null);document.getElementById('startHereCard').style.display='none'"
-          style="background:var(--gm);color:#fff;border:none;border-radius:10px;padding:11px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s">
-          ${g.btn1}
-        </button>
-        <button onclick="document.getElementById('homeSearch').focus();document.getElementById('startHereCard').style.display='none'"
-          style="background:rgba(255,255,255,0.12);color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:10px;padding:11px 16px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">
-          ${g.btn2}
-        </button>
-      </div>
-    </div>`;
+  return `<div id="startHereCard" style="
+    background: linear-gradient(145deg, #0a2e18 0%, #0d3d22 50%, #0a2a1a 100%);
+    border-radius: 20px;
+    padding: 20px 18px 18px;
+    margin-bottom: 14px;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(18,120,66,0.3);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+  ">
+    <!-- Background decoration -->
+    <div style="position:absolute;top:-20px;right:-20px;width:120px;height:120px;border-radius:50%;background:rgba(18,120,66,0.08)"></div>
+    <div style="position:absolute;bottom:-30px;left:-10px;width:80px;height:80px;border-radius:50%;background:rgba(18,120,66,0.05)"></div>
+
+    <!-- Eyebrow -->
+    <div style="font-size:9px;font-weight:700;color:rgba(18,120,66,0.9);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:6px">${c.eyebrow}</div>
+
+    <!-- Title -->
+    <div style="font-size:17px;font-weight:700;font-family:'DM Serif Display',serif;color:#fff;line-height:1.3;margin-bottom:16px">${c.title}</div>
+
+    <!-- 3-step path -->
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px">
+      ${c.steps.map((step, i) => `
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="
+            width:36px;height:36px;border-radius:10px;
+            background:rgba(255,255,255,0.07);
+            display:flex;align-items:center;justify-content:center;
+            font-size:18px;flex-shrink:0;
+            border:1px solid rgba(255,255,255,0.08);
+          ">${step.icon}</div>
+          <div style="flex:1">
+            <div style="font-size:12px;font-weight:700;color:#fff;margin-bottom:1px">${step.label}</div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.45)">${step.sub}</div>
+          </div>
+          <div style="
+            width:20px;height:20px;border-radius:50%;
+            background:rgba(18,120,66,0.25);
+            display:flex;align-items:center;justify-content:center;
+            font-size:11px;color:rgba(18,120,66,0.9);font-weight:700;
+          ">${i+1}</div>
+        </div>`).join('')}
+    </div>
+
+    <!-- CTA buttons -->
+    <div style="display:flex;gap:8px">
+      <button onclick="showPage('learn');switchUniMode('story',null);document.getElementById('startHereCard').style.display='none'"
+        style="
+          flex:1;
+          background:#127842;
+          color:#fff;
+          border:none;
+          border-radius:12px;
+          padding:13px 16px;
+          font-size:12px;font-weight:700;
+          cursor:pointer;
+          font-family:'DM Sans',sans-serif;
+          letter-spacing:0.2px;
+          box-shadow:0 2px 12px rgba(18,120,66,0.4);
+          transition:all 0.2s;
+        "
+        onmouseover="this.style.background='#0d6e3a'"
+        onmouseout="this.style.background='#127842'">
+        ${c.btn1}
+      </button>
+      <button onclick="document.getElementById('homeSearch').focus();document.getElementById('startHereCard').style.display='none'"
+        style="
+          background:rgba(255,255,255,0.08);
+          color:rgba(255,255,255,0.85);
+          border:1px solid rgba(255,255,255,0.12);
+          border-radius:12px;
+          padding:13px 14px;
+          font-size:12px;font-weight:600;
+          cursor:pointer;
+          font-family:'DM Sans',sans-serif;
+          white-space:nowrap;
+          transition:all 0.2s;
+        "
+        onmouseover="this.style.background='rgba(255,255,255,0.12)'"
+        onmouseout="this.style.background='rgba(255,255,255,0.08)'">
+        ${c.btn2}
+      </button>
+    </div>
+
+    <!-- Disclaimer -->
+    <div style="font-size:9px;color:rgba(255,255,255,0.3);margin-top:12px;text-align:center;letter-spacing:0.3px">${c.disc}</div>
+  </div>`;
 }
 
 // ── RESEARCH GUIDED WALKTHROUGH ──────────────────────────────────
