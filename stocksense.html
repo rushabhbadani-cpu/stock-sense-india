@@ -4556,10 +4556,11 @@ function switchUniMode(mode, el) {
   }
   const content = document.getElementById('uniContent');
   if (!content) return;
-  if      (mode === 'story')        content.innerHTML = buildStoryMode();
-  else if (mode === 'chartschool')  content.innerHTML = buildChartSchool();
-  else if (mode === 'fundamentals') content.innerHTML = buildFundamentalsSchool();
-  else if (mode === 'why')          content.innerHTML = buildWhyMode();
+  if      (mode === 'story')                    content.innerHTML = buildStoryMode();
+  else if (mode === 'chartschool' || mode === 'chart') content.innerHTML = buildChartSchool();
+  else if (mode === 'fundamentals')             content.innerHTML = buildFundamentalsSchool();
+  else if (mode === 'why')                      content.innerHTML = buildWhyMode();
+  else if (mode === 'dojo' || mode === 'deep')  content.innerHTML = buildChartSchool(); // redirect old modes
 }
 
 // ═══════════════════════════════════════════════════════════════
