@@ -555,6 +555,9 @@ button{font-family:"DM Sans",sans-serif;cursor:pointer}
         </div>
       </div>
 
+      <!-- DAILY MARKET BRIEF — auto-generated from live index data -->
+      <div id="dailyBriefWrap" style="margin-bottom:14px"></div>
+
       <!-- TOP MOVERS -->
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
         <div class="sec-title" style="margin:0" id="moversLabel">Top Movers</div>
@@ -708,11 +711,12 @@ button{font-family:"DM Sans",sans-serif;cursor:pointer}
       </div>
       <div class="ring" id="ring"><div class="rn" id="rScore">-</div><div class="rd">/10</div></div>
     </div>
-    <div class="pstrip">
+    <div class="pstrip" style="grid-template-columns:repeat(5,1fr)">
       <div class="pc"><div class="plbl" id="lPrice">Price</div><div class="pval" id="vPrice">-</div></div>
       <div class="pc"><div class="plbl" id="lToday">Today %</div><div class="pval" id="vToday">-</div></div>
       <div class="pc"><div class="plbl">Change ₹</div><div class="pval" id="vChange">-</div></div>
       <div class="pc"><div class="plbl">P/E</div><div class="pval" id="vPE">-</div></div>
+      <div class="pc"><div class="plbl">1Y Return</div><div class="pval" id="v1Y" style="font-size:11px">—</div></div>
     </div>
     <!-- Day movement range bar -->
     <div id="dayRangeBar" style="display:none;padding:10px 16px;border-bottom:0.5px solid var(--border2)">
@@ -846,7 +850,7 @@ button{font-family:"DM Sans",sans-serif;cursor:pointer}
           <input class="port-inp" id="paperQtyInp" type="number" placeholder="Quantity" min="1" style="margin:0" oninput="paperCalcTotal()"/>
           <div id="paperTotalPreview" style="font-size:11px;color:var(--muted);display:flex;align-items:center;padding:0 4px">Total: —</div>
         </div>
-        <button class="port-add-btn" onclick="paperBuy()" style="background:var(--g)">Buy (Virtual) →</button>
+        <button class="port-add-btn" onclick="showPreTradeChecklist()" style="background:var(--g)">Buy (Virtual) →</button>
       </div>
 
       <!-- Paper holdings -->
@@ -1839,6 +1843,20 @@ function renderStock(sym, s) {
   if(el('vPE')) el('vPE').textContent = s.pe > 0 ? s.pe.toFixed(1) : 'N/A';
   if(el('vMktCap')) el('vMktCap').textContent = s.mktCap ? fmtMktCap(s.mktCap) : 'N/A';
 
+  // Fetch and show 1Y return on header
+  const v1Y = el('v1Y');
+  if (v1Y) {
+    v1Y.textContent = '...';
+    api('history', { symbol: s.nseCode || sym, range: '1y', interval: '1mo' }).then(h => {
+      if (!h?.prices?.length) { v1Y.textContent = '—'; return; }
+      const p   = h.prices;
+      const ret = ((p[p.length-1].close - p[0].close) / p[0].close * 100).toFixed(1);
+      const up1 = parseFloat(ret) >= 0;
+      v1Y.textContent  = (up1?'+':'') + ret + '%';
+      v1Y.className    = 'pval ' + (up1?'up':'dn');
+    }).catch(() => { v1Y.textContent = '—'; });
+  }
+
   // Day movement range bar
   const drBar = el('dayRangeBar');
   if (drBar && s.high > 0 && s.low > 0) {
@@ -2314,6 +2332,10 @@ function buildScoreTab(s) {
         <div style="font-size:10px;color:var(--muted);line-height:1.5">${row.explain}</div>
       </div>`).join('')}
 
+    <!-- SENTIMENT SCORE — synthesises valuation + momentum + fundamentals -->
+    <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;margin:14px 0 10px">SENTIMENT SNAPSHOT</div>
+    ${buildSentimentScore(s)}
+
     <div id="scoreFinBox">
       <div style="background:var(--bl);border-radius:9px;padding:10px 12px;margin-top:4px;display:flex;align-items:center;gap:10px;cursor:pointer" onclick="loadScoreFundamentals('${s.nseCode||currentSym}')">
         <div style="font-size:20px">📊</div>
@@ -2326,6 +2348,101 @@ function buildScoreTab(s) {
     </div>
     <div class="disc" style="margin-top:8px">${t('scoreDisc')}</div>`;
   return html;
+}
+
+// ── SENTIMENT SCORE — combines valuation + momentum + institutional interest ──
+function buildSentimentScore(s) {
+  const pe      = s.pe || 0;
+  const pct52   = s.w52High > s.w52Low ? (s.price - s.w52Low)/(s.w52High - s.w52Low) : 0.5;
+  const prom    = s.promoter || 0;
+  const fii     = s.fii || 0;
+  const todayPct= Math.abs(s.changePct || 0);
+  const todayUp = (s.changePct || 0) >= 0;
+  const bench   = BENCH[s.sector] || { pe: 25 };
+
+  // 5 sentiment dimensions — each 0-100
+  const dims = [
+    {
+      label: 'Valuation',
+      score: pe <= 0 ? 50 : pe < bench.pe * 0.6 ? 85 : pe < bench.pe ? 70 : pe < bench.pe * 1.3 ? 50 : pe < bench.pe * 2 ? 30 : 15,
+      icon: '💰',
+      bull: pe > 0 && pe < bench.pe,
+      note: pe > 0 ? `P/E ${pe.toFixed(1)}x vs sector ${bench.pe}x — ${pe < bench.pe ? 'below average (value zone)' : pe < bench.pe*1.3 ? 'near average' : 'premium valuation'}` : 'P/E not available',
+    },
+    {
+      label: 'Price Momentum',
+      score: Math.round(40 + pct52 * 35 + (todayUp ? Math.min(todayPct*3, 20) : -Math.min(todayPct*3, 20))),
+      icon: '📈',
+      bull: pct52 > 0.4 && todayUp,
+      note: `At ${Math.round(pct52*100)}% of 52W range · Today ${todayUp?'+':''}${s.changePct?.toFixed(2)||0}%`,
+    },
+    {
+      label: 'Promoter Confidence',
+      score: prom === 0 ? 50 : s.pledgePct > 30 ? 20 : prom >= 60 ? 85 : prom >= 40 ? 65 : prom >= 20 ? 45 : 25,
+      icon: '🤝',
+      bull: prom >= 40 && (s.pledgePct || 0) < 20,
+      note: prom === 0 ? 'Widely held — check FII/DII as confidence proxy' : `${prom}% holding · ${s.pledgePct||0}% pledged`,
+    },
+    {
+      label: 'Institutional Interest',
+      score: Math.round(Math.min(95, 30 + fii * 2 + (s.dii||0) * 1.5)),
+      icon: '🏛️',
+      bull: fii >= 10,
+      note: `FII ${fii||0}% + DII ${s.dii||0}% = ${(fii||0)+(s.dii||0)}% institutional`,
+    },
+    {
+      label: 'Market Position',
+      score: s.mktCap > 1e12 ? 80 : s.mktCap > 2e11 ? 65 : s.mktCap > 5e10 ? 50 : s.mktCap > 0 ? 35 : 50,
+      icon: '🏢',
+      bull: s.mktCap > 2e11,
+      note: s.mktCap > 0 ? `${fmtMktCap(s.mktCap)} · ${s.mktCap > 1e12 ? 'Large cap' : s.mktCap > 2e11 ? 'Mid-large cap' : s.mktCap > 5e10 ? 'Mid cap' : 'Small cap'}` : 'Market cap unavailable',
+    },
+  ];
+
+  const clampedDims = dims.map(d => ({ ...d, score: Math.max(5, Math.min(95, d.score)) }));
+  const avg    = Math.round(clampedDims.reduce((a, d) => a + d.score, 0) / clampedDims.length);
+  const bulls  = clampedDims.filter(d => d.bull).length;
+  const label  = avg >= 70 ? 'Bullish' : avg >= 55 ? 'Cautiously Positive' : avg >= 40 ? 'Neutral' : avg >= 25 ? 'Cautiously Negative' : 'Bearish';
+  const emoji  = avg >= 70 ? '🟢' : avg >= 55 ? '🟡' : avg >= 40 ? '⬜' : avg >= 25 ? '🟠' : '🔴';
+  const col    = avg >= 60 ? 'var(--g)' : avg >= 45 ? 'var(--a)' : 'var(--r)';
+  const bg     = avg >= 60 ? 'var(--gl)' : avg >= 45 ? 'var(--al)' : 'var(--rl)';
+
+  return `
+    <div style="background:${bg};border-radius:var(--r16);padding:14px;margin-bottom:10px;border:0.5px solid ${col}40">
+      <!-- Overall -->
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
+        <div style="text-align:center;flex-shrink:0">
+          <div style="font-size:36px;font-weight:800;font-family:'DM Serif Display',serif;color:${col};line-height:1">${avg}</div>
+          <div style="font-size:9px;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:0.5px">/ 100</div>
+        </div>
+        <div>
+          <div style="font-size:15px;font-weight:700;color:${col};margin-bottom:3px">${emoji} ${label}</div>
+          <div style="font-size:11px;color:var(--muted);line-height:1.5">${bulls}/5 signals positive · Based on live market data</div>
+        </div>
+      </div>
+      <!-- Score bar -->
+      <div style="height:5px;background:rgba(0,0,0,0.08);border-radius:3px;overflow:hidden;margin-bottom:14px">
+        <div style="height:100%;width:${avg}%;background:${col};border-radius:3px;transition:width 0.8s ease"></div>
+      </div>
+      <!-- 5 dimensions -->
+      ${clampedDims.map(d => `
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <div style="font-size:14px;flex-shrink:0">${d.icon}</div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+              <div style="font-size:10px;font-weight:700;color:var(--text)">${d.label}</div>
+              <div style="font-size:10px;font-weight:800;color:${d.score>=60?'var(--g)':d.score>=40?'var(--a)':'var(--r)'}">${d.score}</div>
+            </div>
+            <div style="height:3px;background:var(--border);border-radius:2px;overflow:hidden">
+              <div style="height:100%;width:${d.score}%;background:${d.score>=60?'var(--gm)':d.score>=40?'var(--a)':'var(--r)'};border-radius:2px;transition:width 0.6s"></div>
+            </div>
+            <div style="font-size:9px;color:var(--muted);margin-top:2px;line-height:1.4">${d.note}</div>
+          </div>
+        </div>`).join('')}
+      <div style="font-size:9px;color:var(--muted);margin-top:8px;line-height:1.5;padding-top:8px;border-top:0.5px solid ${col}30">
+        ⚠️ Sentiment score is derived from live Yahoo Finance data — valuation, momentum, institutional interest, and market position. It is an educational tool, not a buy or sell recommendation.
+      </div>
+    </div>`;
 }
 
 async function loadScoreFundamentals(sym) {
@@ -3496,6 +3613,73 @@ function updateMoodCard(nifty, sensex, vix) {
   // Keep moodIdx for backward compat (ticker)
   const moodIdx = document.getElementById('moodIdx');
   if (moodIdx) moodIdx.innerHTML = '';
+
+  // Generate and inject Daily Brief
+  buildDailyBrief(nifty, sensex, vix, { up, pct, moveSize, isOpen, isWeekend });
+}
+
+// ── DAILY MARKET BRIEF — plain English market context ────────────
+function buildDailyBrief(nifty, sensex, vix, { up, pct, moveSize, isOpen, isWeekend }) {
+  const wrap = document.getElementById('dailyBriefWrap');
+  if (!wrap) return;
+
+  const now      = new Date();
+  const dateStr  = now.toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'short' });
+  const vixVal   = vix?.value || 0;
+  const niftyChg = nifty.change || 0;
+  const niftyPt  = Math.round(Math.abs(niftyChg));
+
+  // Generate 3 context sentences based on market conditions
+  const sentences = [];
+
+  // Sentence 1: What happened
+  if (pct < 0.3)       sentences.push(`Markets were flat today — Nifty ${up?'edged up':'slipped'} ${pct.toFixed(2)}% (${niftyPt} pts). No strong directional move.`);
+  else if (pct < 0.8)  sentences.push(`Markets made a modest ${up?'gain':'loss'} — Nifty ${up?'rose':'fell'} ${pct.toFixed(2)}% (${niftyPt} pts). Selective buying${up?'':'/selling'} across sectors.`);
+  else if (pct < 1.8)  sentences.push(`A notable session — Nifty ${up?'gained':'fell'} ${pct.toFixed(2)}% (${niftyPt} pts). This kind of move typically reflects ${up?'broad institutional buying or positive news':'FII selling or negative macro news'}.`);
+  else                 sentences.push(`Sharp ${up?'rally':'selloff'} today — Nifty ${up?'surged':'plunged'} ${pct.toFixed(2)}% (${niftyPt} pts). Moves above ${pct.toFixed(0)}% in a single session usually indicate ${up?'strong buying momentum or major positive catalyst':'panic selling or significant negative event'}.`);
+
+  // Sentence 2: Volatility context
+  if (vixVal > 25)     sentences.push(`India VIX at ${vixVal.toFixed(1)} — fear is elevated. High VIX means options are expensive and traders expect more volatility. Historically, extreme VIX readings (25+) often precede reversals.`);
+  else if (vixVal > 15) sentences.push(`India VIX at ${vixVal.toFixed(1)} — moderate volatility. Markets are somewhat uncertain but not fearful. Normal trading conditions.`);
+  else if (vixVal > 0) sentences.push(`India VIX at ${vixVal.toFixed(1)} — low volatility, calm market conditions. Low VIX often accompanies steady uptrends, but can also signal complacency before a correction.`);
+
+  // Sentence 3: What to watch
+  const watchItems = {
+    up:   ['Watch whether Nifty can sustain above today\'s close tomorrow.', 'Check if IT and Banking are both participating — broad-based rally is healthier than sector-specific.', 'Rising markets on low volume can be short-lived — check tomorrow\'s volume.'],
+    down: ['Watch if support levels hold — Nifty 50 support zones are key.', 'Check FII data tomorrow morning — sustained FII selling drives extended corrections.', 'Stocks falling on high volume need more time to recover than those falling on low volume.'],
+  };
+  const watchArr = up ? watchItems.up : watchItems.down;
+  sentences.push(watchArr[Math.floor(niftyPt % 3)]);
+
+  // Status
+  const status = isWeekend ? '📅 Weekend' : isOpen ? '🟢 Live' : '🔴 Closed';
+
+  const title = {
+    en: 'Daily Market Brief',
+    hi: 'आज का Market Brief',
+    gu: 'Daily Market Brief',
+  }[lang] || 'Daily Market Brief';
+
+  wrap.innerHTML = `
+    <div style="background:var(--card);border-radius:var(--r16);padding:14px;border:0.5px solid var(--border);box-shadow:var(--shadow)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-size:12px;font-weight:700;color:var(--text)">${title}</div>
+        <div style="font-size:9px;font-weight:700;color:var(--muted)">${status} · ${dateStr}</div>
+      </div>
+      <div style="font-size:11px;line-height:1.75;color:var(--text)">
+        ${sentences.map((s, i) => `<div style="${i>0?'margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border2)':''}">${s}</div>`).join('')}
+      </div>
+      <div style="margin-top:12px;display:flex;gap:8px">
+        <button onclick="showPage('learn');switchUniMode('why',null)"
+          style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:var(--r8);padding:9px;font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--text)">
+          🤔 Learn Why Markets Move
+        </button>
+        <button onclick="showPage('research')"
+          style="flex:1;background:var(--gm);border:none;border-radius:var(--r8);padding:9px;font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;color:#fff">
+          🔍 Analyse a Stock
+        </button>
+      </div>
+    </div>`;
 }
 
 // ── HOME — DARK HORSE (auto-calculated) ─────────────────────────
@@ -4509,25 +4693,158 @@ const STORIES = {
         explain:'Balance sheet में बढ़ता NPA सबसे पहला और साफ signal था। जो quarterly results ध्यान से पढ़ता — वो पहले ही समझ जाता। Stock price बाद में गिरा।'
       }
     },
+    {
+      id:'s3', emoji:'🎨', bg:'linear-gradient(135deg,#0e1820,#0e3060)',
+      chapter:'अध्याय 3 · Compounding',
+      title:'Asian Paints: 14 साल की boring growth से 15x',
+      hook:'Asian Paints ने कभी headlines नहीं बनाए। कोई scandal नहीं। कोई celebrity CEO नहीं। बस paint। और फिर भी 2010 से 2024 तक 15x return।',
+      body:[
+        'क्यों? Asian Paints के पास वो था जिसे Warren Buffett "moat" कहते हैं। 70,000+ dealers का distribution network, छोटे-छोटे शहरों तक। जब एक painter एक brand सीख लेता है, वो switch नहीं करता।',
+        'Business predictable था। Revenue 12-15% हर साल बढ़ता — एकदम clockwork की तरह। Profit margin stable। Zero debt। Management के पास 52% shares।',
+        'Stock कभी "सस्ता" नहीं था। P/E अक्सर 50-60x था। लेकिन quality ने premium justify किया। साल दर साल वही boring growth। और वो boring growth compound होकर extraordinary wealth बनी।',
+      ],
+      highlight:'सबसे अच्छे investments boring होते हैं। Asian Paints ने कभी headlines नहीं बनाए — बस हर साल चुपचाप 12-15% बढ़ता रहा।',
+      lesson:'💡 मुख्य सीख: ₹1 लाख at 15% for 20 years = ₹16 लाख। एक great year से नहीं — consistent boring growth से।',
+      quiz:{
+        q:'Asian Paints इतने साल बढ़ता रहा क्योंकि:',
+        opts:['हर साल नए products launch किए','70,000+ dealers का distribution जिसे competitors replicate नहीं कर सके','Government ने special contracts दिए','India की सबसे सस्ती paint थी'],
+        correct:1,
+        explain:'Asian Paints का moat उसका distribution network था — छोटे शहरों तक जहाँ कोई competitor नहीं पहुँचा था। इससे market share लेना बहुत मुश्किल था, चाहे competitor का product कितना भी अच्छा हो।'
+      }
+    },
+    {
+      id:'s4', emoji:'📱', bg:'linear-gradient(135deg,#0e0e20,#1a1a40)',
+      chapter:'अध्याय 4 · Recovery',
+      title:'Zomato: ₹40 से ₹150 — Accumulation पढ़ना',
+      hook:'Zomato 2021 में ₹116 पर list हुआ। 2022 में ₹40 तक गिरा। हर analyst ने कहा business model टूट गया। फिर 2023 में double हुआ। फिर और double।',
+      body:[
+        'अगर आप chart ध्यान से देखते तो कुछ दिखता। Mid-2022 से early 2023 तक stock ₹40-₹70 के बीच sideways था। Volume सूख रहा था — sellers थके जा रहे थे। इसे Accumulation कहते हैं।',
+        'साथ में fundamental picture बदल रही थी। Revenue 70-80% YoY बढ़ रहा था। Losses हर quarter कम हो रहे थे। Blinkit 100%+ grow कर रहा था। Management clearly communicate कर रहा था।',
+        'फिर August 2023 में Zomato ने पहला quarterly profit announce किया। Stock एक दिन में 15% उछला, massive volume पर। जो fundamentals और accumulation दोनों देख रहे थे — वो already positioned थे।',
+      ],
+      highlight:'Chart ने months पहले accumulation दिखाया (sideways, falling volume) — fundamental news ने बस confirm किया जो smart money पहले से कर रहा था।',
+      lesson:'💡 मुख्य सीख: Long sideways base + falling volume = sellers थक रहे हैं। जब अच्छी fundamental news आती है accumulation के दौरान — वो move real और sustained होता है।',
+      quiz:{
+        q:'Zomato recover होने से पहले chart पर क्या signal था?',
+        opts:['Price तेज़ी से गिर रहा था','Volume सूख रहा था जबकि price sideways था — Accumulation pattern','Stock ने new 52-week high बनाया','किसी celebrity ने shares खरीदे'],
+        correct:1,
+        explain:'Volume का sideways base पर सूखना मतलब sellers exhausted हो रहे थे और institutions चुपचाप shares collect कर रहे थे। यह accumulation phase अक्सर significant breakout से पहले आता है।'
+      }
+    },
+    {
+      id:'s5', emoji:'🌊', bg:'linear-gradient(135deg,#0e1518,#0e3040)',
+      chapter:'अध्याय 5 · Macro',
+      title:'March 2020: सबसे तेज़ crash और सबसे तेज़ recovery',
+      hook:'March 2020 में Nifty 12,000 से 7,511 — 3 हफ्तों में। Indian market history का सबसे तेज़ 37% crash। हर तरफ "सब कुछ बेच दो" की आवाज़ें।',
+      body:[
+        'क्या हुआ था असल में? Crash डर की वजह से था — सच्चा, rational डर। लेकिन economy fundamentally नहीं टूटी थी। Banks के पास capital था। Companies के पास assets थे। RBI ने rates aggressively cut किए।',
+        'Nifty का RSI 12 पर आ गया — history का lowest। इसका मतलब था market किसी भी historical event से ज़्यादा तेज़ और दूर गिर गया था। Hindsight में यह decade का best buying opportunity था।',
+        'December 2020 तक Nifty 13,000 पर था। December 2021 तक 18,000। जो hold किए या crash में खरीदे, उन्होंने 18 months में पैसे double किए।',
+      ],
+      highlight:'RSI 12 market-wide crash के दौरान — extreme pessimism का एक most reliable indicator। 2008 नहीं, 2020 — financial system intact था।',
+      lesson:'💡 मुख्य सीख: जब सब डरे हों तब greedy रहो — लेकिन सिर्फ तब जब underlying economy intact हो। सवाल यह नहीं "क्या गिर रहा है?" बल्कि "क्या यह survive करेगा?"',
+      quiz:{
+        q:'March 2020 crash एक buying opportunity क्यों था, selling का reason क्यों नहीं?',
+        opts:['क्योंकि stock prices कम थे','Crisis medical/temporary थी और financial system intact था','RBI ने कहा खरीदो','Nifty हमेशा recover करता है'],
+        correct:1,
+        explain:'2020 crash एक medical crisis की वजह से था, financial system failure नहीं। Banks stable थे, RBI के पास policy tools थे। 2008 के विपरीत, यह एक temporary shock था healthy economy को — इसीलिए recovery इतनी तेज़ थी।'
+      }
+    },
   ],
   gu: [
     {
       id:'s1', emoji:'💰', bg:'linear-gradient(135deg,#0e2010,#1a5e1a)',
       chapter:'પ્રકરણ 1 · પાયો',
       title:'₹50,000 જે ₹1.5 કરોડ બન્યા',
-      hook:'2003ની વાત છે. dot-com crash થઈ ગઈ હતી. ચેન્નઈના એક ટીચરે પોતાની આખી બચત — ₹50,000 — Infosys માં રોકી.',
+      hook:'2003ની વાત છે. dot-com crash. ચેન્નઈના ટીચરે ₹50,000 Infosys માં — ઘરના સૌ "ગાંડા છો?" — business સમજ્યા, ભાવ નહીં.',
       body:[
-        'ઘરના સૌ કહ્યું "ગાંડા છો?" પણ એ teacher ને એક વાત સ્પષ્ટ હતી — Infosys ના clients એ જ, revenue એ જ, management એ જ. ભાવ ઘટ્યો — business નહીં.',
-        '20 વર્ષ hold રાખ્યું. 2008 ની crash માં નહીં વેચ્યું. Business સમજ્યા, એટલે noise ignore કરી શક્યા.',
-        'આ ₹50,000 આજે લગભગ ₹1.5 કરોડ છે.',
+        'Infosys ના clients, revenue, management — બધું સ્થિર. ભાવ 50% ઘટ્યો, business નહીં.',
+        '20 વર્ષ hold. 2008 crash — ન વેચ્યું. Business સ્પષ્ટ → noise ignore.',
+        '₹50,000 → ₹1.5 કરોડ. એક investment. Retirement.',
       ],
-      highlight:'ભાવ 50% ઘટ્યો — business નહીં. Investing નો સૌથી મહત્ત્વનો ભેદ.',
-      lesson:'💡 મુખ્ય શીખ: ભાવ અને business quality અલગ છે. Short-term movement noise છે. Long-term quality signal છે.',
+      highlight:'ભાવ ઘટ્યો, business નહીં. Investing નો સૌ મહત્ત્વનો ભેદ.',
+      lesson:'💡 Short-term price = noise. Long-term business quality = signal.',
       quiz:{
-        q:'Teacher ને પૈસા કેમ મળ્યા?',
-        opts:['સાચા સમયે ખરીદ્યું','ભાવ ઘટ્યો ત્યારે business સારો છે — એ સમજ્યા','નસીબ','Insider information'],
+        q:'Teacher ને ₹1.5 Cr ના મળ્યા?',
+        opts:['Perfect timing','ભાવ ઘટ્યો — business સારો = સમજ','નસીબ','Insider information'],
         correct:1,
-        explain:'Infosys ના clients, revenue, management — બધું એ જ હતું. ભાવ ઘટ્યો, business નહીં. આ સમજ — ₹1.5 કરોડ.'
+        explain:'Business quality unchanged. Price fell, not business. આ સમજ = ₹1.5 Cr.'
+      }
+    },
+    {
+      id:'s2', emoji:'🏦', bg:'linear-gradient(135deg,#1a0808,#5e1a1a)',
+      chapter:'પ્રકરણ 2 · જોખમ',
+      title:'Yes Bank: ₹400 → ₹5 — Red Flags',
+      hook:'2018: Yes Bank ₹400. Celebrities invest. "Must-buy" calls. → ₹5.',
+      body:[
+        'Red flags: NPA ↑ every quarter. Promoter shares pledged. RBI rejected CEO reappointment.',
+        'લોકો chart જોઈ રહ્યા, balance sheet નહીં. Annual report ન વાંચ્યો.',
+        '₹300-400 ખરીદ = 98% loss.',
+      ],
+      highlight:'Chart downtrend + fundamentals ↓ = average down = mistake, not bravery.',
+      lesson:'💡 Balance sheet > Chart. NPA ↑, pledged shares, RBI friction = run.',
+      quiz:{
+        q:'Yes Bank — earliest warning?',
+        opts:['Stock fell','NPA ↑ every quarter in balance sheet','Sell article','CEO left'],
+        correct:1,
+        explain:'NPA in balance sheet = earliest + clearest signal. Stock price fell later.'
+      }
+    },
+    {
+      id:'s3', emoji:'🎨', bg:'linear-gradient(135deg,#0e1820,#0e3060)',
+      chapter:'પ્રકરણ 3 · Compounding',
+      title:'Asian Paints: 14 વર્ષ · 15x · Boring',
+      hook:'Headlines? ક્યારેય નહીં. Scandal? ના. Celebrity CEO? ના. Paint. 2010-2024: 15x.',
+      body:[
+        'Moat: 70,000+ dealers — નાના શહેરો. Painters stick to one brand. Competition = hard.',
+        'Revenue 12-15%/year. Zero debt. Management 52%. P/E 50-60x — expensive but quality justified.',
+        'Boring compounding → extraordinary wealth.',
+      ],
+      highlight:'Boring = best. 12-15% every year for 14 years.',
+      lesson:'💡 ₹1 lakh × 15% × 20 years = ₹16 lakh. Consistency > Spectacular.',
+      quiz:{
+        q:'Asian Paints grow — why?',
+        opts:['New products','70,000+ dealer network competitors could not replicate','Government contracts','Cheapest'],
+        correct:1,
+        explain:'Distribution moat — reach + switching costs = durable competitive advantage.'
+      }
+    },
+    {
+      id:'s4', emoji:'📱', bg:'linear-gradient(135deg,#0e0e20,#1a1a40)',
+      chapter:'પ્રકરણ 4 · Recovery',
+      title:'Zomato: ₹40 → ₹150 — Accumulation',
+      hook:'2021: ₹116 list. 2022: ₹40. "Business broken" — analysts. 2023: doubled. Again doubled.',
+      body:[
+        'Chart: mid-2022→early-2023, sideways ₹40-70, volume drying. = Accumulation.',
+        'Fundamentals: Revenue +70-80% YoY. Losses ↓. Blinkit 100%+ grow.',
+        'Aug 2023: first quarterly profit → stock +15% one day on massive volume.',
+      ],
+      highlight:'Chart showed accumulation months before. Smart money was already positioned.',
+      lesson:'💡 Sideways + falling volume = sellers exhausted → good fundamental news = real breakout.',
+      quiz:{
+        q:'Zomato recovery પહેલાં chart signal?',
+        opts:['Price fast falling','Volume dry + price sideways = Accumulation','New 52W high','Celebrity bought'],
+        correct:1,
+        explain:'Volume dry-up on base = institutions accumulating quietly. Breakout follows fundamental news.'
+      }
+    },
+    {
+      id:'s5', emoji:'🌊', bg:'linear-gradient(135deg,#0e1518,#0e3040)',
+      chapter:'પ્રકરણ 5 · Macro',
+      title:'March 2020: India ની સૌ ઝડપ crash — સૌ ઝડપ recovery',
+      hook:'March 2020: Nifty 12,000 → 7,511 — 3 weeks. -37%. "Sell everything." RSI = 12.',
+      body:[
+        'Reality: medical crisis, not financial. Banks stable. RBI cut rates. Government stimulus. Unlike 2008.',
+        'RSI 12 = extreme pessimism. Historical low. Decade best buying opportunity — in hindsight.',
+        'Dec 2020: Nifty 13,000. Dec 2021: 18,000. Held or bought = 2x in 18 months.',
+      ],
+      highlight:'RSI 12 in market-wide crash (not company-specific) = extreme pessimism historically reliable.',
+      lesson:'💡 Greedy when others fearful — but ONLY if underlying economy intact. "Will it survive?" not "Is it falling?"',
+      quiz:{
+        q:'March 2020 buying opportunity — why?',
+        opts:['Prices low','Medical/temporary crisis — financial system intact','RBI said buy','Nifty always recovers'],
+        correct:1,
+        explain:'Medical crisis ≠ financial system failure. Banks stable, RBI had tools. Temporary shock = fast recovery.'
       }
     },
   ]
@@ -4928,9 +5245,65 @@ const WHY_CHAINS = {
         { icon:'🏦', bg:'rgba(29,179,104,0.2)', cause:'US Federal Reserve ब्याज दर बढ़ाता है', effect:'US bonds आकर्षक हो जाते हैं — ज़्यादा return, कम risk' },
         { icon:'💸', bg:'rgba(25,113,194,0.2)', cause:'FIIs भारतीय stocks बेचते हैं', effect:'US bonds में पैसा लगाते हैं — वहाँ return बेहतर' },
         { icon:'📉', bg:'rgba(224,49,49,0.2)', cause:'FII selling से Nifty पर pressure', effect:'भारतीय economy ठीक होने पर भी Nifty गिरता है — foreign money जा रहा है' },
-        { icon:'💻', bg:'rgba(29,179,104,0.2)', cause:'Rupee कमज़ोर होता है', effect:'IT companies (TCS, Infosys) USD में कमाती हैं — ज़्यादा rupees मिलते हैं' },
+        { icon:'💱', bg:'rgba(95,61,196,0.2)', cause:'Rupee कमज़ोर होता है', effect:'FII selling से डॉलर की माँग बढ़ती है — rupee और कमज़ोर' },
+        { icon:'💻', bg:'rgba(29,179,104,0.2)', cause:'IT companies को फायदा', effect:'TCS, Infosys USD में कमाती हैं — ज़्यादा rupees मिलते हैं — profit बढ़ता है' },
       ],
-      principle:'Washington का एक Fed फैसला → US bond yield → FII flows → Nifty → Rupee → IT profits। इसीलिए Fed को follow करना ज़रूरी है।'
+      principle:'Washington का एक Fed फैसला → US bond yield बढ़ा → FII ने India छोड़ा → Nifty गिरा → Rupee कमज़ोर हुआ → IT profit बढ़ा। इसीलिए Fed को follow करना ज़रूरी है।'
+    },
+    {
+      date:'तेल और बाज़ार',
+      title:'Crude oil महँगा होने पर India में क्या-क्या होता है?',
+      nodes:[
+        { icon:'🛢️', bg:'rgba(224,119,0,0.2)', cause:'Global crude oil price बढ़ता है', effect:'India 85% crude import करता है — हर दिन करोड़ों का import bill बढ़ता है' },
+        { icon:'💱', bg:'rgba(224,49,49,0.2)', cause:'India का trade deficit बढ़ता है', effect:'ज़्यादा rupees बाहर जाते हैं — rupee कमज़ोर होता है' },
+        { icon:'📊', bg:'rgba(224,49,49,0.2)', cause:'Inflation बढ़ती है', effect:'Petrol, diesel महँगा → transport cost → सब कुछ महँगा' },
+        { icon:'✈️', bg:'rgba(224,49,49,0.2)', cause:'Aviation और Paints सबसे ज़्यादा hit', effect:'Jet fuel सबसे बड़ा cost — IndiGo, Asian Paints का margin सीधे compress होता है' },
+        { icon:'🏦', bg:'rgba(29,179,104,0.15)', cause:'RBI rate बढ़ा सकता है', effect:'Inflation रोकने के लिए → loan EMI बढ़ती है → real estate, auto stocks दबाव में' },
+      ],
+      principle:'Oil एक बार महँगा हुआ और पूरी chain चल पड़ती है। Defense: IT और Pharma (exporters) crude से कम impact। Aviation और OMCs (importers) सबसे ज़्यादा impact।'
+    },
+    {
+      date:'Results Season',
+      title:'Quarterly results stock price को इतना क्यों हिलाते हैं?',
+      nodes:[
+        { icon:'📋', bg:'rgba(29,179,104,0.2)', cause:'Company quarterly results announce करती है', effect:'Market actual numbers को analyst estimates से compare करता है' },
+        { icon:'😲', bg:'rgba(224,49,49,0.2)', cause:'Revenue estimate से 2-3% कम आई', effect:'Stock 5-15% एक दिन में गिर सकता है — market ने ज़्यादा price किया था' },
+        { icon:'📈', bg:'rgba(29,179,104,0.2)', cause:'Revenue estimate से ज़्यादा + guidance raised', effect:'Stock 8-20% एक दिन में उठ सकता है — better than expected AND future और अच्छा' },
+        { icon:'🎯', bg:'rgba(112,72,232,0.2)', cause:'Management guidance सबसे important', effect:'अगली quarter क्या होगा — यह पिछले quarter से ज़्यादा matter करता है' },
+      ],
+      principle:'Stock price = expectations। Market को TCS की growth पहले से पता थी — already price में था। जो stock को हिलाता है वो यह है: growth BETTER थी या WORSE, जो expected था उससे।'
+    },
+    {
+      date:'Rupee और आपका Portfolio',
+      title:'Rupee की value आपके portfolio को क्यों affect करती है?',
+      nodes:[
+        { icon:'💱', bg:'rgba(95,61,196,0.2)', cause:'RBI rates बढ़ाए या FII inflows बढ़ें', effect:'Rupee strong होता है — कम rupees per dollar' },
+        { icon:'💻', bg:'rgba(192,26,26,0.2)', cause:'Strong rupee IT को hurt करता है', effect:'TCS same $1B earn करे पर कम rupees मिलते हैं — INR में profit गिरता है' },
+        { icon:'🛢️', bg:'rgba(18,120,66,0.2)', cause:'Strong rupee oil importers को help करता है', effect:'India कम rupees में same barrels खरीदता है → OMCs को benefit' },
+        { icon:'🎯', bg:'rgba(179,92,0,0.2)', cause:'Rupee level = sector rotation का signal', effect:'Weak rupee → IT/Pharma खरीदें (exporters)। Strong rupee → Aviation/OMCs खरीदें।' },
+      ],
+      principle:'Rupee वो hidden lever है जो sector rotation drive करता है। हर 1% USD/INR move से exporters और importers का P&L meaningful amount से बदलता है।'
+    },
+    {
+      date:'RBI और Interest Rates',
+      title:'RBI का rate decision आपके stocks को कैसे हिलाता है?',
+      nodes:[
+        { icon:'🏛️', bg:'rgba(20,88,168,0.2)', cause:'RBI Monetary Policy Committee हर 2 महीने मिलती है', effect:'Repo rate set होता है — वो rate जिस पर banks RBI से borrow करते हैं' },
+        { icon:'🏦', bg:'rgba(192,26,26,0.15)', cause:'RBI repo rate बढ़ाता है inflation रोकने के लिए', effect:'Banks की borrowing cost बढ़ती है → home loan, car loan, business loan महँगे' },
+        { icon:'🏠', bg:'rgba(192,26,26,0.2)', cause:'Loan EMIs बढ़ती हैं', effect:'Consumers कम खर्च करते हैं → real estate, auto, consumer goods hit' },
+        { icon:'💹', bg:'rgba(18,120,66,0.2)', cause:'RBI rates cut करता है जब economy slow हो', effect:'Cheap loans → ज़्यादा borrowing → ज़्यादा spending → stimulus → markets rise' },
+      ],
+      principle:'Rate hike cycle (2-3 साल): high-debt companies और rate-sensitive sectors से बचें। Rate cut cycle: Banking, real estate, consumer discretionary जल्दी खरीदें — सबसे ज़्यादा benefit।'
+    },
+    {
+      date:'Global Geopolitics',
+      title:'War और sanctions India के stocks को क्यों हिलाते हैं?',
+      nodes:[
+        { icon:'⚔️', bg:'rgba(192,26,26,0.2)', cause:'War या geopolitical conflict होता है', effect:'Global risk appetite गिरती है → FIIs emerging markets से पैसा निकालते हैं → India hit' },
+        { icon:'🛢️', bg:'rgba(179,92,0,0.2)', cause:'Conflict oil supply chain disrupt करता है', effect:'Crude spike → India का import bill बढ़ता है → rupee कमज़ोर → inflation' },
+        { icon:'🛡️', bg:'rgba(20,88,168,0.2)', cause:'Global defence spending बढ़ता है', effect:'India के defence companies (HAL, BEL, Bharat Forge) के order books surge → stocks rally' },
+      ],
+      principle:'Geopolitical events chaos create करते हैं पर opportunities भी। Russia-Ukraine crisis (2022): OMCs suffer किए → लेकिन defence stocks 30-50% rally किए। Key question: इस specific disruption से कौन जीतता है?'
     },
   ],
   gu: [
@@ -4944,6 +5317,58 @@ const WHY_CHAINS = {
         { icon:'💻', bg:'rgba(29,179,104,0.2)', cause:'Rupee નબળો', effect:'IT companies USD માં કમાય — વધુ rupees' },
       ],
       principle:'Washington ની Fed decision → US bond → FII flows → Nifty → Rupee → IT. Fed ને follow કરો.'
+    },
+    {
+      date:'Crude Oil અને Portfolio',
+      title:'Crude oil મોઘો થાય ત્યારે India માં શું થાય?',
+      nodes:[
+        { icon:'🛢️', bg:'rgba(224,119,0,0.2)', cause:'Global crude oil price વધે', effect:'India 85% crude import — રોજ crores import bill વધે' },
+        { icon:'📊', bg:'rgba(224,49,49,0.2)', cause:'Inflation વધે', effect:'Petrol, diesel → transport → બધું મોઘું' },
+        { icon:'✈️', bg:'rgba(224,49,49,0.2)', cause:'Aviation સૌ વધુ hit', effect:'Jet fuel = largest cost → IndiGo margin compress' },
+        { icon:'🎯', bg:'rgba(18,120,66,0.2)', cause:'Rupee નબળો → IT ને ફાયદો', effect:'USD earnings → વધુ rupees = IT profit ↑' },
+      ],
+      principle:'Oil chain: import bill ↑ → rupee ↓ → inflation ↑ → RBI rates ↑. IT/Pharma (exporters) ઓછો impact. Aviation/OMCs સૌ વધુ impact.'
+    },
+    {
+      date:'Results Season',
+      title:'Quarterly results stock price ને કેમ ઘણો હલાવે?',
+      nodes:[
+        { icon:'📋', bg:'rgba(29,179,104,0.2)', cause:'Company quarterly results announce', effect:'Market actual vs analyst estimates compare' },
+        { icon:'😲', bg:'rgba(224,49,49,0.2)', cause:'Revenue estimate કરતાં 2-3% ઓછો', effect:'Stock 5-15% one day fall — market ઘણું price કર્યું હતું' },
+        { icon:'📈', bg:'rgba(29,179,104,0.2)', cause:'Revenue beat + guidance raised', effect:'Stock 8-20% one day rise' },
+        { icon:'🎯', bg:'rgba(112,72,232,0.2)', cause:'Management guidance સૌ important', effect:'Next quarter — past quarter કરતાં વધુ matter' },
+      ],
+      principle:'Stock price = expectations. Market ને TCS growth ખબર હતી — already priced. Stock ઘણો ત્યારે ઘટે/વધે: growth BETTER/WORSE than expected.'
+    },
+    {
+      date:'Rupee અને Portfolio',
+      title:'Rupee ની value portfolio ને કેમ affect કરે?',
+      nodes:[
+        { icon:'💱', bg:'rgba(95,61,196,0.2)', cause:'Rupee strong/weak', effect:'Exporters ને weak rupee ફાયદો, importers ને strong rupee' },
+        { icon:'💻', bg:'rgba(192,26,26,0.2)', cause:'Strong rupee IT ને hurt', effect:'Same USD earnings → ઓછા rupees → profit ↓' },
+        { icon:'🎯', bg:'rgba(179,92,0,0.2)', cause:'Sector rotation signal', effect:'Weak rupee → IT/Pharma. Strong rupee → Aviation/OMCs.' },
+      ],
+      principle:'Rupee = hidden lever for sector rotation. Weekly track કરો.'
+    },
+    {
+      date:'RBI Decision',
+      title:'RBI ના rate decision stocks ને કેવી રીતે હલાવે?',
+      nodes:[
+        { icon:'🏛️', bg:'rgba(20,88,168,0.2)', cause:'RBI repo rate વધારે', effect:'Banks borrowing cost ↑ → loans expensive' },
+        { icon:'🏠', bg:'rgba(192,26,26,0.2)', cause:'EMIs વધે', effect:'Less spending → real estate, auto hit' },
+        { icon:'💹', bg:'rgba(18,120,66,0.2)', cause:'RBI rate cut', effect:'Cheap loans → spending ↑ → markets ↑' },
+      ],
+      principle:'Rate hike: high-debt avoid. Rate cut: Banking, real estate buy early.'
+    },
+    {
+      date:'Global Geopolitics',
+      title:'War ભારતીય stocks ને કેમ affect કરે?',
+      nodes:[
+        { icon:'⚔️', bg:'rgba(192,26,26,0.2)', cause:'War/conflict', effect:'FIIs India exit → Nifty fall' },
+        { icon:'🛢️', bg:'rgba(179,92,0,0.2)', cause:'Oil supply disrupt', effect:'Crude ↑ → rupee ↓ → inflation' },
+        { icon:'🛡️', bg:'rgba(20,88,168,0.2)', cause:'Defence spending ↑', effect:'HAL, BEL, Bharat Forge rally' },
+      ],
+      principle:'Russia-Ukraine 2022: OMCs suffer → Defence stocks 30-50% rally. Key: who wins from THIS disruption?'
     },
   ]
 };
@@ -5064,6 +5489,34 @@ const DAILY_CHALLENGES = {
       correct:1,
       explain:'RBI के rate hike से banks सबसे ज़्यादा impact होते हैं — उनकी borrowing cost बढ़ती है। IT पर domestic rates का कम असर। यही pattern दिखता है।'
     },
+    {
+      id:'d2', type:'Stock Detective', typeColor:'#5f3dc4', typeIcon:'🕵️',
+      q:'मैं कौन हूँ? → भारत में सबसे ज़्यादा market cap → Oil refinery + Telecom + Retail + Green energy → Promoter = भारत के सबसे अमीर व्यक्ति → Revenue ₹9 लाख crore+',
+      opts:['TCS','HDFC Bank','Reliance Industries','Infosys'],
+      correct:2,
+      explain:'Reliance Industries: India का सबसे बड़ा company market cap से। O2C (oil to chemicals), Jio (telecom), Reliance Retail, new energy। Mukesh Ambani promoter।'
+    },
+    {
+      id:'d3', type:'Morning Brief', typeColor:'var(--a)', typeIcon:'🌅',
+      q:'Rupee ₹83 से ₹87/USD हो गया (5% कमज़ोर)। कौन सा sector सबसे ज़्यादा BENEFIT करेगा?',
+      opts:['Aviation (IndiGo)','IT Services (TCS, Infosys)','Oil Marketing (HPCL)','Real Estate'],
+      correct:1,
+      explain:'IT companies USD में कमाती हैं, INR में खर्च। Rupee कमज़ोर = same dollar revenue → ज़्यादा rupees। TCS $3B @ ₹83 = ₹24,900 Cr। ₹87 पर = ₹26,100 Cr। Extra ₹1,200 Cr profit!'
+    },
+    {
+      id:'d4', type:'Pattern Spotter', typeColor:'var(--b)', typeIcon:'🔍',
+      q:'Stock 3 weeks से downtrend में है। कल एक candle बनी: top पर छोटा body, नीचे लंबी shadow (2x body)। यह कौन सा pattern है?',
+      opts:['Shooting Star — bearish','Hammer — potential bullish reversal','Doji — indecision','Engulfing — strong signal'],
+      correct:1,
+      explain:'Downtrend के अंत में, top पर छोटा body + नीचे लंबी shadow = Hammer। मतलब: sellers ने price नीचे धकेला पर buyers वापस ऊपर ले गए। Potential reversal — लेकिन अगला candle confirm करे।'
+    },
+    {
+      id:'d5', type:'Morning Brief', typeColor:'var(--a)', typeIcon:'🌅',
+      q:'Crude oil $75 से $85/barrel हो गया। कौन सा sector सबसे ज़्यादा HURT होगा?',
+      opts:['IT Services','Aviation','Pharmaceuticals','Banking'],
+      correct:1,
+      explain:'Aviation का सबसे बड़ा operating cost jet fuel (ATF) है — total cost का 30-40%। Crude $10 बढ़ा → IndiGo, Air India के fuel bills सीधे बढ़े। IT पर कोई direct impact नहीं।'
+    },
   ],
   gu: [
     {
@@ -5072,6 +5525,34 @@ const DAILY_CHALLENGES = {
       opts:['Oil price ઘટ્યો','RBI એ rate વધાર્યો','IT company ના results','Rupee strong'],
       correct:1,
       explain:'RBI rate hike = banks ને સૌથી impact. IT ને domestic rate ઓછી effect. આ pattern common.'
+    },
+    {
+      id:'d2', type:'Stock Detective', typeColor:'#5f3dc4', typeIcon:'🕵️',
+      q:'હું કોણ? → India સૌ વધુ market cap → Oil + Telecom + Retail + Green energy → Promoter = India ના સૌ ધનિક → Revenue ₹9 lakh crore+',
+      opts:['TCS','HDFC Bank','Reliance Industries','Infosys'],
+      correct:2,
+      explain:'Reliance Industries: India ની સૌ મોટી company. O2C, Jio, Reliance Retail, New Energy. Mukesh Ambani promoter.'
+    },
+    {
+      id:'d3', type:'Morning Brief', typeColor:'var(--a)', typeIcon:'🌅',
+      q:'Rupee ₹83 → ₹87/USD (5% નબળો). કયો sector સૌ વધુ benefit?',
+      opts:['Aviation','IT Services (TCS, Infosys)','Oil Marketing','Real Estate'],
+      correct:1,
+      explain:'IT companies USD માં કમાય, INR ખર્ચ. Rupee નબળો = same USD → વધુ rupees. TCS $3B @ ₹87 = ₹26,100 Cr vs ₹83 = ₹24,900 Cr. Extra ₹1,200 Cr profit!'
+    },
+    {
+      id:'d4', type:'Pattern Spotter', typeColor:'var(--b)', typeIcon:'🔍',
+      q:'Downtrend 3 weeks. ગઈ કાલ candle: ઉપર નાનો body, નીચે 2x shadow. Pattern?',
+      opts:['Shooting Star — bearish','Hammer — bullish reversal possible','Doji — indecision','Engulfing'],
+      correct:1,
+      explain:'Downtrend ના અંતે નાનો body + નીચે લાંબો shadow = Hammer. Sellers tried → Buyers pushed back. Reversal signal — next candle confirm.'
+    },
+    {
+      id:'d5', type:'Morning Brief', typeColor:'var(--a)', typeIcon:'🌅',
+      q:'Crude $75 → $85. કયો sector સૌ HURT?',
+      opts:['IT Services','Aviation','Pharma','Banking'],
+      correct:1,
+      explain:'Aviation = jet fuel 30-40% of costs. Crude $10 ↑ → IndiGo, Air India fuel bills directly ↑. IT ને no direct impact.'
     },
   ]
 };
@@ -5487,6 +5968,50 @@ const DEEP_TOPICS = [
       ]
     }
   },
+  // ── BONUS — HOW TO USE THE RESEARCH TAB ──────────────────────
+  {
+    id:'dt10', sem:4, semColor:'#0d6e3a', semBg:'var(--gl)',
+    title:{ en:'How to Use the Research Tab — A Complete Guide', hi:'Research Tab कैसे use करें — Complete Guide', gu:'Research Tab કેવી રીતે વાપરો — Complete Guide' },
+    time:'4 min',
+    layers:{
+      en:[
+        { label:'⚡ 60-Second Version', icon:'⚡',
+          content:'The Research tab is where theory meets live data. Search any NSE stock → you get 6 tabs. Price tab: charts with RSI and moving averages. Score tab: educational score from live data. Financials tab: health card + full P&L. Outlook tab: statistical signals. Peers tab: sector comparison. Company tab: DNA and SWOT.' },
+        { label:'📊 How to Use Each Tab', icon:'📊',
+          content:`<div class="deep-live-example">
+<b>📊 Price Tab</b> — Start here always. See the chart shape (uptrend/downtrend). Toggle 20/50/200-day MA. Read RSI — above 70 = overbought, below 30 = oversold. Use 1W for short term, 1Y for trend.<br><br>
+<b>⭐ Score Tab</b> — 4 live signals from Yahoo Finance: P/E vs sector, 52-week position, market cap, promoter holding. Tap any 📖 icon to learn what that metric means. This is not a buy signal — it is an education tool.<br><br>
+<b>💰 Financials Tab</b> — The Financial Health Card gives you 5 traffic lights in 20 seconds. Tap any row to expand the education note. Then load full P&L to see revenue and profit trends.<br><br>
+<b>🔮 Outlook Tab</b> — Statistical signals based on price patterns. These are probabilities, not predictions. Use for context, not as a trading signal.<br><br>
+<b>👥 Peers Tab</b> — Compare the stock with 3-5 sector peers live. Find who has better P/E, who is growing faster, who has more promoter confidence.
+</div>` },
+        { label:'📖 The Right Order to Analyse', icon:'📖',
+          content:'Professional analysts follow a sequence. Here is the StockSense order:<br><br>1. <b>Price chart (1Y)</b> — Is the trend up or down? What is RSI doing?<br>2. <b>Financial Health Card</b> — Are all 5 signals positive? Any red flags?<br>3. <b>Load P&L</b> — Is revenue growing consistently? Is profit margin stable or shrinking?<br>4. <b>Peers comparison</b> — Is this stock cheaper or more expensive than sector peers?<br>5. <b>Score tab</b> — Does the valuation look reasonable vs sector?<br><br>Only after all 5 steps should you add a stock to your watchlist. Paper trade it first before any real money.' },
+        { label:'🧠 Test Your Understanding', icon:'🧠',
+          quiz:{ q:'You open a stock in the Research tab. The Financial Health Card shows 4/5 signals green, but P/E is red (very high vs sector). What should you do?', opts:['Immediately buy — 4/5 is very good','Investigate why P/E is high — is it justified by growth? Load P&L and check revenue growth YoY','Ignore the P/E — it doesn\'t matter','Check the Peers tab only'], correct:1, explain:'4/5 green is good, but a red P/E matters. High P/E means you are paying a premium. Load the P&L to check if revenue growth justifies the premium. If growing 30%+ annually, maybe yes. If growing 5%, probably not. Always investigate red flags before deciding.' } }
+      ],
+      hi:[
+        { label:'⚡ 60 सेकंड', icon:'⚡',
+          content:'Research tab = theory + live data। Search any NSE stock → 6 tabs: Price (chart, RSI, MA) · Score (live signals) · Financials (health card + P&L) · Outlook (statistical) · Peers (comparison) · Company (DNA)' },
+        { label:'📊 हर Tab कैसे use करें', icon:'📊',
+          content:'<div class="deep-live-example">📊 Price — chart shape, MA toggle, RSI पढ़ो<br>⭐ Score — 4 live signals, 📖 icon = learn what it means<br>💰 Financials — 20 sec health card, फिर P&L load<br>🔮 Outlook — statistical signals, predictions नहीं<br>👥 Peers — sector में कौन सस्ता, कौन तेज़ बढ़ रहा</div>' },
+        { label:'📖 सही order में analyse करें', icon:'📖',
+          content:'1. Price chart (1Y) — trend up/down? RSI?<br>2. Financial Health Card — red flags?<br>3. P&L load — revenue consistently growing? Margin stable?<br>4. Peers — sector में compare<br>5. Score — valuation reasonable?<br><br>सब 5 steps के बाद watchlist। पहले paper trade।' },
+        { label:'🧠 Test', icon:'🧠',
+          quiz:{ q:'Health Card 4/5 green है, लेकिन P/E red (sector से बहुत ज़्यादा)। क्या करें?', opts:['तुरंत buy — 4/5 बहुत अच्छा है','P/E high क्यों है investigate करो — P&L load करो, revenue growth check करो','P/E ignore करो','सिर्फ Peers check करो'], correct:1, explain:'4/5 green अच्छा है पर red P/E matter करता है। P&L load करो। Revenue 30%+ grow? Premium justify। 5% grow? नहीं।' } }
+      ],
+      gu:[
+        { label:'⚡ 60 સેકન્ડ', icon:'⚡',
+          content:'Research tab = theory + live data. Any NSE stock → 6 tabs: Price · Score · Financials · Outlook · Peers · Company' },
+        { label:'📊 Tab Usage', icon:'📊',
+          content:'<div class="deep-live-example">Price: chart, MA, RSI · Score: live signals, 📖=learn · Financials: health card + P&L · Outlook: statistical · Peers: compare</div>' },
+        { label:'📖 Right Order', icon:'📖',
+          content:'1. Price 1Y chart 2. Health Card 3. P&L 4. Peers 5. Score. Then watchlist. Paper trade first.' },
+        { label:'🧠 Test', icon:'🧠',
+          quiz:{ q:'Health Card 4/5 green. P/E red (sector ↑↑). What to do?', opts:['Buy immediately','Investigate P/E — P&L load, revenue growth check','Ignore P/E','Peers only'], correct:1, explain:'Red P/E = investigate. P&L load → revenue 30%+ = justified. 5% = not.' } }
+      ]
+    }
+  },
 ];
 
 function buildDeepMode() {
@@ -5550,22 +6075,23 @@ function buildDeepTopic(topic) {
 }
 
 function buildDeepLayer(topic, layer, li) {
+  const colStyle = `color:${topic.semColor}`;
   if (layer.quiz) {
     const qid = `dq-${topic.id}-${li}`;
     return `
       <div class="deep-layer">
-        <div class="deep-layer-label" style="color:${topic.semColor}">${layer.icon} ${layer.label}</div>
-        <div style="font-size:12px;font-weight:700;margin-bottom:10px;line-height:1.4">${layer.quiz.q}</div>
+        <div class="deep-layer-label" style="${colStyle}">${layer.icon} ${layer.label}</div>
+        <div style="font-size:12px;font-weight:700;margin-bottom:10px;line-height:1.4;font-family:'DM Serif Display',serif">${layer.quiz.q}</div>
         <div id="${qid}-opts">
           ${layer.quiz.opts.map((opt, oi) => `
             <button class="deep-q-opt" onclick="deepQuizAnswer('${qid}',${oi},${layer.quiz.correct},'${topic.id}',this)">${opt}</button>`).join('')}
         </div>
-        <div id="${qid}-result" style="display:none;font-size:11px;margin-top:8px;line-height:1.6;padding:8px 10px;border-radius:8px"></div>
+        <div id="${qid}-result" class="quiz-result"></div>
       </div>`;
   }
   return `
     <div class="deep-layer">
-      <div class="deep-layer-label" style="color:${topic.semColor}">${layer.icon} ${layer.label}</div>
+      <div class="deep-layer-label" style="${colStyle}">${layer.icon} ${layer.label}</div>
       <div class="deep-layer-content">${layer.content}</div>
     </div>`;
 }
@@ -6604,6 +7130,133 @@ function paperCalcTotal() {
     if(tot) tot.textContent = 'Total: —';
   }
 }
+
+// ── PRE-TRADE CHECKLIST — Forces discipline before every virtual buy ──
+function showPreTradeChecklist() {
+  const sym = document.getElementById('paperSymInp')?.value?.trim()?.toUpperCase();
+  const qty = parseInt(document.getElementById('paperQtyInp')?.value || 0);
+  if (!sym || qty < 1) { alert('Enter a stock symbol and quantity first'); return; }
+  if (paperLivePrice <= 0) { alert('Please wait for price to load'); return; }
+
+  const cost     = paperLivePrice * qty;
+  const s        = currentStock;
+  const cash     = paperPortfolio.cash;
+  const riskPct  = ((cost / cash) * 100).toFixed(1);
+  const stopLoss = (paperLivePrice * 0.9).toFixed(2); // default 10% SL
+  const maxLoss  = (cost * 0.1).toFixed(0);
+
+  const checks = {
+    en: [
+      { id:'chk1', label:'I understand what this company does', sub:'Can you explain the business in 2 sentences?', data:s ? `Sector: ${s.sector}` : '' },
+      { id:'chk2', label:'Fundamentals look reasonable', sub:'P/E vs sector, promoter holding, no heavy debt', data:s ? `P/E: ${s.pe>0?s.pe.toFixed(1)+'x':'N/A'} · Promoter: ${s.promoter||0}%` : '' },
+      { id:'chk3', label:'I have a stop-loss in mind', sub:`Default 10% → if ${sym} falls to ₹${stopLoss}, I exit. Loss limited to ₹${parseInt(maxLoss).toLocaleString('en-IN')}`, data:'' },
+      { id:'chk4', label:'This is not more than 20% of my portfolio', sub:`₹${cost.toLocaleString('en-IN',{maximumFractionDigits:0})} = ${riskPct}% of virtual cash`, data:parseFloat(riskPct) > 20 ? '⚠️ Over 20% — consider reducing' : '✅ Within safe limit' },
+      { id:'chk5', label:'I am not chasing FOMO or a tip', sub:'Is this based on your own research, or did you just see a headline?', data:'' },
+    ],
+    hi: [
+      { id:'chk1', label:'मैं समझता/समझती हूँ कि यह कंपनी क्या करती है', sub:'2 sentences में बता सकते हैं?', data:s ? `Sector: ${s.sector}` : '' },
+      { id:'chk2', label:'Fundamentals reasonable लगते हैं', sub:'P/E, promoter holding, debt check किया', data:s ? `P/E: ${s.pe>0?s.pe.toFixed(1)+'x':'N/A'} · Promoter: ${s.promoter||0}%` : '' },
+      { id:'chk3', label:'Stop-loss में मेरे मन में है', sub:`Default 10% → ₹${stopLoss} तक गिरे तो निकलूँगा। Max loss: ₹${parseInt(maxLoss).toLocaleString('en-IN')}`, data:'' },
+      { id:'chk4', label:'Portfolio का 20% से ज़्यादा नहीं', sub:`₹${cost.toLocaleString('en-IN',{maximumFractionDigits:0})} = ${riskPct}% virtual cash का`, data:parseFloat(riskPct) > 20 ? '⚠️ 20% से ज़्यादा' : '✅ Limit के अंदर' },
+      { id:'chk5', label:'FOMO या tip पर नहीं खरीद रहा/रही', sub:'अपनी research पर base है?', data:'' },
+    ],
+    gu: [
+      { id:'chk1', label:'આ company શું કરે છે — સમજ્યો/સમજી', sub:'2 sentences માં explain?', data:s ? `Sector: ${s.sector}` : '' },
+      { id:'chk2', label:'Fundamentals reasonable છે', sub:'P/E, promoter, debt check', data:s ? `P/E: ${s.pe>0?s.pe.toFixed(1)+'x':'N/A'} · Promoter: ${s.promoter||0}%` : '' },
+      { id:'chk3', label:'Stop-loss નક્કી છે', sub:`Default 10% → ₹${stopLoss} → Max loss ₹${parseInt(maxLoss).toLocaleString('en-IN')}`, data:'' },
+      { id:'chk4', label:'Portfolio ના 20% થી વધુ નહીં', sub:`${riskPct}% virtual cash`, data:parseFloat(riskPct) > 20 ? '⚠️ 20% ઉપર' : '✅ Limit માં' },
+      { id:'chk5', label:'FOMO કે tip ના આધારે નહીં', sub:'Own research?', data:'' },
+    ],
+  };
+
+  const C = checks[lang] || checks.en;
+  const titles = {
+    en: { title:'Before you buy — 5 quick checks', sub:`${sym} · ${qty} shares · ₹${cost.toLocaleString('en-IN',{maximumFractionDigits:0})}`, btn:'All checked — Execute Buy', skip:'Skip checks & buy anyway' },
+    hi: { title:'खरीदने से पहले — 5 quick checks', sub:`${sym} · ${qty} shares · ₹${cost.toLocaleString('en-IN',{maximumFractionDigits:0})}`, btn:'सब check — Buy करें', skip:'Skip करके buy करें' },
+    gu: { title:'ખરીદ પહેલાં — 5 quick checks', sub:`${sym} · ${qty} shares · ₹${cost.toLocaleString('en-IN',{maximumFractionDigits:0})}`, btn:'બધા check — Buy', skip:'Skip & buy' },
+  }[lang] || { title:'Before you buy', sub:'', btn:'Execute Buy', skip:'Skip & buy' };
+
+  // State tracking
+  const checked = {};
+
+  const overlay = document.createElement('div');
+  overlay.id = 'preTradeOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:900;display:flex;align-items:flex-end;animation:fadein 0.2s';
+  overlay.innerHTML = `
+    <div style="background:var(--card);border-radius:24px 24px 0 0;width:100%;max-width:520px;margin:0 auto;max-height:85vh;overflow-y:auto;padding:20px 18px 32px">
+      <div style="width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 18px"></div>
+      <!-- Header -->
+      <div style="margin-bottom:18px">
+        <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.9px;color:var(--gm);margin-bottom:4px">Pre-Trade Checklist</div>
+        <div style="font-size:17px;font-weight:700;font-family:'DM Serif Display',serif;margin-bottom:3px">${titles.title}</div>
+        <div style="font-size:12px;color:var(--muted)">${titles.sub}</div>
+      </div>
+      <!-- Checks -->
+      ${C.map(chk => `
+        <div id="${chk.id}-row" onclick="togglePreCheck('${chk.id}')"
+          style="display:flex;gap:13px;align-items:flex-start;padding:12px 0;border-bottom:0.5px solid var(--border2);cursor:pointer;transition:background 0.15s">
+          <div id="${chk.id}-box" style="width:24px;height:24px;border-radius:7px;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s;font-size:13px;font-weight:700;color:#fff;margin-top:1px"></div>
+          <div style="flex:1">
+            <div style="font-size:12px;font-weight:700;margin-bottom:2px;line-height:1.3">${chk.label}</div>
+            <div style="font-size:10px;color:var(--muted);line-height:1.5">${chk.sub}</div>
+            ${chk.data ? `<div style="font-size:10px;color:var(--b);margin-top:3px;font-weight:600">${chk.data}</div>` : ''}
+          </div>
+        </div>`).join('')}
+      <!-- Progress -->
+      <div style="margin:16px 0 12px;background:var(--bg);border-radius:var(--r8);padding:10px 13px;display:flex;align-items:center;gap:12px">
+        <div id="checkProgress" style="font-size:24px;font-weight:800;font-family:'DM Serif Display',serif;color:var(--muted)">0/${C.length}</div>
+        <div style="flex:1">
+          <div style="height:5px;background:var(--border);border-radius:3px;overflow:hidden">
+            <div id="checkBar" style="height:100%;width:0%;background:var(--gm);border-radius:3px;transition:width 0.3s"></div>
+          </div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px">checks completed</div>
+        </div>
+      </div>
+      <!-- Buttons -->
+      <button id="executeBtn" onclick="executeCheckedBuy()" disabled
+        style="width:100%;background:var(--border);color:var(--muted);border:none;border-radius:var(--r12);padding:14px;font-size:13px;font-weight:700;cursor:not-allowed;font-family:'DM Sans',sans-serif;transition:all 0.3s;margin-bottom:8px">
+        ${titles.btn}
+      </button>
+      <button onclick="document.getElementById('preTradeOverlay').remove();paperBuy()"
+        style="width:100%;background:none;color:var(--muted);border:1px solid var(--border);border-radius:var(--r12);padding:11px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">
+        ${titles.skip}
+      </button>
+    </div>`;
+
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+  // Toggle check function — exposed on window
+  window.togglePreCheck = function(id) {
+    checked[id] = !checked[id];
+    const box = document.getElementById(id + '-box');
+    if (box) {
+      box.style.background = checked[id] ? 'var(--gm)' : '';
+      box.style.borderColor = checked[id] ? 'var(--gm)' : 'var(--border)';
+      box.textContent = checked[id] ? '✓' : '';
+    }
+    const count = Object.values(checked).filter(Boolean).length;
+    const prog = document.getElementById('checkProgress');
+    const bar  = document.getElementById('checkBar');
+    const btn  = document.getElementById('executeBtn');
+    if (prog) prog.textContent = `${count}/${C.length}`;
+    if (bar)  bar.style.width = `${(count/C.length)*100}%`;
+    if (prog) prog.style.color = count === C.length ? 'var(--gm)' : 'var(--muted)';
+    if (btn) {
+      const allDone = count === C.length;
+      btn.disabled = !allDone;
+      btn.style.background = allDone ? 'var(--gm)' : 'var(--border)';
+      btn.style.color = allDone ? '#fff' : 'var(--muted)';
+      btn.style.cursor = allDone ? 'pointer' : 'not-allowed';
+    }
+  };
+}
+
+window.executeCheckedBuy = function() {
+  const overlay = document.getElementById('preTradeOverlay');
+  if (overlay) overlay.remove();
+  paperBuy();
+};
 
 async function paperBuy() {
   const sym = document.getElementById('paperSymInp')?.value?.trim()?.toUpperCase();
