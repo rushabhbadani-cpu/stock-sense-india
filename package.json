@@ -2,6 +2,11 @@
   "name": "stocksense-india",
   "version": "2.0.0",
   "description": "StockSense India — Educational stock market learning app",
-  "engines": { "node": "24.x" },
-  "type": "module"
+  "engines": {
+    "node": "24.x"
+  },
+  "type": "module",
+  "dependencies": {
+    "@vercel/analytics": "^2.0.1"
+  }
 }
