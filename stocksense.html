@@ -4488,7 +4488,13 @@ function renderMF(cat, el) {
 // ═══════════════════════════════════════════════════════════════
 
 // ── UNIVERSITY STATE ──────────────────────────────────────────
-let uniProgress = JSON.parse(localStorage.getItem('ss_uni') || '{"lessons":0,"xp":0,"streak":0,"lastDay":"","dojoToday":{},"storyDone":{},"deepDone":{}}');
+let uniProgress = JSON.parse(localStorage.getItem('ss_uni') || '{"lessons":0,"xp":0,"streak":0,"lastDay":"","dojoToday":{},"storyDone":{},"deepDone":{},"chartDone":{},"faDone":{}}');
+// Safety: ensure new fields always exist even for users with old saved data
+if (!uniProgress.chartDone) uniProgress.chartDone = {};
+if (!uniProgress.faDone)    uniProgress.faDone    = {};
+if (!uniProgress.storyDone) uniProgress.storyDone = {};
+if (!uniProgress.deepDone)  uniProgress.deepDone  = {};
+if (!uniProgress.dojoToday) uniProgress.dojoToday = {};
 let uniMode     = 'story';
 let dojoAnswered = {};
 
