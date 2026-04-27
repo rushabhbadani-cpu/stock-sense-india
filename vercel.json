@@ -1,6 +1,6 @@
 {
   "rewrites": [
-    { "source": "/", "destination": "/askartha" }
+    { "source": "/", "destination": "/askartha.html" }
   ],
   "functions": {
     "api/market.js": {
