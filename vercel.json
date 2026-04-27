@@ -1,6 +1,6 @@
 {
   "rewrites": [
-    { "source": "/", "destination": "/stocksense.html" }
+    { "source": "/", "destination": "/askartha_v3.html" }
   ],
   "functions": {
     "api/market.js": {
