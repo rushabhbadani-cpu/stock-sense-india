@@ -10,13 +10,18 @@
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=Tiro+Devanagari+Hindi&display=swap" rel="stylesheet">
 <style>
 :root{
-  --g:#1DB954;--gd:#0F5C2A;--gp:#E8F5EE;
-  --b:#1A4D8F;--bl:#4A7EC7;--bp:#E8F0FB;
-  --gold:#C9922A;--gol:#E8B84B;--gop:#FDF3E0;
-  --dark:#0A1520;--surf:#0D1B2A;--elev:#162230;--bord:#243447;--mut:#1E2E3D;
-  --tx:#E8EDF2;--txd:#7A8FA6;--txm:#4A5E72;
-  --warn:#F59E0B;--err:#EF4444;
-  --r8:8px;--r12:12px;--r16:16px;--r20:20px;--r24:24px;
+  /* Signal colours — green/red ONLY for price data */
+  --g:#00C076;--gd:#007A4B;--gp:rgba(0,192,118,.08);
+  --b:#1A4D8F;--bl:#4A7EC7;--bp:rgba(74,126,199,.1);
+  --gold:#C9922A;--gol:#E8B84B;--gop:rgba(201,146,42,.1);
+  /* Surface — dark neutral, NOT green */
+  --dark:#080E14;--surf:#0C1520;--elev:#111E2C;--bord:#1A2A38;--mut:#162030;
+  /* Text */
+  --tx:#DCE6F0;--txd:#7A90A8;--txm:#445A6E;
+  /* Alerts */
+  --warn:#F0B429;--err:#FF4D4D;
+  /* Radius */
+  --r8:8px;--r10:10px;--r12:12px;--r16:16px;--r20:20px;--r24:24px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;overflow:hidden;background:var(--dark);color:var(--tx);font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased}
@@ -322,7 +327,8 @@ button{font-family:inherit;cursor:pointer}
       </div>
     </div>
     <div class="top-right">
-      <span class="user-name" id="user-name-display"></span>
+      <span id="user-name-display" style="font-size:11px;color:var(--txm);font-weight:500"></span>
+      <div id="market-status-badge" style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:9px;font-weight:700;letter-spacing:.3px"></div>
       <button class="lang-btn" onclick="cycleLang()" id="lang-btn">EN</button>
     </div>
   </div>
@@ -352,16 +358,16 @@ button{font-family:inherit;cursor:pointer}
 
       <!-- AI Market Pulse -->
       <div class="ai-bub" id="market-pulse">
-        <div class="ai-head"><div class="ai-av">🤖</div><div class="ai-nm">Artha · Market Pulse</div></div>
+        <div class="ai-head"><div class="ai-av">🤖</div><div class="ai-nm">Artha · Market Intelligence</div><div style="margin-left:auto;font-size:9px;color:var(--txm)" id="pulse-ts">Live</div></div>
         <div class="ai-txt" id="pulse-txt">Fetching live market data…</div>
       </div>
 
       <!-- Sub tabs -->
       <div class="sub-tabs">
         <div class="sub-tab active" onclick="switchLive('movers',this)">📈 Movers</div>
+        <div class="sub-tab" onclick="switchLive('heatmap',this)">🌡️ Heatmap</div>
         <div class="sub-tab" onclick="switchLive('macro',this)">🌍 Macro</div>
         <div class="sub-tab" onclick="switchLive('global',this)">🌐 Global</div>
-        <div class="sub-tab" onclick="switchLive('news',this);loadNews()">📰 News</div>
         <div class="sub-tab" onclick="switchLive('ipo',this)">🚀 IPO</div>
       </div>
 
@@ -406,6 +412,20 @@ button{font-family:inherit;cursor:pointer}
         <div class="section-title">Market News</div>
         <div id="news-list"><div class="shimmer" style="height:200px;border-radius:12px"></div></div>
         <div class="disc">⚠️ News from Google News RSS. Sentiment is auto-detected — verify before acting.</div>
+      </div>
+
+      <!-- HEATMAP -->
+      <div id="live-heatmap" style="display:none">
+        <div class="section-title">Sector Performance — Nifty 50</div>
+        <div id="heatmap-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:12px">
+          <div class="shimmer" style="height:72px;border-radius:12px"></div>
+          <div class="shimmer" style="height:72px;border-radius:12px"></div>
+          <div class="shimmer" style="height:72px;border-radius:12px"></div>
+          <div class="shimmer" style="height:72px;border-radius:12px"></div>
+          <div class="shimmer" style="height:72px;border-radius:12px"></div>
+          <div class="shimmer" style="height:72px;border-radius:12px"></div>
+        </div>
+        <div class="disc">Tap any sector to see its stocks. Colour intensity = strength of move.</div>
       </div>
 
       <!-- IPO -->
@@ -870,6 +890,15 @@ button{font-family:inherit;cursor:pointer}
 <script>
 'use strict';
 
+// Safe element setter — prevents crashes if element not yet in DOM
+function setEl(id, prop, val) {
+  const el = document.getElementById(id);
+  if (el) el[prop] = val;
+}
+function setTxt(id, val) { setEl(id, 'textContent', val); }
+function setHTML(id, val) { setEl(id, 'innerHTML', val); }
+function getEl(id) { return document.getElementById(id); }
+
 // ── STORAGE ──────────────────────────────────────────────────────
 const S = {
   g: k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
@@ -880,7 +909,7 @@ const S = {
 async function api(action, params={}) {
   const qs = new URLSearchParams({action, ...params}).toString();
   try {
-    const res = await fetch(`/api/market?${qs}`, {signal: AbortSignal.timeout(20000)});
+    const res = await fetch('/api/market?' + qs);
     if (!res.ok) return null;
     return await res.json();
   } catch(e) {
@@ -889,8 +918,26 @@ async function api(action, params={}) {
   }
 }
 
-function fmtPrice(n) { return '₹' + parseFloat(n).toLocaleString('en-IN', {maximumFractionDigits:2}); }
-function fmtCr(n) { return n >= 10000000 ? '₹'+(n/10000000).toFixed(1)+'Cr' : n >= 100000 ? '₹'+(n/100000).toFixed(1)+'L' : '₹'+n.toLocaleString('en-IN'); }
+// ── Indian number formatting ─────────────────────────────────
+function fmtPrice(n) {
+  if (!n && n !== 0) return '—';
+  return '₹' + parseFloat(n).toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function fmtCr(n) {
+  if (!n && n !== 0) return '₹0';
+  const a = Math.abs(n);
+  if (a >= 10000000) return '₹' + (a/10000000).toFixed(2) + ' Cr';
+  if (a >= 100000)   return '₹' + (a/100000).toFixed(2) + ' L';
+  if (a >= 1000)     return '₹' + a.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2});
+  return '₹' + a.toFixed(2);
+}
+function fmtVol(v) {
+  if (!v) return '—';
+  if (v >= 10000000) return (v/10000000).toFixed(2) + ' Cr';
+  if (v >= 100000)   return (v/100000).toFixed(2) + ' L';
+  if (v >= 1000)     return (v/1000).toFixed(2) + 'K';
+  return v.toLocaleString('en-IN');
+}
 
 // ── INIT ─────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
@@ -915,23 +962,29 @@ function finishOnboard() {
 
 function showApp(name) {
   document.getElementById('app').style.display = 'flex';
-  document.getElementById('user-name-display').textContent = name;
+  const und = document.getElementById('user-name-display'); if(und) und.textContent = name;
   // Greet
   const h = new Date().getHours();
   const greet = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
   const gt = document.getElementById('greet-txt');
   if (gt) gt.textContent = `${greet}, ${name} 👋`;
+  // Market status badge
+  updateMarketBadge();
+  setInterval(updateMarketBadge, 60000);
   // Load data
   loadLearnProgress();
   loadCFOData();
   buildLearnChips();
-  // Warmup API session
-  api('warmup');
-  // Load live data
-  loadIndices();
-  loadMovers();
-  loadMacro();
-  loadGlobal();
+  // Market badge
+  updateMarketBadge();
+  setInterval(updateMarketBadge, 30000);
+  // Macro data (static)
+  loadMacroData();
+  // Warmup API session then load live data
+  api('warmup').then(() => {
+    loadIndices();
+    loadMovers();
+  });
 }
 
 // ── NAVIGATION ────────────────────────────────────────────────────
@@ -947,10 +1000,12 @@ function switchTab(tab) {
 function switchLive(section, el) {
   document.querySelectorAll('#tab-live .sub-tab').forEach(t => t.classList.remove('active'));
   if (el) el.classList.add('active');
-  ['movers','macro','global','news','ipo'].forEach(s => {
+  ['movers','heatmap','macro','global','news','ipo'].forEach(s => {
     const el2 = document.getElementById('live-' + s);
     if (el2) el2.style.display = s === section ? 'block' : 'none';
   });
+  if (section === 'heatmap' && !heatmapLoaded) loadHeatmap();
+  if (section === 'global' && !globalLoaded) loadGlobal();
 }
 
 function switchMovers(type, el) {
@@ -970,8 +1025,37 @@ function switchAnalyse(section, el) {
   if (section === 'paper') renderPaperHoldings();
 }
 
+// ── MARKET STATUS ────────────────────────────────────────────────
+function getMarketState() {
+  const now = new Date();
+  const ist = new Date(now.toLocaleString('en-US', {timeZone:'Asia/Kolkata'}));
+  const day = ist.getDay(); const h = ist.getHours(); const m = ist.getMinutes();
+  const mins = h * 60 + m;
+  const isWeekend = day === 0 || day === 6;
+  const isOpen = !isWeekend && mins >= 555 && mins <= 930;
+  return { isOpen, isWeekend, ist };
+}
+
+function updateMarketBadge() {
+  const { isOpen, isWeekend } = getMarketState();
+  const badge = document.getElementById('market-status-badge');
+  if (!badge) return;
+  if (isOpen) {
+    badge.style.cssText = 'display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:9px;font-weight:700;background:rgba(29,185,84,.12);border:1px solid rgba(29,185,84,.25);color:#1DB954';
+    badge.innerHTML = '<span style="width:5px;height:5px;border-radius:50%;background:#1DB954;animation:pulse 1.5s infinite"></span>LIVE';
+  } else if (isWeekend) {
+    badge.style.cssText = 'display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:9px;font-weight:700;background:rgba(240,180,41,.1);border:1px solid rgba(240,180,41,.25);color:#F0B429';
+    badge.innerHTML = '<span style="width:5px;height:5px;border-radius:50%;background:#F0B429"></span>WEEKEND';
+  } else {
+    badge.style.cssText = 'display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:9px;font-weight:700;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:#EF4444';
+    badge.innerHTML = '<span style="width:5px;height:5px;border-radius:50%;background:#EF4444"></span>CLOSED';
+  }
+}
+
 // ── LIVE TAB — INDICES ────────────────────────────────────────────
 let moversCache = {gainers:[], losers:[], volume:[]};
+let heatmapLoaded = false;
+let globalLoaded = false;
 
 async function loadIndices() {
   const data = await api('indices');
@@ -980,18 +1064,53 @@ async function loadIndices() {
   const show = data.indices.filter(i => i.name !== 'INDIA VIX').slice(0,4);
   grid.innerHTML = show.map(idx => {
     const up = idx.changePct >= 0;
+    const col = up ? 'var(--g)' : 'var(--err)';
+    const absChg = idx.change != null ? (up?'+':'') + fmtPrice(Math.abs(idx.change)) : '';
     return `<div class="idx-card">
       <div class="idx-name">${idx.name}</div>
-      <div class="idx-val ${up?'up':'dn'}">${idx.value?.toLocaleString('en-IN',{maximumFractionDigits:0})}</div>
-      <div class="idx-chg ${up?'up':'dn'}">${up?'▲':'▼'} ${Math.abs(idx.changePct).toFixed(2)}%</div>
+      <div class="idx-val" style="color:${col}">${idx.value?.toLocaleString('en-IN',{maximumFractionDigits:0})}</div>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:3px">
+        <span style="font-size:11px;font-weight:700;color:${col}">${up?'▲':'▼'} ${Math.abs(idx.changePct).toFixed(2)}%</span>
+        <span style="font-size:10px;color:${col};font-family:'DM Mono',monospace;opacity:.8">${absChg}</span>
+      </div>
     </div>`;
   }).join('');
-  // Market pulse
+  // Artha AI Market Insight
   const nifty = data.indices.find(i => i.name === 'NIFTY 50');
+  const vix   = data.indices.find(i => i.name === 'INDIA VIX');
+  const niftyIT = data.indices.find(i => i.name === 'NIFTY IT');
+  const niftyPharma = data.indices.find(i => i.name === 'NIFTY PHARMA');
   if (nifty) {
     const up = nifty.changePct >= 0;
-    document.getElementById('pulse-txt').innerHTML =
-      `Nifty 50 is <strong style="color:var(--${up?'g':'err'})">${up?'up':'down'} ${Math.abs(nifty.changePct).toFixed(2)}%</strong> at ${nifty.value?.toLocaleString('en-IN',{maximumFractionDigits:0})} today. ${up ? 'Buyers are in control. Market sentiment is positive — look for stocks forming breakouts on high volume.' : 'Sellers dominate today. Check if this is broad weakness or sector-specific. Quality stocks at support can be watched for entry.'}`;
+    const pct = Math.abs(nifty.changePct).toFixed(2);
+    const absChg = nifty.change != null ? (up?'+':'') + fmtPrice(Math.abs(nifty.change)) : '';
+    const { isOpen, isWeekend } = getMarketState();
+    const sessionTag = isWeekend ? ' (weekend — last session)' : !isOpen ? ' (market closed)' : '';
+
+    let insight = `Nifty 50 is <strong style="color:var(--${up?'g':'err'})">${up?'up':'down'} ${pct}% (${absChg})</strong> at <strong>${nifty.value?.toLocaleString('en-IN',{maximumFractionDigits:0})}</strong>${sessionTag}. `;
+
+    if (niftyIT && Math.abs(niftyIT.changePct) > 1) {
+      const itUp = niftyIT.changePct >= 0;
+      insight += `Nifty IT ${itUp?'gained':'fell'} ${Math.abs(niftyIT.changePct).toFixed(2)}% — ${itUp?'dollar-earning tech companies benefiting from rupee movement':'US tech headwinds or rupee strength weighing on IT'}. `;
+    }
+    if (niftyPharma && Math.abs(niftyPharma.changePct) > 1) {
+      const phUp = niftyPharma.changePct >= 0;
+      insight += `Pharma ${phUp?'leading gains':'under pressure'} at ${niftyPharma.changePct.toFixed(2)}%. `;
+    }
+    if (vix) {
+      if (vix.value > 20) insight += `India VIX at ${vix.value.toFixed(1)} — elevated fear, expect volatile moves. `;
+      else if (vix.value < 14) insight += `India VIX at ${vix.value.toFixed(1)} — calm conditions, low volatility expected. `;
+    }
+
+    const ptxt = document.getElementById('pulse-txt');
+    if (ptxt) ptxt.innerHTML = insight;
+    // Update timestamp
+    const pts = document.getElementById('pulse-ts');
+    if (pts) {
+      const now = new Date();
+      const ist = new Date(now.toLocaleString('en-US',{timeZone:'Asia/Kolkata'}));
+      pts.textContent = ist.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true}) + ' IST';
+    }
   }
   // Ticker
   updateTicker(data.indices);
@@ -1001,49 +1120,80 @@ function updateTicker(indices) {
   if (!indices?.length) return;
   const items = indices.map(i => {
     const up = i.changePct >= 0;
-    return `<span class="ticker-item"><b>${i.name}</b> ${i.value?.toLocaleString('en-IN',{maximumFractionDigits:0})} <span class="${up?'t-up':'t-dn'}">${up?'▲':'▼'}${Math.abs(i.changePct).toFixed(2)}%</span></span>`;
-  }).join('<span class="ticker-item" style="color:var(--bord)">│</span>');
+    const col = up ? 'var(--g)' : 'var(--err)';
+    const absChg = i.change != null ? (up?'+':'') + fmtPrice(Math.abs(i.change)) : '';
+    return `<span class="ticker-item"><b>${i.name}</b>&nbsp;${i.value?.toLocaleString('en-IN',{maximumFractionDigits:0})}&nbsp;<span style="color:${col};font-weight:700">${up?'▲':'▼'}${Math.abs(i.changePct).toFixed(2)}%</span>&nbsp;<span style="color:${col};opacity:.75;font-size:9px">${absChg}</span></span><span class="ticker-item" style="color:var(--txm);font-size:10px">·</span>`;
+  }).join('');
   const track = document.getElementById('ticker-track');
-  track.innerHTML = items + items; // duplicate for seamless loop
+  if (track) track.innerHTML = items + items;
 }
 
 async function loadMovers() {
-  const syms = 'RELIANCE,TCS,HDFCBANK,INFY,ICICIBANK,SBIN,BHARTIARTL,WIPRO,AXISBANK,MARUTI,SUNPHARMA,ITC,BAJFINANCE,TITAN,TATAMOTORS,ZOMATO,HCLTECH,LT,NTPC,ONGC,ADANIPORTS,HINDUNILVR,KOTAKBANK,TATASTEEL,ASIANPAINT';
-  const data = await api('batch', {symbols: syms});
+  // marketscan = full Nifty 50 in one request — most accurate
+  const data = await api('marketscan');
   if (!data?.quotes) return;
-  const results = Object.entries(data.quotes).map(([sym, q]) => ({sym, ...q}));
-  moversCache.gainers = [...results].filter(r => r.changePct > 0).sort((a,b) => b.changePct - a.changePct);
-  moversCache.losers  = [...results].filter(r => r.changePct < 0).sort((a,b) => a.changePct - b.changePct);
+  const results = Object.entries(data.quotes).map(([sym, q]) => ({sym, ...q})).filter(r => r.price > 0);
+  const { isOpen, isWeekend } = getMarketState();
+
+  moversCache.gainers = [...results].sort((a,b) => (b.changePct||0) - (a.changePct||0));
+  moversCache.losers  = [...results].sort((a,b) => (a.changePct||0) - (b.changePct||0));
   moversCache.volume  = [...results].sort((a,b) => (b.volume||0) - (a.volume||0));
+
+  // Store for heatmap use
+  window._nifty50Quotes = data.quotes;
   renderMovers('gainers');
 }
 
 function renderMovers(type) {
   const el = document.getElementById('movers-list'); if (!el) return;
   const list = moversCache[type] || [];
-  if (!list.length) { el.innerHTML = '<div style="text-align:center;padding:16px;color:var(--txd);font-size:12px">⏳ Loading…</div>'; return; }
-  el.innerHTML = list.slice(0,8).map((r,i) => {
+  if (!list.length) { el.innerHTML = '<div style="text-align:center;padding:24px;color:var(--txd);font-size:12px">⏳ Loading live data…</div>'; return; }
+
+  const { isOpen, isWeekend } = getMarketState();
+  const sessionNote = (!isOpen || isWeekend)
+    ? `<div style="background:rgba(240,180,41,.1);border:1px solid rgba(240,180,41,.2);border-radius:8px;padding:8px 12px;font-size:10px;color:#F0B429;margin-bottom:10px;font-weight:600">${isWeekend ? '📅 Weekend — showing last trading session' : '🔴 Market closed — showing last session prices'}</div>`
+    : '';
+
+  el.innerHTML = sessionNote + list.slice(0, 10).map((r, i) => {
     const up = (r.changePct||0) >= 0;
+    const col = up ? 'var(--g)' : 'var(--err)';
     const price = r.price > 0 ? fmtPrice(r.price) : '—';
     const pct = r.changePct != null ? (up?'+':'') + r.changePct.toFixed(2) + '%' : '—';
+    const absChg = r.change != null ? (up?'+':'') + fmtPrice(Math.abs(r.change)) : '';
+    const volStr = type === 'volume' ? fmtVol(r.volume) : null;
     return `<div class="mv-row">
-      <div class="mv-icon">${r.sym.slice(0,4)}</div>
-      <div style="flex:1;min-width:0"><div class="mv-name">${r.sym}</div><div class="mv-sector">${r.longName?.substring(0,22)||'NSE'}</div></div>
-      <div style="text-align:right"><div class="mv-price">${price}</div><div class="mv-pct ${up?'up':'dn'}">${pct}</div></div>
+      <div style="font-size:11px;font-weight:700;color:var(--txm);min-width:18px;text-align:center;font-family:'DM Mono',monospace">${i+1}</div>
+      <div class="mv-icon" style="font-size:10px">${r.sym.slice(0,4)}</div>
+      <div style="flex:1;min-width:0"><div class="mv-name">${r.sym}</div><div class="mv-sector">${(r.longName||'').substring(0,24)||'NSE Listed'}</div></div>
+      <div style="text-align:right">
+        <div class="mv-price">${price}</div>
+        ${volStr
+          ? `<div style="font-size:10px;color:var(--txd)">Vol: ${volStr}</div>`
+          : `<div style="display:flex;gap:5px;justify-content:flex-end;align-items:center;flex-wrap:wrap">
+               <div class="mv-pct ${up?'up':'dn'}" style="font-size:11px;font-weight:700">${up?'▲':'▼'} ${pct}</div>
+               <div style="font-size:10px;color:${col};font-weight:500;opacity:.8">${absChg}</div>
+             </div>`
+        }
+      </div>
     </div>`;
   }).join('');
 }
 
-function loadMacro() {
+function loadMacroData() {
   const MACRO = [
-    {icon:'💹', label:'Repo Rate', val:'6.25%', why:'RBI rate affects YOUR home loan EMI. Every 0.25% rise = ~₹15-20 more per ₹10L EMI.'},
-    {icon:'📊', label:'CPI Inflation', val:'4.8%', why:'YOUR grocery bill is rising at this rate. Budget accordingly for essentials.'},
-    {icon:'💱', label:'USD/INR', val:'83.4', why:'Weaker rupee = costlier imports. IT companies like TCS benefit when rupee weakens.'},
-    {icon:'🌱', label:'GDP Growth', val:'6.8%', why:'India growing faster than most economies. Good for long-term equity investors.'},
+    {icon:'🏦', label:'Repo Rate', val:'6.25%', color:'#4A7EC7', why:'Every 0.25% RBI hike = ~₹15-20 more EMI per ₹10L borrowed. Affects your home loan directly.'},
+    {icon:'📊', label:'CPI Inflation', val:'4.8%', color:'#F0B429', why:'Your groceries and fuel rising at this rate. FD at 6.5% earns only 1.7% real return after inflation.'},
+    {icon:'💱', label:'USD / INR', val:'₹83.4', color:'var(--tx)', why:'Weak rupee: IT & Pharma gain (USD earnings). Aviation & OMCs lose (USD costs rise).'},
+    {icon:'🌱', label:'GDP Growth', val:'6.8%', color:'var(--g)', why:'India growing faster than most economies. Compounding equity above GDP builds long-term wealth.'},
   ];
   const grid = document.getElementById('macro-grid');
   if (grid) {
-    grid.innerHTML = MACRO.map(m => `<div class="macro-card"><div class="macro-icon">${m.icon}</div><div class="macro-label">${m.label}</div><div class="macro-val">${m.val}</div><div class="macro-why">${m.why}</div></div>`).join('');
+    grid.innerHTML = MACRO.map(m => `<div class="macro-card">
+      <div style="font-size:20px;margin-bottom:6px">${m.icon}</div>
+      <div class="macro-label">${m.label}</div>
+      <div class="macro-val" style="color:${m.color}">${m.val}</div>
+      <div class="macro-why">${m.why}</div>
+    </div>`).join('');
   }
 }
 
@@ -1086,17 +1236,7 @@ function buildLearnChips() {
   mkChips(MACRO, 'macro-chips');
 }
 
-function markLesson(key, el) {
-  const prog = S.g('aa_learn') || {};
-  if (prog[key]) return;
-  prog[key] = true;
-  S.s('aa_learn', prog);
-  S.s('aa_xp', (S.g('aa_xp')||0) + 15);
-  S.s('aa_streak', (S.g('aa_streak')||0) + 1);
-  el.classList.add('done');
-  el.textContent = '✓ ' + el.textContent.trim();
-  buildLearnChips();
-}
+// markLesson removed — use openLesson()
 
 function loadLearnProgress() { buildLearnChips(); }
 
@@ -1142,10 +1282,10 @@ function updateBFM() {
   setBar('bfm-debt', d, d <= 20);
   setBar('bfm-save', sv, sv >= 20);
   setBar('bfm-want', w, w <= 10);
-  document.getElementById('bfm-needs-pct').textContent = cfoData.income ? n + '%' : '—';
-  document.getElementById('bfm-debt-pct').textContent  = cfoData.income ? d + '%' : '—';
-  document.getElementById('bfm-save-pct').textContent  = cfoData.income ? sv + '%' : '—';
-  document.getElementById('bfm-want-pct').textContent  = cfoData.income ? w + '%' : '—';
+  setEl('bfm-needs-pct','textContent', cfoData.income ? n + '%' : '—');
+  setEl('bfm-debt-pct','textContent', cfoData.income ? d + '%' : '—');
+  setEl('bfm-save-pct','textContent', cfoData.income ? sv + '%' : '—');
+  setEl('bfm-want-pct','textContent', cfoData.income ? w + '%' : '—');
 }
 
 function updateHealthScore() {
@@ -1203,7 +1343,7 @@ function saveBFM() {
   cfoData.savings  = parseFloat(document.getElementById('bfm-sv')?.value||0);
   cfoData.wants    = parseFloat(document.getElementById('bfm-w')?.value||0);
   saveCFO(); closePanel(); updateBFM(); updateHealthScore();
-  document.getElementById('exp-income-show').textContent = fmtCr(cfoData.income);
+  setEl('exp-income-show','textContent', fmtCr(cfoData.income));
 }
 
 function panelIncome() {
@@ -1263,9 +1403,9 @@ function calcNetWorth() {
   const res = document.getElementById('nw-result');
   if (res) {
     res.style.display = 'block';
-    document.getElementById('nw-r-assets').textContent = fmtCr(assets);
-    document.getElementById('nw-r-debts').textContent  = fmtCr(liabs);
-    document.getElementById('nw-r-net').textContent    = fmtCr(net);
+    setEl('nw-r-assets','textContent', fmtCr(assets));
+    setEl('nw-r-debts','textContent', fmtCr(liabs));
+    setEl('nw-r-net','textContent', fmtCr(net));
     document.getElementById('nw-r-net').style.color    = net >= 0 ? 'var(--g)' : 'var(--err)';
   }
   return {assets, liabs};
@@ -1331,10 +1471,9 @@ function renderDebts() {
   const msgEl = document.getElementById('debt-coach-msg');
   if (msgEl) {
     msgEl.style.display = 'block';
-    document.getElementById('debt-coach-txt').textContent =
-      debtMethod === 'avalanche'
+    setEl('debt-coach-txt','textContent', debtMethod === 'avalanche'
         ? `⚡ Avalanche Strategy: Focus extra money on "${sorted[0]?.name}" first (highest rate: ${sorted[0]?.rate}%). This saves the most interest mathematically. Total EMI: ${fmtCr(totalEMI)}/month. Estimated debt freedom: ${maxMonths} months.`
-        : `❄️ Snowball Strategy: Focus extra money on "${sorted[0]?.name}" first (smallest balance: ${fmtCr(sorted[0]?.amt)}). This gives you quick wins and momentum. Total EMI: ${fmtCr(totalEMI)}/month.`;
+        : `❄️ Snowball Strategy: Focus extra money on "${sorted[0]?.name}" first (smallest balance: ${fmtCr(sorted[0]?.amt)}). This gives you quick wins and momentum. Total EMI: ${fmtCr(totalEMI)}/month.`);
   }
 }
 
@@ -1506,38 +1645,38 @@ async function doSearchSym(sym) {
   const result = document.getElementById('stock-result');
   result.classList.remove('show');
   // Show loading state
-  document.getElementById('st-sym').textContent = sym;
-  document.getElementById('st-name').textContent = 'Loading…';
-  document.getElementById('st-price').textContent = '—';
+  setEl('st-sym','textContent', sym);
+  setEl('st-name','textContent', 'Loading…');
+  setEl('st-price','textContent', '—');
   result.classList.add('show');
 
   const data = await api('quote', {symbol: sym});
   if (!data || !data.price) {
-    document.getElementById('st-name').textContent = 'Not found — try another symbol';
+    setEl('st-name','textContent', 'Not found — try another symbol');
     return;
   }
   const up = (data.changePct||0) >= 0;
-  document.getElementById('st-sym').textContent   = sym;
-  document.getElementById('st-name').textContent  = data.longName || sym;
-  document.getElementById('st-price').textContent = fmtPrice(data.price);
+  setEl('st-sym','textContent', sym);
+  setEl('st-name','textContent', data.longName || sym);
+  setEl('st-price','textContent', fmtPrice(data.price));
   document.getElementById('st-price').className   = 'stock-p ' + (up?'up':'dn');
-  document.getElementById('st-chg').textContent   = (up?'+':'') + (data.changePct||0).toFixed(2) + '% today';
+  setEl('st-chg','textContent', (up?'+':'') + (data.changePct||0).toFixed(2) + '% today');
   document.getElementById('st-chg').className     = 'stock-chg ' + (up?'up':'dn');
-  document.getElementById('st-open').textContent  = data.open > 0 ? fmtPrice(data.open) : '—';
-  document.getElementById('st-high').textContent  = data.high > 0 ? fmtPrice(data.high) : '—';
-  document.getElementById('st-low').textContent   = data.low  > 0 ? fmtPrice(data.low)  : '—';
-  document.getElementById('st-pe').textContent    = data.pe   > 0 ? data.pe.toFixed(1)+'x' : 'N/A';
-  document.getElementById('st-52l').textContent   = data.w52Low  > 0 ? fmtPrice(data.w52Low)  : '—';
-  document.getElementById('st-52h').textContent   = data.w52High > 0 ? fmtPrice(data.w52High) : '—';
+  setEl('st-open','textContent', data.open > 0 ? fmtPrice(data.open) : '—');
+  setEl('st-high','textContent', data.high > 0 ? fmtPrice(data.high) : '—');
+  setEl('st-low','textContent', data.low  > 0 ? fmtPrice(data.low)  : '—');
+  setEl('st-pe','textContent', data.pe   > 0 ? data.pe.toFixed(1)+'x' : 'N/A');
+  setEl('st-52l','textContent', data.w52Low  > 0 ? fmtPrice(data.w52Low)  : '—');
+  setEl('st-52h','textContent', data.w52High > 0 ? fmtPrice(data.w52High) : '—');
   const pct52 = data.w52High > data.w52Low ? ((data.price - data.w52Low)/(data.w52High - data.w52Low)*100) : 50;
-  document.getElementById('st-52pos').textContent = `At ${Math.round(pct52)}% of 52W range`;
+  setEl('st-52pos','textContent', `At ${Math.round(pct52)}% of 52W range`);
   document.getElementById('st-52fill').style.left = Math.min(94,Math.max(6,pct52)) + '%';
 
   // AI insight
   const insight = up
     ? `${sym} is up ${(data.changePct||0).toFixed(2)}% today at ${fmtPrice(data.price)}. ${pct52 > 70 ? 'Trading near 52-week highs — strong momentum. Watch for resistance.' : 'Mid-range position with room to move higher.'} ${data.pe > 0 ? `P/E of ${data.pe.toFixed(1)}x — compare with sector average.` : ''}`
     : `${sym} is down ${Math.abs(data.changePct||0).toFixed(2)}% today at ${fmtPrice(data.price)}. ${pct52 < 30 ? 'Near 52-week lows — check if business fundamentals are intact before concluding it\'s cheap.' : 'Pulling back from highs — could be normal consolidation.'} ${data.pe > 0 ? `P/E: ${data.pe.toFixed(1)}x.` : ''}`;
-  document.getElementById('st-why').textContent = insight;
+  setEl('st-why','textContent', insight);
 }
 
 function addToWatchlist() {
@@ -1609,9 +1748,9 @@ async function renderPortfolio() {
     sumEl.style.display = 'block';
     const totalPnL = totalCurrent - totalInvested;
     const up = totalPnL >= 0;
-    document.getElementById('port-invested').textContent = fmtCr(Math.round(totalInvested));
-    document.getElementById('port-current').textContent  = fmtCr(Math.round(totalCurrent));
-    document.getElementById('port-pnl').textContent      = (up?'+':'') + fmtCr(Math.abs(Math.round(totalPnL)));
+    setEl('port-invested','textContent', fmtCr(Math.round(totalInvested)));
+    setEl('port-current','textContent', fmtCr(Math.round(totalCurrent)));
+    setEl('port-pnl','textContent', (up?'+':'') + fmtCr(Math.abs(Math.round(totalPnL))));
     document.getElementById('port-pnl').style.color      = up ? 'var(--g)' : 'var(--err)';
   }
 }
@@ -1659,7 +1798,7 @@ async function paperBuy() {
   savePaper();
   document.getElementById('paper-sym').value = '';
   document.getElementById('paper-qty').value = '';
-  document.getElementById('paper-price-preview').textContent = 'Enter symbol to see live price';
+  setEl('paper-price-preview','textContent', 'Enter symbol to see live price');
   paperLivePrice = 0;
   renderPaperHoldings();
   alert(`✅ Bought ${qty} × ${sym} @ ${fmtPrice(paperLivePrice)} (virtual)`);
@@ -1743,7 +1882,7 @@ function panelPortfolio() {
 }
 
 function runScreen(type) {
-  document.getElementById('screen-result').innerHTML = '<div class="shimmer" style="height:60px;border-radius:10px"></div>';
+  setEl('screen-result','innerHTML', '<div class="shimmer" style="height:60px;border-radius:10px"></div>');
   setTimeout(() => {
     const msgs = {
       rsi:'RSI Oversold scan: Stocks where RSI is estimated below 35. These have fallen fast and may find support. Check fundamentals before acting. Coming live in Phase 4.',
@@ -1751,13 +1890,13 @@ function runScreen(type) {
       '52low':'Near 52-Week Low scan: Stocks within 15% of yearly low. Sometimes value, sometimes falling knife — always check the reason. Coming live in Phase 4.',
       lowpe:'Low P/E scan: Stocks trading below sector average P/E. May be undervalued or struggling — always investigate the reason. Coming live in Phase 4.',
     };
-    document.getElementById('screen-result').innerHTML = `<div class="ai-bub"><div class="ai-head"><div class="ai-av">📋</div><div class="ai-nm">Screener</div></div><div class="ai-txt">${msgs[type]}</div></div>`;
+    setEl('screen-result','innerHTML', `<div class="ai-bub"><div class="ai-head"><div class="ai-av">📋</div><div class="ai-nm">Screener</div></div><div class="ai-txt">${msgs[type]}</div></div>`);
   }, 800);
 }
 
 // ── SLIDE PANEL ───────────────────────────────────────────────────
 function openPanel(title, html) {
-  document.getElementById('panel-content').innerHTML = `<div class="panel-title">${title}</div>${html}`;
+  setEl('panel-content','innerHTML', `<div class="panel-title">${title}</div>${html}`);
   document.getElementById('slide-panel').classList.add('open');
   document.getElementById('overlay').classList.add('show');
 }
@@ -1879,12 +2018,110 @@ function closeLesson() {
   if (modal) modal.style.display = 'none';
 }
 
+// ── SECTOR HEATMAP ───────────────────────────────────────────────
+const SECTORS = [
+  {name:'IT',       syms:['TCS','INFY','WIPRO','HCLTECH','LTIM']},
+  {name:'Banking',  syms:['HDFCBANK','ICICIBANK','KOTAKBANK','AXISBANK','SBIN']},
+  {name:'Pharma',   syms:['SUNPHARMA','DRREDDY','CIPLA','DIVISLAB']},
+  {name:'Auto',     syms:['MARUTI','TATAMOTORS','MM','BAJAJ-AUTO','HEROMOTOCO']},
+  {name:'FMCG',     syms:['ITC','HINDUNILVR','NESTLEIND','BRITANNIA']},
+  {name:'Energy',   syms:['RELIANCE','ONGC','BPCL','NTPC','POWERGRID']},
+  {name:'Metals',   syms:['TATASTEEL','JSWSTEEL','HINDALCO','COALINDIA']},
+  {name:'Infra',    syms:['LT','ADANIPORTS','ADANIENT','GRASIM']},
+  {name:'Finance',  syms:['BAJFINANCE','BAJAJFINSV','HDFCLIFE','SBILIFE']},
+];
+
+async function loadHeatmap() {
+  if (heatmapLoaded) return;
+  heatmapLoaded = true;
+  if (window._nifty50Quotes) { renderHeatmap(window._nifty50Quotes); return; }
+  const allSyms = SECTORS.flatMap(function(s){return s.syms;}).filter(function(v,i,a){return a.indexOf(v)===i;}).join(',');
+  const data = await api('batch', {symbols: allSyms});
+  if (data && data.quotes) renderHeatmap(data.quotes);
+}
+
+function renderHeatmap(quotes) {
+  const grid = document.getElementById('heatmap-grid');
+  if (!grid) return;
+  grid.innerHTML = SECTORS.map(function(sector) {
+    const sq = sector.syms.map(function(s){return quotes[s];}).filter(Boolean);
+    if (!sq.length) {
+      return '<div style="background:var(--elev);border:1px solid var(--bord);border-radius:12px;padding:12px 8px;text-align:center"><div style="font-size:10px;font-weight:700;color:var(--txm)">' + sector.name + '</div><div style="font-size:11px;color:var(--txm);margin-top:4px">—</div></div>';
+    }
+    const avgPct = sq.reduce(function(s,q){return s+(q.changePct||0);},0) / sq.length;
+    const avgAbs = sq.reduce(function(s,q){return s+(q.change||0);},0) / sq.length;
+    const up = avgPct >= 0;
+    const intensity = Math.min(Math.abs(avgPct)/4, 1);
+    const bg     = up ? 'rgba(0,192,118,' + (0.08 + intensity*0.35) + ')' : 'rgba(255,77,77,' + (0.08 + intensity*0.35) + ')';
+    const border = up ? 'rgba(0,192,118,.25)' : 'rgba(255,77,77,.25)';
+    const col    = up ? 'var(--g)' : 'var(--err)';
+    const sign   = up ? '+' : '';
+    const symsJSON = JSON.stringify(sector.syms);
+    return '<div style="background:' + bg + ';border:1px solid ' + border + ';border-radius:12px;padding:11px 8px;text-align:center;cursor:pointer" onclick="showSectorPanel(\'' + sector.name + '\',' + symsJSON + ')">'
+      + '<div style="font-size:10px;font-weight:700;color:' + col + ';margin-bottom:5px">' + sector.name + '</div>'
+      + '<div style="font-size:14px;font-weight:800;font-family:\'DM Mono\',monospace;color:' + col + '">' + sign + avgPct.toFixed(2) + '%</div>'
+      + '<div style="font-size:9px;font-weight:600;font-family:\'DM Mono\',monospace;color:' + col + ';margin-top:2px;opacity:.85">' + sign + '₹' + Math.abs(avgAbs).toFixed(2) + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+function showSectorPanel(name, syms) {
+  const quotes = window._nifty50Quotes || {};
+  const rows = syms.map(function(sym) {
+    const q = quotes[sym];
+    const up = q ? (q.changePct||0) >= 0 : null;
+    const col = up === null ? 'var(--txd)' : up ? 'var(--g)' : 'var(--err)';
+    let priceHtml = '<div style="font-size:11px;color:var(--txd)">Loading…</div>';
+    if (q) {
+      priceHtml = '<div style="font-size:13px;font-weight:600;font-family:\'DM Mono\',monospace">₹' + (q.price ? q.price.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}) : '—') + '</div>'
+        + '<div style="font-size:11px;font-weight:700;color:' + col + '">'
+        + (up?'▲':'▼') + ' ' + Math.abs(q.changePct||0).toFixed(2) + '% &nbsp; '
+        + (up?'+':'') + '₹' + Math.abs(q.change||0).toFixed(2)
+        + '</div>';
+    }
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--bord);cursor:pointer" onclick="doSearchSym(\'' + sym + '\');closePanel();switchTab(\'analyse\')">'
+      + '<div><div style="font-size:13px;font-weight:700;font-family:\'DM Mono\',monospace">' + sym + '</div>'
+      + '<div style="font-size:10px;color:var(--txd)">' + ((q && q.longName) ? q.longName.substring(0,26) : 'Tap to research →') + '</div></div>'
+      + '<div style="text-align:right">' + priceHtml + '</div>'
+      + '</div>';
+  }).join('');
+  openPanel(name + ' Sector', rows);
+}
+
+// ── GLOBAL MARKETS ─────────────────────────────────────────────────
+async function loadGlobal() {
+  if (globalLoaded) return;
+  globalLoaded = true;
+  const GLOBAL = [
+    {sym:'^GSPC', name:'S&P 500',   flag:'🇺🇸'},
+    {sym:'^IXIC', name:'Nasdaq',    flag:'🇺🇸'},
+    {sym:'^N225', name:'Nikkei',    flag:'🇯🇵'},
+    {sym:'^HSI',  name:'Hang Seng', flag:'🇭🇰'},
+  ];
+  const grid = document.getElementById('global-grid');
+  if (!grid) return;
+  const results = await Promise.all(GLOBAL.map(function(g){return api('quote',{symbol:g.sym});}));
+  grid.innerHTML = GLOBAL.map(function(g, i) {
+    const q = results[i];
+    if (!q || !q.price) {
+      return '<div class="idx-card"><div class="idx-name">' + g.flag + ' ' + g.name + '</div><div class="idx-val" style="color:var(--txm)">Unavailable</div></div>';
+    }
+    const up  = (q.changePct||0) >= 0;
+    const col = up ? 'var(--g)' : 'var(--err)';
+    return '<div class="idx-card">'
+      + '<div class="idx-name">' + g.flag + ' ' + g.name + '</div>'
+      + '<div class="idx-val" style="color:' + col + '">' + q.price.toLocaleString('en-US',{maximumFractionDigits:0}) + '</div>'
+      + '<div style="display:flex;gap:5px;align-items:center;margin-top:3px">'
+      + '<span style="font-size:11px;font-weight:700;color:' + col + '">' + (up?'▲':'▼') + ' ' + Math.abs(q.changePct||0).toFixed(2) + '%</span>'
+      + '<span style="font-size:10px;color:' + col + ';font-family:\'DM Mono\',monospace;opacity:.8">' + (up?'+':'') + (q.change ? q.change.toFixed(2) : '—') + '</span>'
+      + '</div></div>';
+  }).join('');
+}
+
 // Auto-refresh every 60 seconds during market hours
 setInterval(() => {
-  const now = new Date();
-  const ist = new Date(now.toLocaleString('en-US',{timeZone:'Asia/Kolkata'}));
-  const day = ist.getDay(), h = ist.getHours(), m = ist.getMinutes();
-  const isOpen = day >= 1 && day <= 5 && (h > 9 || (h===9&&m>=15)) && (h < 15 || (h===15&&m<=30));
+  const { isOpen } = getMarketState();
+  updateMarketBadge();
   if (isOpen) { loadIndices(); loadMovers(); }
 }, 60000);
 </script>
