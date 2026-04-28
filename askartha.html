@@ -10,16 +10,16 @@
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=Tiro+Devanagari+Hindi&display=swap" rel="stylesheet">
 <style>
 :root{
-  /* Signal colours — green/red ONLY for price data */
-  --g:#00C076;--gd:#007A4B;--gp:rgba(0,192,118,.08);
-  --b:#1A4D8F;--bl:#4A7EC7;--bp:rgba(74,126,199,.1);
-  --gold:#C9922A;--gol:#E8B84B;--gop:rgba(201,146,42,.1);
-  /* Surface — dark neutral, NOT green */
-  --dark:#080E14;--surf:#0C1520;--elev:#111E2C;--bord:#1A2A38;--mut:#162030;
+  /* BRAND: Gold=primary, Blue=secondary, Green=gains only, Red=losses only */
+  --gold:#C9922A;--gold-l:#E8B84B;--gold-bg:rgba(201,146,42,.1);--gold-bord:rgba(201,146,42,.28);
+  --blue:#1A4D8F;--blue-l:#4A7EC7;--blue-bg:rgba(26,77,143,.12);--blue-bord:rgba(74,126,199,.22);
+  /* Price signals only */
+  --g:#00C076;--gp:rgba(0,192,118,.08);--gbord:rgba(0,192,118,.2);
+  --err:#FF4D4D;--erp:rgba(255,77,77,.08);--ebord:rgba(255,77,77,.2);
+  /* Surfaces */
+  --dark:#080E14;--surf:#0C1520;--elev:#111E2C;--bord:#1A2A38;--bord2:#1E2E3D;
   /* Text */
   --tx:#DCE6F0;--txd:#7A90A8;--txm:#445A6E;
-  /* Alerts */
-  --warn:#F0B429;--err:#FF4D4D;
   /* Radius */
   --r8:8px;--r10:10px;--r12:12px;--r16:16px;--r20:20px;--r24:24px;
 }
@@ -30,13 +30,13 @@ button{font-family:inherit;cursor:pointer}
 /* ── SPLASH ── */
 #splash{position:fixed;inset:0;background:var(--surf);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:9999;transition:opacity .6s ease}
 #splash.gone{opacity:0;pointer-events:none}
-.sp-logo{width:76px;height:76px;border-radius:20px;background:linear-gradient(135deg,var(--b),var(--g),var(--gold));display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-size:38px;font-weight:800;color:#fff;box-shadow:0 20px 60px rgba(29,185,84,.25),0 10px 30px rgba(26,77,143,.2);animation:breathe 2s ease-in-out infinite}
+.sp-logo{width:76px;height:76px;border-radius:20px;background:linear-gradient(145deg,#0A1828,#2A1A04,#3D2800);display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-size:38px;font-weight:800;color:#fff;box-shadow:0 20px 60px rgba(29,185,84,.25),0 10px 30px rgba(26,77,143,.2);animation:breathe 2s ease-in-out infinite}
 @keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
 .sp-name{font-family:'Sora',sans-serif;font-size:30px;font-weight:800;letter-spacing:-1px;background:linear-gradient(90deg,var(--g),var(--bl),var(--gol));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .sp-tag{font-family:'Tiro Devanagari Hindi',serif;font-size:16px;color:var(--txd)}
 .sp-dots{display:flex;gap:7px;margin-top:6px}
 .sp-dot{width:7px;height:7px;border-radius:50%;animation:dot 1.4s ease-in-out infinite}
-.sp-dot:nth-child(1){background:var(--g);animation-delay:0s}
+.sp-dot:nth-child(1){background:var(--gold);animation-delay:0s}
 .sp-dot:nth-child(2){background:var(--bl);animation-delay:.2s}
 .sp-dot:nth-child(3){background:var(--gold);animation-delay:.4s}
 @keyframes dot{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1);opacity:1}}
@@ -44,20 +44,20 @@ button{font-family:inherit;cursor:pointer}
 /* ── ONBOARDING ── */
 #onboard{position:fixed;inset:0;background:var(--surf);z-index:8000;display:none;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center}
 #onboard.show{display:flex}
-.ob-logo{width:60px;height:60px;border-radius:16px;background:linear-gradient(135deg,var(--b),var(--g),var(--gold));display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-size:28px;font-weight:800;color:#fff;margin:0 auto 20px}
+.ob-logo{width:60px;height:60px;border-radius:16px;background:linear-gradient(145deg,#0A1828,#2A1A04,#3D2800);display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-size:28px;font-weight:800;color:#fff;margin:0 auto 20px}
 .ob-h{font-family:'Sora',sans-serif;font-size:26px;font-weight:700;margin-bottom:8px}
 .ob-s{font-size:14px;color:var(--txd);margin-bottom:28px;line-height:1.6}
 .ob-inp{width:100%;background:var(--elev);border:1.5px solid var(--bord);border-radius:var(--r12);padding:14px 16px;font-size:16px;color:var(--tx);font-family:'DM Sans',sans-serif;outline:none;margin-bottom:12px;transition:border .2s}
-.ob-inp:focus{border-color:var(--g)}
-.ob-btn{width:100%;background:var(--g);color:#fff;border:none;border-radius:var(--r12);padding:16px;font-family:'Sora',sans-serif;font-size:16px;font-weight:700;transition:background .2s}
+.ob-inp:focus{border-color:var(--gold)}
+.ob-btn{width:100%;background:var(--gold);color:#fff;border:none;border-radius:var(--r12);padding:16px;font-family:'Sora',sans-serif;font-size:16px;font-weight:700;transition:background .2s}
 .ob-btn:hover{background:var(--gd)}
 
 /* ── APP SHELL ── */
 #app{position:fixed;inset:0;display:flex;flex-direction:column;overflow:hidden}
 .top-bar{background:var(--surf);border-bottom:1px solid var(--bord);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 .logo-row{display:flex;align-items:center;gap:10px}
-.logo-icon{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--b),var(--g),var(--gold));display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-size:17px;font-weight:800;color:#fff}
-.logo-name{font-family:'Sora',sans-serif;font-size:20px;font-weight:800;letter-spacing:-.5px;background:linear-gradient(90deg,var(--g),var(--bl));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.logo-icon{width:34px;height:34px;border-radius:10px;background:linear-gradient(145deg,#0A1828,#2A1A04,#3D2800);display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-size:17px;font-weight:800;color:#fff}
+.logo-name{font-family:'Sora',sans-serif;font-size:20px;font-weight:800;letter-spacing:-.5px;background:linear-gradient(90deg,var(--gold),var(--gold-l));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .logo-tag{font-size:9px;color:var(--txm);letter-spacing:.5px}
 .top-right{display:flex;align-items:center;gap:8px}
 .lang-btn{background:var(--elev);border:1px solid var(--bord);border-radius:8px;padding:5px 11px;font-size:11px;font-weight:600;color:var(--txd)}
@@ -80,12 +80,12 @@ button{font-family:inherit;cursor:pointer}
 /* ── BOTTOM NAV ── */
 .bnav{position:fixed;bottom:0;left:0;right:0;background:rgba(13,27,42,.97);backdrop-filter:blur(20px);border-top:1px solid var(--bord);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom)}
 .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 4px 8px;cursor:pointer;transition:all .15s;position:relative}
-.nav-item::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:0;height:2px;background:var(--g);border-radius:0 0 2px 2px;transition:width .2s}
+.nav-item::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:0;height:2px;background:var(--gold);border-radius:0 0 2px 2px;transition:width .2s}
 .nav-item.active::before{width:28px}
 .nav-icon{font-size:21px;line-height:1;transition:transform .2s}
 .nav-item.active .nav-icon{transform:scale(1.1)}
 .nav-label{font-size:9px;font-weight:600;color:var(--txm);letter-spacing:.2px;transition:color .15s}
-.nav-item.active .nav-label{color:var(--g)}
+.nav-item.active .nav-label{color:var(--gold)}
 
 /* ── CARDS ── */
 .card{background:var(--surf);border:1px solid var(--bord);border-radius:var(--r16);padding:16px;margin-bottom:12px}
@@ -99,8 +99,8 @@ button{font-family:inherit;cursor:pointer}
 .idx-val{font-family:'Sora',sans-serif;font-size:18px;font-weight:700;letter-spacing:-.5px;margin-bottom:3px}
 .idx-chg{font-size:11px;font-weight:700}
 .up{color:var(--g)}.dn{color:var(--err)}
-.live-dot{display:inline-flex;align-items:center;gap:5px;background:rgba(29,185,84,.12);border:1px solid rgba(29,185,84,.25);border-radius:20px;padding:3px 10px;font-size:9px;font-weight:700;color:var(--g);margin-bottom:10px}
-.live-dot::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--g);animation:pulse 1.5s ease-in-out infinite}
+.live-dot{display:inline-flex;align-items:center;gap:5px;background:var(--blue-bg);border:1px solid var(--blue-bord);border-radius:20px;padding:3px 10px;font-size:9px;font-weight:700;color:var(--blue-l);margin-bottom:10px}
+.live-dot::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--blue-l);animation:pulse 1.5s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 
 /* ── MOVER ROWS ── */
@@ -123,7 +123,7 @@ button{font-family:inherit;cursor:pointer}
 /* ── AI BUBBLE ── */
 .ai-bub{background:linear-gradient(135deg,var(--elev),rgba(26,77,143,.15));border:1px solid rgba(26,77,143,.3);border-radius:var(--r16);padding:14px;margin-bottom:12px}
 .ai-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.ai-av{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--b),var(--g));display:flex;align-items:center;justify-content:center;font-size:13px}
+.ai-av{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--gold));display:flex;align-items:center;justify-content:center;font-size:13px}
 .ai-nm{font-size:11px;font-weight:700;color:var(--bl)}
 .ai-txt{font-size:12px;color:var(--txd);line-height:1.7}
 
@@ -140,9 +140,9 @@ button{font-family:inherit;cursor:pointer}
 /* ── SEARCH ── */
 .search-wrap{display:flex;gap:8px;margin-bottom:14px}
 .search-inp{flex:1;background:var(--elev);border:1.5px solid var(--bord);border-radius:var(--r12);padding:12px 14px;font-size:14px;color:var(--tx);font-family:'DM Sans',sans-serif;outline:none;transition:border .2s}
-.search-inp:focus{border-color:var(--g)}
+.search-inp:focus{border-color:var(--gold)}
 .search-inp::placeholder{color:var(--txm)}
-.search-btn{background:var(--g);color:#fff;border:none;border-radius:var(--r12);padding:12px 18px;font-size:13px;font-weight:700;white-space:nowrap}
+.search-btn{background:var(--gold);color:#fff;border:none;border-radius:var(--r12);padding:12px 18px;font-size:13px;font-weight:700;white-space:nowrap}
 
 /* ── STOCK RESULT ── */
 .stock-result{display:none;animation:fadein .3s ease}
@@ -160,7 +160,7 @@ button{font-family:inherit;cursor:pointer}
 .pg-val{font-family:'DM Mono',monospace;font-size:12px;font-weight:500}
 .w52-bar{background:var(--elev);border-radius:var(--r12);padding:12px;margin-bottom:12px}
 .w52-track{height:6px;background:var(--bord);border-radius:3px;overflow:visible;position:relative;margin:8px 0}
-.w52-fill{position:absolute;top:-4px;width:14px;height:14px;border-radius:50%;background:var(--g);transform:translateX(-50%);transition:left .6s ease}
+.w52-fill{position:absolute;top:-4px;width:14px;height:14px;border-radius:50%;background:var(--gold);transform:translateX(-50%);transition:left .6s ease}
 
 /* ── CFO TAB ── */
 .health-ring-wrap{display:flex;flex-direction:column;align-items:center;padding:20px 0}
@@ -181,7 +181,7 @@ button{font-family:inherit;cursor:pointer}
 .bfm-fill{height:100%;border-radius:3px;transition:width .8s ease}
 .cfo-menu{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
 .cfo-menu-item{background:var(--elev);border:1px solid var(--bord);border-radius:var(--r16);padding:16px;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;gap:6px}
-.cfo-menu-item:hover{border-color:var(--g);background:rgba(29,185,84,.06)}
+.cfo-menu-item:hover{border-color:var(--gold);background:var(--gold-bg)}
 .cfo-menu-icon{font-size:24px}
 .cfo-menu-name{font-size:12px;font-weight:700}
 .cfo-menu-desc{font-size:10px;color:var(--txd);line-height:1.4}
@@ -189,14 +189,14 @@ button{font-family:inherit;cursor:pointer}
 /* ── CFO SECTIONS ── */
 .cfo-section{display:none;animation:fadein .3s ease}
 .cfo-section.show{display:block}
-.back-btn{display:flex;align-items:center;gap:8px;background:none;border:none;color:var(--g);font-size:13px;font-weight:600;padding:0;margin-bottom:16px;font-family:'DM Sans',sans-serif}
+.back-btn{display:flex;align-items:center;gap:8px;background:none;border:none;color:var(--gold);font-size:13px;font-weight:600;padding:0;margin-bottom:16px;font-family:'DM Sans',sans-serif}
 .inp-label{font-size:11px;font-weight:600;color:var(--txd);margin-bottom:5px;display:block}
 .inp{width:100%;background:var(--elev);border:1.5px solid var(--bord);border-radius:var(--r12);padding:12px 14px;font-size:14px;color:var(--tx);font-family:'DM Sans',sans-serif;outline:none;transition:border .2s;margin-bottom:12px}
-.inp:focus{border-color:var(--g)}
+.inp:focus{border-color:var(--gold)}
 .inp-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .btn-primary{width:100%;background:var(--g);color:#fff;border:none;border-radius:var(--r12);padding:14px;font-family:'Sora',sans-serif;font-size:14px;font-weight:700;transition:background .2s}
-.btn-primary:hover{background:var(--gd)}
-.btn-outline{width:100%;background:transparent;color:var(--g);border:1.5px solid var(--g);border-radius:var(--r12);padding:12px;font-family:'Sora',sans-serif;font-size:13px;font-weight:600;transition:all .2s;margin-top:8px}
+.btn-primary:hover{background:#A07520}
+.btn-outline{width:100%;background:transparent;color:var(--gold);border:1.5px solid var(--gold);border-radius:var(--r12);padding:12px;font-family:'Sora',sans-serif;font-size:13px;font-weight:600;transition:all .2s;margin-top:8px}
 .debt-item{background:var(--elev);border:1px solid var(--bord);border-radius:var(--r12);padding:12px;margin-bottom:8px}
 .debt-name{font-size:13px;font-weight:700;margin-bottom:4px}
 .debt-meta{font-size:11px;color:var(--txd);margin-bottom:8px}
@@ -204,19 +204,19 @@ button{font-family:inherit;cursor:pointer}
 .debt-bar-fill{height:100%;background:var(--err);border-radius:3px;transition:width .6s}
 .toggle-row{display:flex;gap:8px;margin-bottom:14px}
 .toggle-btn{flex:1;background:var(--elev);border:1.5px solid var(--bord);border-radius:var(--r10);padding:10px;font-size:12px;font-weight:700;color:var(--txd);transition:all .15s}
-.toggle-btn.active{background:rgba(29,185,84,.12);border-color:var(--g);color:var(--g)}
+.toggle-btn.active{background:var(--gold-bg);border-color:var(--gold-bord);color:var(--gold)}
 .tax-compare{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
 .tax-regime{background:var(--elev);border:1px solid var(--bord);border-radius:var(--r12);padding:14px;text-align:center}
-.tax-regime.winner{border-color:var(--g);background:rgba(29,185,84,.08)}
+.tax-regime.winner{border-color:var(--gold);background:var(--gold-bg)}
 .regime-name{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--txm);margin-bottom:6px}
 .regime-tax{font-family:'Sora',sans-serif;font-size:20px;font-weight:800;margin-bottom:3px}
-.regime-save{font-size:10px;color:var(--g);font-weight:600}
+.regime-save{font-size:10px;color:var(--gold);font-weight:600}
 .goal-item{background:var(--elev);border:1px solid var(--bord);border-radius:var(--r12);padding:12px;margin-bottom:8px}
 .goal-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 .goal-name{font-size:13px;font-weight:700}
 .goal-pct{font-size:11px;font-weight:700;color:var(--g)}
 .goal-bar{height:5px;background:var(--bord);border-radius:3px;overflow:hidden;margin-bottom:6px}
-.goal-fill{height:100%;background:var(--g);border-radius:3px;transition:width .6s}
+.goal-fill{height:100%;background:var(--gold);border-radius:3px;transition:width .6s}
 .goal-meta{font-size:10px;color:var(--txd)}
 
 /* ── SLIDE PANEL ── */
@@ -228,8 +228,8 @@ button{font-family:inherit;cursor:pointer}
 .panel-title{font-family:'Sora',sans-serif;font-size:18px;font-weight:700;margin-bottom:16px}
 
 /* ── LEARN TAB ── */
-.prog-wrap{background:linear-gradient(135deg,rgba(26,77,143,.3),rgba(29,185,84,.15));border:1px solid rgba(29,185,84,.2);border-radius:var(--r20);padding:20px;margin-bottom:14px;text-align:center}
-.prog-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:rgba(29,185,84,.8);margin-bottom:6px}
+.prog-wrap{background:linear-gradient(135deg,rgba(26,77,143,.25),rgba(60,40,10,.3));border:1px solid var(--gold-bord);border-radius:var(--r20);padding:20px;margin-bottom:14px;text-align:center}
+.prog-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--gold);margin-bottom:6px}
 .prog-title{font-family:'Sora',sans-serif;font-size:20px;font-weight:700;margin-bottom:4px}
 .prog-sub{font-size:11px;color:var(--txd);margin-bottom:14px}
 .prog-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
@@ -243,7 +243,7 @@ button{font-family:inherit;cursor:pointer}
 .learn-sub{font-size:10px;color:var(--txd)}
 .learn-chips{padding:0 16px 14px;display:flex;gap:6px;flex-wrap:wrap}
 .chip{background:var(--elev);border:1px solid var(--bord);border-radius:20px;padding:5px 12px;font-size:11px;font-weight:600;color:var(--txd);cursor:pointer;transition:all .15s}
-.chip:hover,.chip.done{background:rgba(29,185,84,.12);border-color:var(--g);color:var(--g)}
+.chip:hover,.chip.done{background:var(--gold-bg);border-color:var(--gold-bord);color:var(--gold)}
 
 /* ── WHY MACHINE ── */
 .why-card{background:linear-gradient(145deg,#0d1117,#0e1a2e);border:1px solid rgba(255,255,255,.06);border-radius:var(--r16);padding:16px;margin-bottom:10px}
@@ -254,7 +254,7 @@ button{font-family:inherit;cursor:pointer}
 .why-node-ico{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;z-index:1}
 .why-cause{font-size:11px;font-weight:700;color:rgba(255,255,255,.88);margin-bottom:2px}
 .why-effect{font-size:10px;color:rgba(255,255,255,.45);line-height:1.5}
-.why-principle{background:rgba(29,185,84,.1);border-left:2px solid var(--g);border-radius:0 8px 8px 0;padding:9px 12px;margin-top:8px;font-size:11px;color:rgba(255,255,255,.7);line-height:1.6}
+.why-principle{background:var(--blue-bg);border-left:2px solid var(--blue-l);border-radius:0 8px 8px 0;padding:9px 12px;margin-top:8px;font-size:11px;color:rgba(255,255,255,.7);line-height:1.6}
 
 /* ── WATCHLIST ── */
 .wl-item{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--bord);cursor:pointer}
@@ -290,10 +290,27 @@ button{font-family:inherit;cursor:pointer}
 .sub-tabs{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
 .sub-tabs::-webkit-scrollbar{display:none}
 .sub-tab{background:var(--elev);border:1px solid var(--bord);border-radius:20px;padding:7px 14px;font-size:11px;font-weight:600;color:var(--txd);cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0}
-.sub-tab.active{background:rgba(29,185,84,.12);border-color:var(--g);color:var(--g)}
+.sub-tab.active{background:var(--gold-bg);border-color:var(--gold-bord);color:var(--gold)}
 .port-tabs{display:flex;gap:0;background:var(--elev);border-radius:var(--r12);padding:3px;margin-bottom:14px}
 .port-tab{flex:1;background:transparent;border:none;border-radius:var(--r10);padding:9px;font-size:12px;font-weight:700;color:var(--txd);transition:all .2s}
-.port-tab.active{background:var(--g);color:#fff}
+.port-tab.active{background:var(--gold);color:#fff}
+
+.ob-goal-btn{display:flex;align-items:center;gap:12px;background:var(--elev);border:1.5px solid var(--bord);border-radius:var(--r12);padding:13px;cursor:pointer;transition:all .15s;width:100%}
+.ob-goal-btn.selected{background:var(--gold-bg);border-color:var(--gold-bord)}
+.ob-goal-ico{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.ob-goal-name{font-size:13px;font-weight:600;color:var(--tx);margin-bottom:2px}
+.ob-goal-desc{font-size:10px;color:var(--txm)}
+.ob-goal-radio{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--bord2);flex-shrink:0;transition:all .15s}
+.ob-goal-btn.selected .ob-goal-radio{border-color:var(--gold);background:var(--gold)}
+.ob-goal-btn.selected .ob-goal-name{color:var(--gold)}
+
+.pill-gain{display:inline-flex;align-items:center;gap:3px;background:rgba(0,192,118,.08);border:1px solid rgba(0,192,118,.2);color:var(--g);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;font-family:'DM Mono',monospace}
+.pill-loss{display:inline-flex;align-items:center;gap:3px;background:rgba(255,77,77,.08);border:1px solid rgba(255,77,77,.2);color:var(--err);border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;font-family:'DM Mono',monospace}
+
+/* Refresh button */
+#refresh-btn:active { transform: rotate(180deg); color: var(--gold); }
+#refresh-btn.spinning { animation: spin-once .5s ease-in-out; }
+@keyframes spin-once { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
@@ -308,11 +325,42 @@ button{font-family:inherit;cursor:pointer}
 
 <!-- ONBOARDING -->
 <div id="onboard">
-  <div class="ob-logo">₹</div>
-  <div class="ob-h">Welcome to AskArtha</div>
-  <div class="ob-s">India's smartest personal finance & market learning app. Free. In your language.</div>
-  <input class="ob-inp" id="ob-name" type="text" placeholder="Your first name" maxlength="20">
-  <button class="ob-btn" onclick="finishOnboard()">Let's Go →</button>
+  <div id="ob-step1" style="width:100%;text-align:center">
+    <div class="ob-logo">&#x20B9;</div>
+    <div class="ob-h">Welcome to AskArtha</div>
+    <div class="ob-s">India&#x27;s personal finance and market learning app. Built for every Indian. Free forever.</div>
+    <input class="ob-inp" id="ob-name" type="text" placeholder="Your first name" maxlength="20" autocomplete="given-name">
+    <button class="ob-btn" onclick="goToStep2()">Continue &#x2192;</button>
+  </div>
+  <div id="ob-step2" style="display:none;width:100%">
+    <div class="ob-logo">&#x20B9;</div>
+    <div class="ob-h" id="ob-hi">Hi there</div>
+    <div class="ob-s">What brings you here? We&#x27;ll open the right section for you.</div>
+    <div style="display:flex;flex-direction:column;gap:9px;margin-bottom:18px;width:100%">
+      <div class="ob-goal-btn" onclick="selectGoal('market',this)">
+        <div class="ob-goal-ico" style="background:var(--blue-bg);border:1px solid var(--blue-bord)">&#x1F4C8;</div>
+        <div style="flex:1;text-align:left"><div class="ob-goal-name">Track the market</div><div class="ob-goal-desc">Live prices, movers, sector heatmap</div></div>
+        <div class="ob-goal-radio"></div>
+      </div>
+      <div class="ob-goal-btn" onclick="selectGoal('money',this)">
+        <div class="ob-goal-ico" style="background:var(--gold-bg);border:1px solid var(--gold-bord)">&#x1F4BC;</div>
+        <div style="flex:1;text-align:left"><div class="ob-goal-name">Manage my money</div><div class="ob-goal-desc">Budget, EMIs, tax, net worth</div></div>
+        <div class="ob-goal-radio"></div>
+      </div>
+      <div class="ob-goal-btn" onclick="selectGoal('learn',this)">
+        <div class="ob-goal-ico" style="background:var(--blue-bg);border:1px solid var(--blue-bord)">&#x1F4DA;</div>
+        <div style="flex:1;text-align:left"><div class="ob-goal-name">Learn investing</div><div class="ob-goal-desc">From zero, step by step with real examples</div></div>
+        <div class="ob-goal-radio"></div>
+      </div>
+      <div class="ob-goal-btn" onclick="selectGoal('research',this)">
+        <div class="ob-goal-ico" style="background:var(--blue-bg);border:1px solid var(--blue-bord)">&#x1F50D;</div>
+        <div style="flex:1;text-align:left"><div class="ob-goal-name">Research a stock</div><div class="ob-goal-desc">Price, fundamentals, AI insights</div></div>
+        <div class="ob-goal-radio"></div>
+      </div>
+    </div>
+    <button class="ob-btn" id="ob-start-btn" onclick="finishOnboard()" style="opacity:.4;pointer-events:none">Get Started &#x2192;</button>
+    <div style="font-size:11px;color:var(--txm);text-align:center;margin-top:10px">You can switch anytime from the bottom nav</div>
+  </div>
 </div>
 
 <!-- APP -->
@@ -329,6 +377,7 @@ button{font-family:inherit;cursor:pointer}
     <div class="top-right">
       <span id="user-name-display" style="font-size:11px;color:var(--txm);font-weight:500"></span>
       <div id="market-status-badge" style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:9px;font-weight:700;letter-spacing:.3px"></div>
+      <button id="refresh-btn" onclick="manualRefresh()" title="Refresh prices" style="background:none;border:none;cursor:pointer;padding:4px 6px;border-radius:8px;font-size:15px;color:var(--txm);transition:transform .3s ease;line-height:1" aria-label="Refresh">&#x21BB;</button>
       <button class="lang-btn" onclick="cycleLang()" id="lang-btn">EN</button>
     </div>
   </div>
@@ -442,77 +491,559 @@ button{font-family:inherit;cursor:pointer}
     </div>
 
     <!-- ═══ LEARN TAB ═══ -->
-    <div class="tab-pane" id="tab-learn">
-      <div class="prog-wrap">
-        <div class="prog-label">StockSense University</div>
-        <div class="prog-title" id="greet-txt">Good morning 👋</div>
-        <div class="prog-sub">From zero to stock market expert. Free. In your language.</div>
-        <div class="prog-stats">
-          <div class="prog-stat"><div class="prog-stat-val" id="learn-lessons">0</div><div class="prog-stat-lbl">Lessons</div></div>
-          <div class="prog-stat" style="background:rgba(201,146,42,.12)"><div class="prog-stat-val" style="color:var(--gol)" id="learn-streak">0 🔥</div><div class="prog-stat-lbl">Streak</div></div>
-          <div class="prog-stat" style="background:rgba(29,185,84,.12)"><div class="prog-stat-val" style="color:var(--g)" id="learn-xp">0</div><div class="prog-stat-lbl">XP</div></div>
-        </div>
-      </div>
+    <!-- ════ LEARN TAB ════ -->
+    <div class="tab-panel" id="tab-learn">
 
-      <!-- Chart School -->
-      <div class="learn-card">
-        <div class="learn-header">
-          <div class="learn-icon" style="background:rgba(29,185,84,.15)">📊</div>
-          <div>
-            <div class="learn-title">Chart School</div>
-            <div class="learn-sub">Support, resistance, candlesticks, moving averages</div>
+      <!-- Progress Hero -->
+      <div class="learn-hero">
+        <div style="display:flex;align-items:center;gap:14px">
+          <div class="prog-ring">
+            <svg width="56" height="56" viewBox="0 0 56 56">
+              <circle cx="28" cy="28" r="23" fill="none" stroke="#1A2A38" stroke-width="4"/>
+              <circle cx="28" cy="28" r="23" fill="none" stroke="var(--blue-l)" stroke-width="4"
+                stroke-dasharray="144.5" stroke-dashoffset="144.5" id="learn-progress-ring"
+                stroke-linecap="round" transform="rotate(-90 28 28)"/>
+            </svg>
+            <div class="prog-pct" id="learn-pct">0%</div>
+          </div>
+          <div style="flex:1">
+            <div style="font-family:'Sora',sans-serif;font-size:14px;font-weight:700;color:var(--tx);margin-bottom:2px">AskArtha University</div>
+            <div style="font-size:11px;color:var(--txd)" id="learn-count">0 of 88 lessons complete</div>
+            <div style="display:flex;gap:12px;margin-top:4px">
+              <div style="font-size:11px;color:var(--txd)">&#x1F525; <span style="color:var(--gold-l);font-weight:700" id="streak-count">0</span> day streak</div>
+              <div style="font-size:11px;color:var(--txd)">&#x2B50; <span style="color:var(--gold-l);font-weight:700" id="xp-count">0</span> XP</div>
+            </div>
           </div>
         </div>
-        <div class="learn-chips" id="chart-chips"></div>
       </div>
 
-      <!-- Fundamentals School -->
-      <div class="learn-card">
-        <div class="learn-header">
-          <div class="learn-icon" style="background:rgba(26,77,143,.15)">📈</div>
-          <div>
-            <div class="learn-title">Fundamentals School</div>
-            <div class="learn-sub">P/E, ROE, revenue, balance sheet, moats</div>
+      <div style="padding:14px 16px 0">
+
+        <!-- ── CHART SCHOOL ── -->
+        <div class="school-card" id="school-chart">
+          <div class="school-hd" onclick="toggleSchool('chart-lessons')">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div class="school-emoji" style="background:rgba(26,77,143,.12)">&#x1F4C8;</div>
+              <div>
+                <div class="school-name">Chart School</div>
+                <div class="school-cnt" id="chart-count">40 lessons &middot; Technical analysis</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <svg width="32" height="32" viewBox="0 0 32 32">
+                <circle cx="16" cy="16" r="12" fill="none" stroke="#1A2A38" stroke-width="3"/>
+                <circle cx="16" cy="16" r="12" fill="none" stroke="#4A7EC7" stroke-width="3"
+                  stroke-dasharray="75.4" stroke-dashoffset="75.4" id="chart-ring"
+                  stroke-linecap="round" transform="rotate(-90 16 16)"/>
+              </svg>
+              <span style="font-size:11px;color:var(--blue-l);font-weight:700" id="chart-pct">0%</span>
+            </div>
+          </div>
+          <div id="chart-lessons" style="display:none">
+            <div class="lesson-chip" onclick="openLesson('C1')">
+              <span style="font-size:15px">&#x1F4CA;</span>
+              <div class="lc-name">C1 &middot; What is a Stock Chart?</div>
+              <div class="lc-st s-done">Done</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('C2')">
+              <span style="font-size:15px">&#x1F56F;</span>
+              <div class="lc-name">C2 &middot; Reading Candlesticks</div>
+              <div class="lc-st s-done">Done</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('C3')">
+              <span style="font-size:15px">&#x1F4C9;</span>
+              <div class="lc-name">C3 &middot; Support & Resistance</div>
+              <div class="lc-st s-next">Start</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('C4')">
+              <span style="font-size:15px">&#x1F4D0;</span>
+              <div class="lc-name">C4 &middot; Trend Lines</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('C5')">
+              <span style="font-size:15px">&#x3030;</span>
+              <div class="lc-name">C5 &middot; Moving Averages — MA & EMA</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('C6')">
+              <span style="font-size:15px">&#x1F4CA;</span>
+              <div class="lc-name">C6 &middot; Volume — The Hidden Signal</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('C7')">
+              <span style="font-size:15px">&#x1F4A5;</span>
+              <div class="lc-name">C7 &middot; Breakouts & Breakdowns</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('C8')">
+              <span style="font-size:15px">&#x1F5BC;</span>
+              <div class="lc-name">C8 &middot; Chart Patterns — Part 1</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('C9')">
+              <span style="font-size:15px">&#x1F5BC;</span>
+              <div class="lc-name">C9 &middot; Chart Patterns — Part 2</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('C10')">
+              <span style="font-size:15px">&#x1F4CF;</span>
+              <div class="lc-name">C10 &middot; RSI — Relative Strength Index</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('C11')">
+              <span style="font-size:15px">&#x1F4C8;</span>
+              <div class="lc-name">C11 &middot; MACD — Moving Average Convergence</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('C12')">
+              <span style="font-size:15px">&#x1FA97;</span>
+              <div class="lc-name">C12 &middot; Bollinger Bands</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('C13')">
+              <span style="font-size:15px">&#x1F4CF;</span>
+              <div class="lc-name">C13 &middot; Fibonacci Retracement</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('C14')">
+              <span style="font-size:15px">&#x1F3AF;</span>
+              <div class="lc-name">C14 &middot; Stochastic Oscillator</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('C15')">
+              <span style="font-size:15px">&#x2B06;</span>
+              <div class="lc-name">C15 &middot; Supertrend Indicator</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('C16')">
+              <span style="font-size:15px">&#x1F4CF;</span>
+              <div class="lc-name">C16 &middot; ATR — Average True Range</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('C17')">
+              <span style="font-size:15px">&#x1F3CB;</span>
+              <div class="lc-name">C17 &middot; OBV — On Balance Volume</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('C18')">
+              <span style="font-size:15px">&#x1F56F;</span>
+              <div class="lc-name">C18 &middot; Doji & Spinning Top Candles</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('C19')">
+              <span style="font-size:15px">&#x1F528;</span>
+              <div class="lc-name">C19 &middot; Hammer & Shooting Star</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('C20')">
+              <span style="font-size:15px">&#x1F4A1;</span>
+              <div class="lc-name">C20 &middot; Engulfing Patterns</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('C21')">
+              <span style="font-size:15px">&#x2B50;</span>
+              <div class="lc-name">C21 &middot; Morning Star & Evening Star</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('C22')">
+              <span style="font-size:15px">&#x1F464;</span>
+              <div class="lc-name">C22 &middot; Head & Shoulders Pattern</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('C23')">
+              <span style="font-size:15px">&#x26A0;</span>
+              <div class="lc-name">C23 &middot; Double Top & Double Bottom</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('C24')">
+              <span style="font-size:15px">&#x2615;</span>
+              <div class="lc-name">C24 &middot; Cup & Handle Pattern</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('C25')">
+              <span style="font-size:15px">&#x1F6A9;</span>
+              <div class="lc-name">C25 &middot; Flag & Pennant Patterns</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('C26')">
+              <span style="font-size:15px">&#x1F4D0;</span>
+              <div class="lc-name">C26 &middot; Wedge Patterns</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('C27')">
+              <span style="font-size:15px">&#x1F4A8;</span>
+              <div class="lc-name">C27 &middot; Gap Analysis</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('C28')">
+              <span style="font-size:15px">&#x23F1;</span>
+              <div class="lc-name">C28 &middot; Multi-Timeframe Analysis</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('C29')">
+              <span style="font-size:15px">&#x1F4CC;</span>
+              <div class="lc-name">C29 &middot; Pivot Points</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('C30')">
+              <span style="font-size:15px">&#x2601;</span>
+              <div class="lc-name">C30 &middot; Ichimoku Cloud Basics</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('C31')">
+              <span style="font-size:15px">&#x1F3D7;</span>
+              <div class="lc-name">C31 &middot; Market Structure — HH HL LH LL</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('C32')">
+              <span style="font-size:15px">&#x1F3AF;</span>
+              <div class="lc-name">C32 &middot; Price Action Trading</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('C33')">
+              <span style="font-size:15px">&#x1F4E6;</span>
+              <div class="lc-name">C33 &middot; Demand & Supply Zones</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('C34')">
+              <span style="font-size:15px">&#x1F4CB;</span>
+              <div class="lc-name">C34 &middot; Reading Level 2 Data</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('C35')">
+              <span style="font-size:15px">&#x1F517;</span>
+              <div class="lc-name">C35 &middot; Option Chain Basics</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('C36')">
+              <span style="font-size:15px">&#x1F504;</span>
+              <div class="lc-name">C36 &middot; Sector Rotation via Charts</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('C37')">
+              <span style="font-size:15px">&#x1F4F8;</span>
+              <div class="lc-name">C37 &middot; Chart Reading — Real Examples 1</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('C38')">
+              <span style="font-size:15px">&#x1F4F8;</span>
+              <div class="lc-name">C38 &middot; Chart Reading — Real Examples 2</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('C39')">
+              <span style="font-size:15px">&#x2705;</span>
+              <div class="lc-name">C39 &middot; Building Your Chart Checklist</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('C40')">
+              <span style="font-size:15px">&#x1F393;</span>
+              <div class="lc-name">C40 &middot; Chart School Final — Full Analysis</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
           </div>
         </div>
-        <div class="learn-chips" id="fa-chips"></div>
-      </div>
 
-      <!-- Macro School -->
-      <div class="learn-card">
-        <div class="learn-header">
-          <div class="learn-icon" style="background:rgba(201,146,42,.15)">🌍</div>
-          <div>
-            <div class="learn-title">Macro School</div>
-            <div class="learn-sub">Inflation, RBI rates, GDP, rupee — explained personally</div>
+        <!-- ── FUNDAMENTALS SCHOOL ── -->
+        <div class="school-card" id="school-fund">
+          <div class="school-hd" onclick="toggleSchool('fund-lessons')">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div class="school-emoji" style="background:rgba(201,146,42,.1)">&#x1F4CB;</div>
+              <div>
+                <div class="school-name">Fundamentals School</div>
+                <div class="school-cnt" id="fund-count">40 lessons &middot; Read company financials</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <svg width="32" height="32" viewBox="0 0 32 32">
+                <circle cx="16" cy="16" r="12" fill="none" stroke="#1A2A38" stroke-width="3"/>
+                <circle cx="16" cy="16" r="12" fill="none" stroke="#C9922A" stroke-width="3"
+                  stroke-dasharray="75.4" stroke-dashoffset="75.4" id="fund-ring"
+                  stroke-linecap="round" transform="rotate(-90 16 16)"/>
+              </svg>
+              <span style="font-size:11px;color:var(--gold);font-weight:700" id="fund-pct">0%</span>
+            </div>
+          </div>
+          <div id="fund-lessons" style="display:none">
+            <div class="lesson-chip" onclick="openLesson('F1')">
+              <span style="font-size:15px">&#x1F4C4;</span>
+              <div class="lc-name">F1 &middot; Reading a P&L Statement</div>
+              <div class="lc-st s-done">Done</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('F2')">
+              <span style="font-size:15px">&#x2696;</span>
+              <div class="lc-name">F2 &middot; The Balance Sheet Decoded</div>
+              <div class="lc-st s-next">Start</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('F3')">
+              <span style="font-size:15px">&#x1F4B8;</span>
+              <div class="lc-name">F3 &middot; Cash Flow Statement</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('F4')">
+              <span style="font-size:15px">&#x1F4B9;</span>
+              <div class="lc-name">F4 &middot; Revenue vs Profit — The Difference</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('F5')">
+              <span style="font-size:15px">&#x1F4CA;</span>
+              <div class="lc-name">F5 &middot; EBITDA Explained Simply</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('F6')">
+              <span style="font-size:15px">&#x1F4B0;</span>
+              <div class="lc-name">F6 &middot; EPS — Earnings Per Share</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('F7')">
+              <span style="font-size:15px">&#x1F4CF;</span>
+              <div class="lc-name">F7 &middot; P/E Ratio — Price to Earnings</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('F8')">
+              <span style="font-size:15px">&#x1F4D6;</span>
+              <div class="lc-name">F8 &middot; P/B Ratio — Price to Book</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('F9')">
+              <span style="font-size:15px">&#x2696;</span>
+              <div class="lc-name">F9 &middot; Debt to Equity Ratio</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('F10')">
+              <span style="font-size:15px">&#x1F3C6;</span>
+              <div class="lc-name">F10 &middot; Return on Equity — ROE</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('F11')">
+              <span style="font-size:15px">&#x1F4B5;</span>
+              <div class="lc-name">F11 &middot; Return on Capital — ROCE</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('F12')">
+              <span style="font-size:15px">&#x1F4B4;</span>
+              <div class="lc-name">F12 &middot; Free Cash Flow — FCF</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('F13')">
+              <span style="font-size:15px">&#x1F527;</span>
+              <div class="lc-name">F13 &middot; Working Capital Analysis</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('F14')">
+              <span style="font-size:15px">&#x1F464;</span>
+              <div class="lc-name">F14 &middot; Promoter Holding — Why It Matters</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('F15')">
+              <span style="font-size:15px">&#x1F30D;</span>
+              <div class="lc-name">F15 &middot; FII & DII Flows Explained</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('F16')">
+              <span style="font-size:15px">&#x1F4C5;</span>
+              <div class="lc-name">F16 &middot; Quarterly Results — How to Read</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('F17')">
+              <span style="font-size:15px">&#x1F4DA;</span>
+              <div class="lc-name">F17 &middot; Annual Report — Key Sections</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('F18')">
+              <span style="font-size:15px">&#x1F50D;</span>
+              <div class="lc-name">F18 &middot; Screener.in — Fundamental Tools</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('F19')">
+              <span style="font-size:15px">&#x1F3ED;</span>
+              <div class="lc-name">F19 &middot; Sector Analysis — Cyclicals vs Defensives</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('F20')">
+              <span style="font-size:15px">&#x1F3F0;</span>
+              <div class="lc-name">F20 &middot; Moats — Competitive Advantages</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('F21')">
+              <span style="font-size:15px">&#x1F46A;</span>
+              <div class="lc-name">F21 &middot; Management Quality Check</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('F22')">
+              <span style="font-size:15px">&#x1F4B3;</span>
+              <div class="lc-name">F22 &middot; Dividend Yield & Payout Ratio</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('F23')">
+              <span style="font-size:15px">&#x1F4C8;</span>
+              <div class="lc-name">F23 &middot; PEG Ratio — Growth Adjusted P/E</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('F24')">
+              <span style="font-size:15px">&#x1F3E2;</span>
+              <div class="lc-name">F24 &middot; Enterprise Value — EV/EBITDA</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('F25')">
+              <span style="font-size:15px">&#x23F0;</span>
+              <div class="lc-name">F25 &middot; DCF — Discounted Cash Flow Basics</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('F26')">
+              <span style="font-size:15px">&#x1F6D2;</span>
+              <div class="lc-name">F26 &middot; FMCG Sector Fundamentals</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('F27')">
+              <span style="font-size:15px">&#x1F3E6;</span>
+              <div class="lc-name">F27 &middot; Banking Sector — NIM & NPA</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('F28')">
+              <span style="font-size:15px">&#x1F4BB;</span>
+              <div class="lc-name">F28 &middot; IT Sector — Revenue Metrics</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('F29')">
+              <span style="font-size:15px">&#x1F48A;</span>
+              <div class="lc-name">F29 &middot; Pharma Sector — ANDA & Patents</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('F30')">
+              <span style="font-size:15px">&#x1F697;</span>
+              <div class="lc-name">F30 &middot; Auto Sector — Volume Numbers</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('F31')">
+              <span style="font-size:15px">&#x2694;</span>
+              <div class="lc-name">F31 &middot; Comparing Two Companies</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('F32')">
+              <span style="font-size:15px">&#x1F6A9;</span>
+              <div class="lc-name">F32 &middot; Red Flags in Financials</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('F33')">
+              <span style="font-size:15px">&#x1F4CF;</span>
+              <div class="lc-name">F33 &middot; Smallcap vs Midcap vs Largecap</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('F34')">
+              <span style="font-size:15px">&#x1F9F0;</span>
+              <div class="lc-name">F34 &middot; Screener — Building Your Filter</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('F35')">
+              <span style="font-size:15px">&#x1F4C3;</span>
+              <div class="lc-name">F35 &middot; Reading Credit Ratings</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('F36')">
+              <span style="font-size:15px">&#x1F381;</span>
+              <div class="lc-name">F36 &middot; Corporate Actions — Splits & Bonuses</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('F37')">
+              <span style="font-size:15px">&#x1F680;</span>
+              <div class="lc-name">F37 &middot; IPO Fundamentals — What to Check</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('F38')">
+              <span style="font-size:15px">&#x1F4F8;</span>
+              <div class="lc-name">F38 &middot; Fundamental Case Study — Reliance</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('F39')">
+              <span style="font-size:15px">&#x1F4F8;</span>
+              <div class="lc-name">F39 &middot; Fundamental Case Study — HDFC Bank</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('F40')">
+              <span style="font-size:15px">&#x1F393;</span>
+              <div class="lc-name">F40 &middot; Fundamentals Final — Full Stock Report</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
           </div>
         </div>
-        <div class="learn-chips" id="macro-chips"></div>
-      </div>
 
-      <!-- Why Machine -->
-      <div class="section-title" style="margin-top:4px">🤔 Why Machine — How markets connect</div>
-      <div class="why-card">
-        <div class="why-title">Why do US Fed decisions move Indian stocks?</div>
-        <div class="why-node"><div class="why-node-ico" style="background:rgba(29,185,84,.2)">🏦</div><div><div class="why-cause">US Fed raises interest rates</div><div class="why-effect">US bonds become more attractive — safer, higher yield</div></div></div>
-        <div class="why-node"><div class="why-node-ico" style="background:rgba(26,77,143,.2)">💸</div><div><div class="why-cause">FIIs sell Indian stocks</div><div class="why-effect">They move money to US bonds where returns are now better</div></div></div>
-        <div class="why-node"><div class="why-node-ico" style="background:rgba(239,68,68,.2)">📉</div><div><div class="why-cause">Large FII selling puts pressure on Nifty</div><div class="why-effect">Nifty falls even if Indian economy is fine — foreign money leaving</div></div></div>
-        <div class="why-node"><div class="why-node-ico" style="background:rgba(29,185,84,.2)">💻</div><div><div class="why-cause">Weaker rupee helps IT companies</div><div class="why-effect">TCS, Infosys earn in USD — same dollar = more rupees = higher profit</div></div></div>
-        <div class="why-principle">📌 One Fed decision in Washington creates: US bond yield → FII flows → Nifty movement → Rupee → IT profits. This is why watching the Fed matters even if you only invest in India.</div>
-      </div>
+        <!-- ── MACRO SCHOOL ── -->
+        <div class="school-card" id="school-macro">
+          <div class="school-hd" onclick="toggleSchool('macro-lessons')">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div class="school-emoji" style="background:rgba(0,192,118,.08)">&#x1F310;</div>
+              <div>
+                <div class="school-name">Macro School</div>
+                <div class="school-cnt">8 lessons &middot; Economy in plain English</div>
+              </div>
+            </div>
+            <div style="background:var(--gold-bg);border:1px solid var(--gold-bord);border-radius:20px;padding:2px 8px;font-size:9px;font-weight:700;color:var(--gold)">NEW</div>
+          </div>
+          <div id="macro-lessons" style="display:none">
+            <div class="lesson-chip" onclick="openLesson('M1')">
+              <span style="font-size:15px">&#x1F6D2;</span>
+              <div class="lc-name">M1 &middot; Inflation & Your Grocery Bill</div>
+              <div class="lc-st s-next">Start</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('M2')">
+              <span style="font-size:15px">&#x1F4CA;</span>
+              <div class="lc-name">M2 &middot; GDP & Your Job Security</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('M3')">
+              <span style="font-size:15px">&#x1F3E6;</span>
+              <div class="lc-name">M3 &middot; Repo Rate & Your EMI</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('M4')">
+              <span style="font-size:15px">&#x1F4B1;</span>
+              <div class="lc-name">M4 &middot; Rupee vs Dollar — Why It Matters</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('M5')">
+              <span style="font-size:15px">&#x1F30D;</span>
+              <div class="lc-name">M5 &middot; FII Flows — Foreign Money in India</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('M6')">
+              <span style="font-size:15px">&#x1F4CB;</span>
+              <div class="lc-name">M6 &middot; Budget & Fiscal Deficit Explained</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('M7')">
+              <span style="font-size:15px">&#x1F3DB;</span>
+              <div class="lc-name">M7 &middot; RBI Policy & Stock Markets</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+            <div class="lesson-chip" onclick="openLesson('M8')">
+              <span style="font-size:15px">&#x1F30F;</span>
+              <div class="lc-name">M8 &middot; Global Recession — How India Gets Affected</div>
+              <div class="lc-st s-lock">&#x1F512;</div>
+            </div>
+          </div>
+        </div>
 
-      <div class="why-card">
-        <div class="why-title">Why does crude oil price affect your portfolio?</div>
-        <div class="why-node"><div class="why-node-ico" style="background:rgba(201,146,42,.2)">🛢️</div><div><div class="why-cause">Crude oil rises globally</div><div class="why-effect">India imports 85% of crude — import bill rises by crores every day</div></div></div>
-        <div class="why-node"><div class="why-node-ico" style="background:rgba(239,68,68,.2)">💱</div><div><div class="why-cause">India's trade deficit widens</div><div class="why-effect">More rupees leave India — rupee weakens against dollar</div></div></div>
-        <div class="why-node"><div class="why-node-ico" style="background:rgba(239,68,68,.2)">✈️</div><div><div class="why-cause">Aviation & paints hit hardest</div><div class="why-effect">Jet fuel is IndiGo's biggest cost. Asian Paints margins compress directly.</div></div></div>
-        <div class="why-principle">📌 Oil rising: buy IT/Pharma (exporters benefit from weak rupee). Avoid Aviation/OMCs (importers suffer). This is sector rotation 101.</div>
-      </div>
+        <!-- ── WHY MACHINE ── -->
+        <div class="school-card" style="cursor:pointer" onclick="openWhyMachine()">
+          <div class="school-hd">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div class="school-emoji" style="background:rgba(26,77,143,.12)">&#x1F914;</div>
+              <div>
+                <div class="school-name">Why Machine</div>
+                <div class="school-cnt">AI explains market moves in plain English</div>
+              </div>
+            </div>
+            <div style="background:var(--blue-bg);border:1px solid var(--blue-bord);border-radius:20px;padding:2px 8px;font-size:9px;font-weight:700;color:var(--blue-l)">AI &#x203A;</div>
+          </div>
+        </div>
 
-      <div class="disc">⚠️ StockSense University is for education only. Not investment advice.</div>
+        <div style="background:rgba(240,180,42,.05);border:1px solid rgba(240,180,42,.12);border-radius:10px;padding:8px 12px;font-size:10px;color:var(--txm);line-height:1.5;text-align:center;margin-bottom:20px">
+          &#x1F4DA; AskArtha University is for education only. Not investment advice.
+        </div>
+
+      </div>
     </div>
 
-    <!-- ═══ MY CFO TAB ═══ -->
     <div class="tab-pane" id="tab-cfo">
 
       <!-- CFO Home -->
@@ -535,7 +1066,7 @@ button{font-family:inherit;cursor:pointer}
           <div class="nw-row">
             <div class="nw-item"><div class="nw-label">Assets</div><div class="nw-val" id="nw-assets">₹0</div></div>
             <div class="nw-item"><div class="nw-label">Debts</div><div class="nw-val" style="color:var(--err)" id="nw-debts">₹0</div></div>
-            <div class="nw-item"><div class="nw-label">Net Worth</div><div class="nw-val" style="color:var(--g)" id="nw-net">₹0</div></div>
+            <div class="nw-item"><div class="nw-label">Net Worth</div><div class="nw-val" style="color:var(--gold)" id="nw-net">₹0</div></div>
           </div>
         </div>
 
@@ -550,7 +1081,7 @@ button{font-family:inherit;cursor:pointer}
           <div class="section-title">Balanced Finance Model</div>
           <div class="bfm-bar"><div class="bfm-top"><div class="bfm-name">🏠 Needs</div><div class="bfm-pct" id="bfm-needs-pct">— %</div></div><div style="display:flex;justify-content:space-between;font-size:9px;color:var(--txm);margin-bottom:4px"><span>Target ≤50%</span></div><div class="bfm-track"><div class="bfm-fill" id="bfm-needs" style="width:0%;background:var(--bl)"></div></div></div>
           <div class="bfm-bar"><div class="bfm-top"><div class="bfm-name">💳 Debt/EMI</div><div class="bfm-pct" id="bfm-debt-pct">— %</div></div><div style="display:flex;justify-content:space-between;font-size:9px;color:var(--txm);margin-bottom:4px"><span>Target ≤20%</span></div><div class="bfm-track"><div class="bfm-fill" id="bfm-debt" style="width:0%;background:var(--err)"></div></div></div>
-          <div class="bfm-bar"><div class="bfm-top"><div class="bfm-name">💰 Savings</div><div class="bfm-pct" id="bfm-save-pct">— %</div></div><div style="display:flex;justify-content:space-between;font-size:9px;color:var(--txm);margin-bottom:4px"><span>Target ≥20%</span></div><div class="bfm-track"><div class="bfm-fill" id="bfm-save" style="width:0%;background:var(--g)"></div></div></div>
+          <div class="bfm-bar"><div class="bfm-top"><div class="bfm-name">💰 Savings</div><div class="bfm-pct" id="bfm-save-pct">— %</div></div><div style="display:flex;justify-content:space-between;font-size:9px;color:var(--txm);margin-bottom:4px"><span>Target ≥20%</span></div><div class="bfm-track"><div class="bfm-fill" id="bfm-save" style="width:0%;background:var(--gold)"></div></div></div>
           <div class="bfm-bar"><div class="bfm-top"><div class="bfm-name">🛍️ Wants</div><div class="bfm-pct" id="bfm-want-pct">— %</div></div><div style="display:flex;justify-content:space-between;font-size:9px;color:var(--txm);margin-bottom:4px"><span>Target ≤10%</span></div><div class="bfm-track"><div class="bfm-fill" id="bfm-want" style="width:0%;background:var(--gold)"></div></div></div>
           <div style="margin-top:10px"><button class="btn-primary" onclick="openPanel('Update Monthly Spending',panelBFM())">Update My Numbers</button></div>
         </div>
@@ -593,7 +1124,7 @@ button{font-family:inherit;cursor:pointer}
           <button class="btn-primary" onclick="addExpense()">Add Expense</button>
         </div>
         <div id="exp-list"></div>
-        <div class="disc">Your income: <strong id="exp-income-show">Not set</strong>. <span onclick="openPanel('Set Monthly Income',panelIncome())" style="color:var(--g);cursor:pointer;font-weight:600">Update →</span></div>
+        <div class="disc">Your income: <strong id="exp-income-show">Not set</strong>. <span onclick="openPanel('Set Monthly Income',panelIncome())" style="color:var(--gold);cursor:pointer;font-weight:600">Update →</span></div>
       </div>
 
       <!-- ── NET WORTH SECTION ── -->
@@ -786,8 +1317,8 @@ button{font-family:inherit;cursor:pointer}
               <div class="w52-track"><div class="w52-fill" id="st-52fill" style="left:50%"></div></div>
             </div>
             <div style="display:flex;gap:8px;margin-top:12px">
-              <button onclick="addToWatchlist()" style="flex:1;background:var(--elev);border:1px solid var(--bord);border-radius:var(--r10);padding:10px;font-size:12px;font-weight:700;color:var(--g)">☆ Watchlist</button>
-              <button onclick="openPanel('Add to Portfolio',panelPortfolio())" style="flex:1;background:var(--g);border:none;border-radius:var(--r10);padding:10px;font-size:12px;font-weight:700;color:#fff">+ Portfolio</button>
+              <button onclick="addToWatchlist()" style="flex:1;background:var(--elev);border:1px solid var(--bord);border-radius:var(--r10);padding:10px;font-size:12px;font-weight:700;color:var(--blue-l)">☆ Watchlist</button>
+              <button onclick="openPanel('Add to Portfolio',panelPortfolio())" style="flex:1;background:var(--gold);border:none;border-radius:var(--r10);padding:10px;font-size:12px;font-weight:700;color:#fff">+ Portfolio</button>
             </div>
           </div>
           <div class="ai-bub">
@@ -860,7 +1391,7 @@ button{font-family:inherit;cursor:pointer}
             <div><label class="inp-label">Qty</label><input class="inp" id="paper-qty" type="number" placeholder="5"></div>
           </div>
           <div id="paper-price-preview" style="font-size:11px;color:var(--txd);margin:-4px 0 10px;padding:0 2px">Enter symbol to see live price</div>
-          <button class="btn-primary" onclick="paperBuy()" style="background:var(--g)">Buy Virtual →</button>
+          <button class="btn-primary" onclick="paperBuy()" style="background:var(--gold)">Buy Virtual →</button>
         </div>
         <div id="paper-holdings"></div>
         <button onclick="paperReset()" style="width:100%;background:transparent;color:var(--txd);border:1px solid var(--bord);border-radius:var(--r10);padding:11px;font-size:12px;font-family:'DM Sans',sans-serif;margin-bottom:8px">Reset Virtual Portfolio</button>
@@ -953,14 +1484,40 @@ window.addEventListener('DOMContentLoaded', () => {
   }, 1600);
 });
 
-function finishOnboard() {
-  const name = document.getElementById('ob-name').value.trim() || 'Friend';
-  S.s('aa_user', {name, lang:'en'});
-  document.getElementById('onboard').classList.remove('show');
-  showApp(name);
+// ── ONBOARDING ──────────────────────────────────────────────────
+var selectedGoal = '';
+
+function goToStep2() {
+  var nameEl = document.getElementById('ob-name');
+  var name = nameEl ? nameEl.value.trim() : '';
+  if (!name) { if(nameEl) nameEl.focus(); return; }
+  var hi = document.getElementById('ob-hi');
+  if (hi) hi.textContent = 'Hi ' + name + '!';
+  var s1 = document.getElementById('ob-step1');
+  var s2 = document.getElementById('ob-step2');
+  if (s1) s1.style.display = 'none';
+  if (s2) s2.style.display = 'block';
 }
 
-function showApp(name) {
+function selectGoal(goal, el) {
+  selectedGoal = goal;
+  document.querySelectorAll('.ob-goal-btn').forEach(function(b){ b.classList.remove('selected'); });
+  el.classList.add('selected');
+  var btn = document.getElementById('ob-start-btn');
+  if (btn) { btn.style.opacity = '1'; btn.style.pointerEvents = 'auto'; }
+}
+
+function finishOnboard() {
+  var nameEl = document.getElementById('ob-name');
+  var name = nameEl ? nameEl.value.trim() : '';
+  if (!name) name = 'Friend';
+  S.s('aa_user', {name: name, goal: selectedGoal});
+  var ob = document.getElementById('onboard');
+  if (ob) ob.classList.remove('show');
+  showApp(name, selectedGoal);
+}
+
+function showApp(name, goal) {
   document.getElementById('app').style.display = 'flex';
   const und = document.getElementById('user-name-display'); if(und) und.textContent = name;
   // Greet
@@ -981,7 +1538,12 @@ function showApp(name) {
   // Macro data (static)
   loadMacroData();
   // Warmup API session then load live data
-  api('warmup').then(() => {
+  // Route to correct tab based on goal
+  var goalTabMap = {market:'live', money:'cfo', learn:'learn', research:'analyse'};
+  var startTab = goalTabMap[goal] || 'live';
+  if (startTab !== 'live') switchTab(startTab);
+  // Load live data
+  api('warmup').then(function() {
     loadIndices();
     loadMovers();
   });
@@ -2118,12 +2680,35 @@ async function loadGlobal() {
   }).join('');
 }
 
-// Auto-refresh every 60 seconds during market hours
-setInterval(() => {
-  const { isOpen } = getMarketState();
+// ── REFRESH ENGINE ──────────────────────────────────────────────
+function manualRefresh() {
+  var btn = document.getElementById('refresh-btn');
+  if (btn) {
+    btn.classList.remove('spinning');
+    void btn.offsetWidth; // reflow to restart animation
+    btn.classList.add('spinning');
+    setTimeout(function() { btn.classList.remove('spinning'); }, 600);
+  }
+  loadIndices();
+  loadMovers();
   updateMarketBadge();
-  if (isOpen) { loadIndices(); loadMovers(); }
-}, 60000);
+}
+
+// Auto-refresh: every 30s during market hours, every 5min when closed
+var _refreshInterval = null;
+function startAutoRefresh() {
+  if (_refreshInterval) clearInterval(_refreshInterval);
+  var state = getMarketState();
+  var interval = state.isOpen ? 30000 : 300000;
+  _refreshInterval = setInterval(function() {
+    loadIndices();
+    loadMovers();
+    updateMarketBadge();
+    // Adjust interval if market status changed
+    startAutoRefresh();
+  }, interval);
+}
+startAutoRefresh();
 </script>
 </body>
 </html>
