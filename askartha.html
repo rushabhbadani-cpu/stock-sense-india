@@ -8,147 +8,6 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>AskArtha — Samjho Apna Paisa</title>
 <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
-// ── CHART ENGINE ─────────────────────────────────────────────────
-var _stockChart = null;
-var _stockChartTF = {range:'1d', interval:'5m'};
-
-function setTF(btn, range, interval) {
-  document.querySelectorAll('.tf-btn').forEach(function(b){ b.classList.remove('active'); });
-  btn.classList.add('active');
-  _stockChartTF = {range: range, interval: interval};
-  if (currentSym) loadStockChart(currentSym, range, interval);
-}
-
-async function loadStockChart(sym, range, interval) {
-  var wrap = document.getElementById('stock-chart-wrap');
-  var loading = document.getElementById('stock-chart-loading');
-  if (!wrap) return;
-  if (loading) loading.style.display = 'flex';
-  if (_stockChart) { try { _stockChart.remove(); } catch(e){} _stockChart = null; }
-  var data = await api('history', {symbol: sym, range: range, interval: interval});
-  if (!data || !data.history || !data.history.length) {
-    if (loading) { loading.style.display = 'flex'; loading.textContent = 'Chart data unavailable'; }
-    return;
-  }
-  if (loading) loading.style.display = 'none';
-  wrap.innerHTML = '';
-  var isCandle = range === '1d' || range === '5d';
-  try {
-    _stockChart = LightweightCharts.createChart(wrap, {
-      width: wrap.clientWidth || 340, height: 200,
-      layout: { background: { color: '#080E14' }, textColor: '#7A90A8' },
-      grid: { vertLines: { color: 'rgba(26,42,56,.4)' }, horzLines: { color: 'rgba(26,42,56,.4)' } },
-      timeScale: { borderColor: '#1A2A38', timeVisible: true, secondsVisible: false },
-      rightPriceScale: { borderColor: '#1A2A38' },
-      crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
-      handleScroll: true, handleScale: true,
-    });
-    if (isCandle) {
-      var series = _stockChart.addCandlestickSeries({
-        upColor: '#00C076', downColor: '#FF4D4D',
-        borderUpColor: '#00C076', borderDownColor: '#FF4D4D',
-        wickUpColor: '#00C076', wickDownColor: '#FF4D4D',
-      });
-      series.setData(data.history.filter(function(d){ return d.open&&d.high&&d.low&&d.close; }).map(function(d){ return {time:d.time,open:d.open,high:d.high,low:d.low,close:d.close}; }));
-    } else {
-      var series = _stockChart.addLineSeries({ color: '#C9922A', lineWidth: 2, priceLineVisible: false, crosshairMarkerVisible: true });
-      series.setData(data.history.filter(function(d){ return d.close; }).map(function(d){ return {time:d.time,value:d.close}; }));
-    }
-    _stockChart.timeScale().fitContent();
-  } catch(e) {
-    console.warn('Chart error:', e.message);
-    if (loading) { loading.style.display = 'flex'; loading.textContent = 'Chart unavailable'; }
-  }
-}
-
-async function loadSparkline(sym, containerId, isUp) {
-  var el = document.getElementById(containerId);
-  if (!el) return;
-  var data = await api('history', {symbol: sym, range: '5d', interval: '30m'});
-  if (!data || !data.history || data.history.length < 2) return;
-  var prices = data.history.map(function(d){ return d.close; }).filter(Boolean);
-  if (prices.length < 2) return;
-  var min = Math.min.apply(null, prices);
-  var max = Math.max.apply(null, prices);
-  var rng = max - min || 1;
-  var W = 120, H = 36;
-  var pts = prices.map(function(p, i) {
-    var x = (i / (prices.length - 1)) * W;
-    var y = H - ((p - min) / rng) * H;
-    return x + ',' + y;
-  }).join(' ');
-  var col = isUp ? '#00C076' : '#FF4D4D';
-  el.innerHTML = '<svg width="100%" height="36" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none"><polyline points="' + pts + '" fill="none" stroke="' + col + '" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-}
-
-var _idxChart = null;
-
-function openIndexChart(name, sym) {
-  var modal = document.getElementById('idx-chart-modal');
-  if (!modal) {
-    modal = document.createElement('div');
-    modal.id = 'idx-chart-modal';
-    modal.className = 'idx-modal';
-    document.body.appendChild(modal);
-  }
-  modal.style.display = 'flex';
-  modal.innerHTML = '<div class="idx-modal-bar"><div class="idx-modal-title">' + name + '</div><button onclick="closeIndexChart()" style="background:var(--elev);border:1px solid var(--bord);border-radius:50%;width:30px;height:30px;font-size:14px;color:var(--txd);cursor:pointer">✕</button></div>'
-    + '<div class="idx-modal-body"><div class="idx-tf-row">'
-    + ['1D|1d|5m','1W|5d|15m','1M|1mo|1d','3M|3mo|1d','1Y|1y|1wk'].map(function(t,i) {
-        var parts = t.split('|');
-        return '<button class="tf-btn' + (i===0?' active':'') + '" onclick="loadIdxChart('' + sym + '','' + parts[1] + '','' + parts[2] + '',this)">' + parts[0] + '</button>';
-      }).join('')
-    + '</div><div class="idx-chart-box" id="idx-chart-box"></div></div>';
-  loadIdxChart(sym, '1d', '5m', modal.querySelector('.tf-btn.active'));
-}
-
-function closeIndexChart() {
-  var modal = document.getElementById('idx-chart-modal');
-  if (modal) modal.style.display = 'none';
-  if (_idxChart) { try { _idxChart.remove(); } catch(e){} _idxChart = null; }
-}
-
-async function loadIdxChart(sym, range, interval, btn) {
-  if (btn) {
-    var modal = document.getElementById('idx-chart-modal');
-    if (modal) modal.querySelectorAll('.tf-btn').forEach(function(b){ b.classList.remove('active'); });
-    btn.classList.add('active');
-  }
-  var box = document.getElementById('idx-chart-box');
-  if (!box) return;
-  box.innerHTML = '<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--txd)">Loading…</div>';
-  var data = await api('history', {symbol: sym, range: range, interval: interval});
-  if (!data || !data.history || !data.history.length) {
-    box.innerHTML = '<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--txd)">Data unavailable</div>';
-    return;
-  }
-  box.innerHTML = '';
-  if (_idxChart) { try { _idxChart.remove(); } catch(e){} _idxChart = null; }
-  var isCandle = range === '1d' || range === '5d';
-  try {
-    _idxChart = LightweightCharts.createChart(box, {
-      width: box.clientWidth || window.innerWidth - 32, height: box.clientHeight || 300,
-      layout: { background: { color: '#080E14' }, textColor: '#7A90A8' },
-      grid: { vertLines: { color: 'rgba(26,42,56,.4)' }, horzLines: { color: 'rgba(26,42,56,.4)' } },
-      timeScale: { borderColor: '#1A2A38', timeVisible: true },
-      rightPriceScale: { borderColor: '#1A2A38' },
-      crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
-      handleScroll: true, handleScale: true,
-    });
-    if (isCandle) {
-      var series = _idxChart.addCandlestickSeries({ upColor:'#00C076',downColor:'#FF4D4D',borderUpColor:'#00C076',borderDownColor:'#FF4D4D',wickUpColor:'#00C076',wickDownColor:'#FF4D4D' });
-      series.setData(data.history.filter(function(d){ return d.open&&d.high&&d.low&&d.close; }).map(function(d){ return {time:d.time,open:d.open,high:d.high,low:d.low,close:d.close}; }));
-    } else {
-      var series = _idxChart.addLineSeries({ color: '#C9922A', lineWidth: 2, priceLineVisible: false });
-      series.setData(data.history.filter(function(d){ return d.close; }).map(function(d){ return {time:d.time,value:d.close}; }));
-    }
-    _idxChart.timeScale().fitContent();
-  } catch(e) {
-    box.innerHTML = '<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--txd)">Chart error</div>';
-  }
-}
-
-</script>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=Tiro+Devanagari+Hindi&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -2986,6 +2845,148 @@ function toggleSchool(id) {
   el.style.display = el.style.display === 'none' ? 'block' : 'none';
 }
 function openWhyMachine() { switchTab('analyse'); }
+
+// ── CHART ENGINE ─────────────────────────────────────────────────
+var _stockChart = null;
+var _stockChartTF = {range:'1d', interval:'5m'};
+
+function setTF(btn, range, interval) {
+  document.querySelectorAll('.tf-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  _stockChartTF = {range: range, interval: interval};
+  if (currentSym) loadStockChart(currentSym, range, interval);
+}
+
+async function loadStockChart(sym, range, interval) {
+  var wrap = document.getElementById('stock-chart-wrap');
+  var loading = document.getElementById('stock-chart-loading');
+  if (!wrap) return;
+  if (loading) loading.style.display = 'flex';
+  if (_stockChart) { try { _stockChart.remove(); } catch(e){} _stockChart = null; }
+  var data = await api('history', {symbol: sym, range: range, interval: interval});
+  if (!data || !data.history || !data.history.length) {
+    if (loading) { loading.style.display = 'flex'; loading.textContent = 'Chart data unavailable'; }
+    return;
+  }
+  if (loading) loading.style.display = 'none';
+  wrap.innerHTML = '';
+  var isCandle = range === '1d' || range === '5d';
+  try {
+    _stockChart = LightweightCharts.createChart(wrap, {
+      width: wrap.clientWidth || 340, height: 200,
+      layout: { background: { color: '#080E14' }, textColor: '#7A90A8' },
+      grid: { vertLines: { color: 'rgba(26,42,56,.4)' }, horzLines: { color: 'rgba(26,42,56,.4)' } },
+      timeScale: { borderColor: '#1A2A38', timeVisible: true, secondsVisible: false },
+      rightPriceScale: { borderColor: '#1A2A38' },
+      crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+      handleScroll: true, handleScale: true,
+    });
+    if (isCandle) {
+      var series = _stockChart.addCandlestickSeries({
+        upColor: '#00C076', downColor: '#FF4D4D',
+        borderUpColor: '#00C076', borderDownColor: '#FF4D4D',
+        wickUpColor: '#00C076', wickDownColor: '#FF4D4D',
+      });
+      series.setData(data.history.filter(function(d){ return d.open&&d.high&&d.low&&d.close; }).map(function(d){ return {time:d.time,open:d.open,high:d.high,low:d.low,close:d.close}; }));
+    } else {
+      var series = _stockChart.addLineSeries({ color: '#C9922A', lineWidth: 2, priceLineVisible: false, crosshairMarkerVisible: true });
+      series.setData(data.history.filter(function(d){ return d.close; }).map(function(d){ return {time:d.time,value:d.close}; }));
+    }
+    _stockChart.timeScale().fitContent();
+  } catch(e) {
+    console.warn('Chart error:', e.message);
+    if (loading) { loading.style.display = 'flex'; loading.textContent = 'Chart unavailable'; }
+  }
+}
+
+async function loadSparkline(sym, containerId, isUp) {
+  var el = document.getElementById(containerId);
+  if (!el) return;
+  var data = await api('history', {symbol: sym, range: '5d', interval: '30m'});
+  if (!data || !data.history || data.history.length < 2) return;
+  var prices = data.history.map(function(d){ return d.close; }).filter(Boolean);
+  if (prices.length < 2) return;
+  var min = Math.min.apply(null, prices);
+  var max = Math.max.apply(null, prices);
+  var rng = max - min || 1;
+  var W = 120, H = 36;
+  var pts = prices.map(function(p, i) {
+    var x = (i / (prices.length - 1)) * W;
+    var y = H - ((p - min) / rng) * H;
+    return x + ',' + y;
+  }).join(' ');
+  var col = isUp ? '#00C076' : '#FF4D4D';
+  el.innerHTML = '<svg width="100%" height="36" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none"><polyline points="' + pts + '" fill="none" stroke="' + col + '" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+}
+
+var _idxChart = null;
+
+function openIndexChart(name, sym) {
+  var modal = document.getElementById('idx-chart-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'idx-chart-modal';
+    modal.className = 'idx-modal';
+    document.body.appendChild(modal);
+  }
+  modal.style.display = 'flex';
+  var tfBtns = ['1D|1d|5m','1W|5d|15m','1M|1mo|1d','3M|3mo|1d','1Y|1y|1wk'].map(function(t,i) {
+    var parts = t.split('|');
+    var active = i===0 ? ' active' : '';
+    return '<button class="tf-btn' + active + '" onclick="loadIdxChart(\'' + sym + '\',\'' + parts[1] + '\',\'' + parts[2] + '\',this)">' + parts[0] + '</button>';
+  }).join('');
+  modal.innerHTML = '<div class="idx-modal-bar"><div class="idx-modal-title">' + name + '</div>'
+    + '<button onclick="closeIndexChart()" style="background:var(--elev);border:1px solid var(--bord);border-radius:50%;width:30px;height:30px;font-size:14px;color:var(--txd);cursor:pointer">✕</button></div>'
+    + '<div class="idx-modal-body"><div class="idx-tf-row">' + tfBtns + '</div>'
+    + '<div class="idx-chart-box" id="idx-chart-box"></div></div>';
+  loadIdxChart(sym, '1d', '5m', modal.querySelector('.tf-btn.active'));
+}
+
+function closeIndexChart() {
+  var modal = document.getElementById('idx-chart-modal');
+  if (modal) modal.style.display = 'none';
+  if (_idxChart) { try { _idxChart.remove(); } catch(e){} _idxChart = null; }
+}
+
+async function loadIdxChart(sym, range, interval, btn) {
+  if (btn) {
+    var modal = document.getElementById('idx-chart-modal');
+    if (modal) modal.querySelectorAll('.tf-btn').forEach(function(b){ b.classList.remove('active'); });
+    btn.classList.add('active');
+  }
+  var box = document.getElementById('idx-chart-box');
+  if (!box) return;
+  box.innerHTML = '<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--txd)">Loading…</div>';
+  var data = await api('history', {symbol: sym, range: range, interval: interval});
+  if (!data || !data.history || !data.history.length) {
+    box.innerHTML = '<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--txd)">Data unavailable</div>';
+    return;
+  }
+  box.innerHTML = '';
+  if (_idxChart) { try { _idxChart.remove(); } catch(e){} _idxChart = null; }
+  var isCandle = range === '1d' || range === '5d';
+  try {
+    _idxChart = LightweightCharts.createChart(box, {
+      width: box.clientWidth || window.innerWidth - 32, height: box.clientHeight || 300,
+      layout: { background: { color: '#080E14' }, textColor: '#7A90A8' },
+      grid: { vertLines: { color: 'rgba(26,42,56,.4)' }, horzLines: { color: 'rgba(26,42,56,.4)' } },
+      timeScale: { borderColor: '#1A2A38', timeVisible: true },
+      rightPriceScale: { borderColor: '#1A2A38' },
+      crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+      handleScroll: true, handleScale: true,
+    });
+    if (isCandle) {
+      var series = _idxChart.addCandlestickSeries({ upColor:'#00C076',downColor:'#FF4D4D',borderUpColor:'#00C076',borderDownColor:'#FF4D4D',wickUpColor:'#00C076',wickDownColor:'#FF4D4D' });
+      series.setData(data.history.filter(function(d){ return d.open&&d.high&&d.low&&d.close; }).map(function(d){ return {time:d.time,open:d.open,high:d.high,low:d.low,close:d.close}; }));
+    } else {
+      var series = _idxChart.addLineSeries({ color: '#C9922A', lineWidth: 2, priceLineVisible: false });
+      series.setData(data.history.filter(function(d){ return d.close; }).map(function(d){ return {time:d.time,value:d.close}; }));
+    }
+    _idxChart.timeScale().fitContent();
+  } catch(e) {
+    box.innerHTML = '<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--txd)">Chart error</div>';
+  }
+}
 </script>
 </body>
 </html>
