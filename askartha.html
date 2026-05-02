@@ -337,7 +337,7 @@ button{font-family:inherit;cursor:pointer}
 /* ── LEARN TAB — NEW STRUCTURE ── */
 .learn-hero{background:linear-gradient(135deg,rgba(26,77,143,.2),rgba(60,40,10,.25));border:1px solid var(--gold-bord);border-radius:var(--r16);padding:16px;margin-bottom:14px;position:relative}
 .prog-ring{position:relative;width:56px;height:56px;flex-shrink:0}
-.prog-pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:11px;font-weight:700;color:var(--blue-l)}
+.prog-pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:monospace;font-size:11px;font-weight:700;color:var(--blue-l)}
 .school-card{background:var(--surf);border:1px solid var(--bord);border-radius:var(--r16);overflow:hidden;margin-bottom:10px}
 .school-hd{padding:14px 16px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;transition:background .15s}
 .school-hd:active{background:rgba(255,255,255,.03)}
@@ -367,7 +367,7 @@ button{font-family:inherit;cursor:pointer}
 /* Quick Analysis side-by-side */
 .qa-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:10px}
 .qa-label{color:var(--txm);font-weight:600;text-transform:uppercase;letter-spacing:.3px;font-size:9px}
-.qa-val{font-family:'DM Mono',monospace;font-size:11px;font-weight:700;color:var(--tx);text-align:right}
+.qa-val{font-family:monospace;font-size:11px;font-weight:700;color:var(--tx);text-align:right}
 
 </style>
 </head>
@@ -1369,8 +1369,8 @@ button{font-family:inherit;cursor:pointer}
             </div>
             <div class="price-grid" style="grid-template-columns:repeat(4,1fr)">
               <div class="pg-item"><div class="pg-label">Open</div><div class="pg-val" id="st-open">—</div></div>
-              <div class="pg-item"><div class="pg-label">High</div><div class="pg-val up" id="st-high">—</div></div>
-              <div class="pg-item"><div class="pg-label">Low</div><div class="pg-val dn" id="st-low">—</div></div>
+              <div class="pg-item"><div class="pg-label">Day High</div><div class="pg-val up" id="st-high">—</div></div>
+              <div class="pg-item"><div class="pg-label">Day Low</div><div class="pg-val dn" id="st-low">—</div></div>
               <div class="pg-item"><div class="pg-label">Prev Close</div><div class="pg-val" id="st-prev">—</div></div>
               <div class="pg-item"><div class="pg-label">P/E</div><div class="pg-val" id="st-pe">—</div></div>
               <div class="pg-item"><div class="pg-label">Market Cap</div><div class="pg-val" id="st-mcap">—</div></div>
@@ -1431,11 +1431,22 @@ button{font-family:inherit;cursor:pointer}
                 📚 Open Chart School to understand these signals
               </div>
 
-              <!-- Revenue trend bars -->
+              <!-- Revenue + Profit trend bars -->
               <div id="revenue-section" style="display:none;margin-bottom:8px">
-                <div style="font-size:9px;font-weight:700;color:var(--gold);letter-spacing:.5px;margin-bottom:4px">📈 REVENUE TREND</div>
-                <div style="display:flex;gap:3px;align-items:flex-end;height:44px" id="revenue-bars"></div>
+                <div style="font-size:9px;font-weight:700;color:var(--gold);letter-spacing:.5px;margin-bottom:4px">📈 REVENUE vs PROFIT (Annual)</div>
+                <div style="display:flex;gap:3px;align-items:flex-end;height:52px" id="revenue-bars"></div>
                 <div style="display:flex;gap:3px;margin-top:2px" id="revenue-labels"></div>
+                <div id="revenue-legend" style="display:none;gap:10px;margin-top:4px">
+                  <span style="font-size:9px;color:var(--blue-l)">▬ Revenue</span>
+                  <span style="font-size:9px;color:var(--g)">▬ Profit</span>
+                </div>
+              </div>
+
+              <!-- Peer Comparison -->
+              <div id="peer-section" style="display:none;margin-bottom:8px">
+                <div style="font-size:9px;font-weight:700;color:var(--gold);letter-spacing:.5px;margin-bottom:6px">👥 PEER COMPARISON</div>
+                <div id="peer-grid"></div>
+                <div style="font-size:9px;color:var(--txm);margin-top:4px">Tap any peer to analyse it</div>
               </div>
 
               <!-- Deeper fundamentals expandable -->
@@ -2401,9 +2412,15 @@ async function doSearchSym(sym) {
   document.getElementById('st-price').className   = 'stock-p ' + (up?'up':'dn');
   setEl('st-chg','textContent', (up?'+':'') + (data.changePct||0).toFixed(2) + '% today');
   document.getElementById('st-chg').className     = 'stock-chg ' + (up?'up':'dn');
-  setEl('st-open','textContent', data.open > 0 ? fmtPrice(data.open) : '—');
-  setEl('st-high','textContent', data.high > 0 ? fmtPrice(data.high) : '—');
-  setEl('st-low','textContent', data.low  > 0 ? fmtPrice(data.low)  : '—');
+  // open/high/low: use data if available, else fallback to prevClose/price
+  var openVal = data.open > 0 ? data.open : data.prevClose > 0 ? data.prevClose : data.price;
+  var highVal = data.high > 0 ? data.high : data.price;
+  var lowVal  = data.low  > 0 ? data.low  : data.price;
+  var {isOpen} = getMarketState();
+  var ohlcNote = (!isOpen && !data.high) ? ' *' : '';
+  setEl('st-open','textContent', fmtPrice(openVal) + ohlcNote);
+  setEl('st-high','textContent', fmtPrice(highVal) + ohlcNote);
+  setEl('st-low','textContent',  fmtPrice(lowVal)  + ohlcNote);
   setEl('st-pe','textContent', data.pe   > 0 ? data.pe.toFixed(1)+'x' : 'N/A');
   setEl('st-52l','textContent', data.w52Low  > 0 ? fmtPrice(data.w52Low)  : '—');
   setEl('st-52h','textContent', data.w52High > 0 ? fmtPrice(data.w52High) : '—');
@@ -3097,9 +3114,71 @@ var STOCK_LIST = [
   ['ZOMATO','Zomato','Consumer Tech'],['ADANIENT','Adani Enterprises','Conglomerate'],
   ['VEDL','Vedanta','Metals'],['MM','Mahindra & Mahindra','Auto'],
   ['PAYTM','Paytm','Fintech'],['NYKAA','Nykaa','Consumer Tech'],
-  ['DMART','Avenue Supermarts','Retail'],['PVR','PVR Inox','Entertainment'],
+  ['DMART','Avenue Supermarts','Retail'],['PVR','PVR INOX','Entertainment'],
   ['IRCTC','IRCTC','Travel'],['HAL','Hindustan Aeronautics','Defence'],
   ['BEL','Bharat Electronics','Defence'],['IRFC','Indian Railway Finance','Finance'],
+  // Extended — Banking
+  ['IDFCFIRSTB','IDFC First Bank','Banking'],['BANDHANBNK','Bandhan Bank','Banking'],
+  ['FEDERALBNK','Federal Bank','Banking'],['RBLBANK','RBL Bank','Banking'],
+  ['YESBANK','Yes Bank','Banking'],['PNB','Punjab National Bank','Banking'],
+  ['BANKBARODA','Bank of Baroda','Banking'],['CANBK','Canara Bank','Banking'],
+  ['UNIONBANK','Union Bank of India','Banking'],['MAHABANK','Bank of Maharashtra','Banking'],
+  // Extended — IT
+  ['MPHASIS','Mphasis','IT'],['COFORGE','Coforge','IT'],['PERSISTENT','Persistent Systems','IT'],
+  ['LTTS','L&T Technology Services','IT'],['KPIT','KPIT Technologies','IT'],
+  ['TATAELXSI','Tata Elxsi','IT'],['OFSS','Oracle Financial Services','IT'],
+  ['NIIT','NIIT Learning','IT'],['MASTEK','Mastek','IT'],
+  // Extended — Pharma
+  ['AUROPHARMA','Aurobindo Pharma','Pharma'],['TORNTPHARM','Torrent Pharma','Pharma'],
+  ['LUPIN','Lupin','Pharma'],['BIOCON','Biocon','Pharma'],['ALKEM','Alkem Labs','Pharma'],
+  ['IPCALAB','IPCA Labs','Pharma'],['NATCOPHARM','Natco Pharma','Pharma'],
+  ['GRANULES','Granules India','Pharma'],['AJANTPHARM','Ajanta Pharma','Pharma'],
+  // Extended — Auto & EV
+  ['TVSMOTOR','TVS Motor','Auto'],['MOTHERSON','Samvardhana Motherson','Auto'],
+  ['BOSCHLTD','Bosch','Auto'],['BALKRISIND','Balkrishna Industries','Auto'],
+  ['MINDAIND','Minda Industries','Auto'],['RVNL','Rail Vikas Nigam','Infra'],
+  ['ATGL','Adani Total Gas','Energy'],['IGL','Indraprastha Gas','Energy'],
+  ['MGL','Mahanagar Gas','Energy'],['GAIL','GAIL India','Energy'],
+  // Extended — FMCG & Consumer
+  ['DABUR','Dabur India','FMCG'],['MARICO','Marico','FMCG'],['COLPAL','Colgate-Palmolive','FMCG'],
+  ['GODREJCP','Godrej Consumer Products','FMCG'],['EMAMILTD','Emami','FMCG'],
+  ['VBL','Varun Beverages','FMCG'],['RADICO','Radico Khaitan','FMCG'],
+  ['UNITDSPR','United Spirits','FMCG'],['UBL','United Breweries','FMCG'],
+  // Extended — Finance & Insurance
+  ['CHOLAFIN','Cholamandalam Finance','Finance'],['MUTHOOTFIN','Muthoot Finance','Finance'],
+  ['MANAPPURAM','Manappuram Finance','Finance'],['L&TFH','L&T Finance','Finance'],
+  ['PEL','Piramal Enterprises','Finance'],['ICICIGI','ICICI Lombard','Insurance'],
+  ['NIACL','New India Assurance','Insurance'],['STARHEALTH','Star Health Insurance','Insurance'],
+  // Extended — Cement & Real Estate
+  ['SHREECEM','Shree Cement','Cement'],['AMBUJACEM','Ambuja Cement','Cement'],
+  ['ACCLTD','ACC','Cement'],['RAMCOCEM','Ramco Cement','Cement'],
+  ['DLF','DLF','Real Estate'],['GODREJPROP','Godrej Properties','Real Estate'],
+  ['OBEROIRLTY','Oberoi Realty','Real Estate'],['PRESTIGE','Prestige Estates','Real Estate'],
+  // Extended — Metals & Mining
+  ['SAIL','Steel Authority of India','Metals'],['NMDC','NMDC','Mining'],
+  ['HINDCOPPER','Hindustan Copper','Metals'],['NATIONALUM','National Aluminium','Metals'],
+  // Extended — Telecom & Media
+  ['IDEA','Vodafone Idea','Telecom'],['MTNL','MTNL','Telecom'],
+  ['ZEEL','Zee Entertainment','Media'],['SUNTV','Sun TV Network','Media'],
+  ['PVR','PVR INOX','Media'],
+  // Extended — Healthcare
+  ['FORTIS','Fortis Healthcare','Healthcare'],['MAXHEALTH','Max Healthcare','Healthcare'],
+  ['KIMS','Krishna Institute of Medical','Healthcare'],['RAINBOW','Rainbow Childrens Medicare','Healthcare'],
+  // Extended — New Age & Tech
+  ['NYKAA','FSN E-Commerce (Nykaa)','Consumer Tech'],['CARTRADE','CarTrade Tech','Consumer Tech'],
+  ['EASEMYTRIP','Easy Trip Planners','Travel'],['INDIGO','IndiGo Airlines','Aviation'],
+  ['SPICEJET','SpiceJet','Aviation'],['INTERGLOBE','InterGlobe Aviation','Aviation'],
+  ['TATACOMM','Tata Communications','Telecom'],['HFCL','HFCL','Telecom'],
+  // Extended — Chemicals & Specialty
+  ['PIDILITIND','Pidilite Industries','Chemicals'],['SRF','SRF','Chemicals'],
+  ['NAVINFLUOR','Navin Fluorine','Chemicals'],['DEEPAKNTR','Deepak Nitrite','Chemicals'],
+  ['AAPL','Aarti Industries','Chemicals'],['FINEORG','Fine Organics','Chemicals'],
+  // Extended — PSU & Infra
+  ['BHEL','BHEL','PSU'],['CONCOR','Container Corp','PSU'],['HUDCO','HUDCO','Finance'],
+  ['RECLTD','REC Limited','Finance'],['PFC','Power Finance Corp','Finance'],
+  ['SJVN','SJVN','Energy'],['NHPC','NHPC','Energy'],['CESC','CESC','Energy'],
+  ['TATAPOWER','Tata Power','Energy'],['ADANIGREEN','Adani Green Energy','Energy'],
+  ['ADANIPOWER','Adani Power','Energy'],
 ];
 
 var _fundCache = {};
@@ -3190,22 +3269,90 @@ function renderFundamentals(d) {
   // Revenue trend bars
   if (d.income && d.income.length) {
     var rev = d.income.slice().reverse();
-    var maxR = Math.max.apply(null, rev.map(function(i){ return i.revenue||0; }));
+    var maxR = Math.max.apply(null, rev.map(function(i){ return Math.max(i.revenue||0, Math.abs(i.profit||0)); }));
     var barsEl = document.getElementById('revenue-bars');
     var lblsEl = document.getElementById('revenue-labels');
     var secEl  = document.getElementById('revenue-section');
     if (barsEl && maxR > 0) {
       if (secEl) secEl.style.display = 'block';
       barsEl.innerHTML = rev.map(function(yr) {
-        var pct = Math.max(10, (yr.revenue/maxR)*100);
-        var col = yr.profit > 0 ? 'var(--g)' : 'var(--err)';
-        return '<div style="flex:1;background:'+col+';border-radius:3px 3px 0 0;height:'+pct+'%;opacity:.8"></div>';
+        var revPct = Math.max(6, ((yr.revenue||0)/maxR)*100);
+        var profPct = Math.max(2, (Math.abs(yr.profit||0)/maxR)*100);
+        var profCol = yr.profit >= 0 ? 'var(--g)' : 'var(--err)';
+        return '<div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:1px">'
+          + '<div style="background:var(--blue-l);border-radius:2px 2px 0 0;height:'+revPct+'%;opacity:.6" title="Revenue: '+fmtCr((yr.revenue||0)/1e7)+'"></div>'
+          + '<div style="background:'+profCol+';border-radius:2px 2px 0 0;height:'+profPct+'%;opacity:.9" title="Profit: '+fmtCr((yr.profit||0)/1e7)+'"></div>'
+          + '</div>';
       }).join('');
       lblsEl.innerHTML = rev.map(function(yr){
         return '<div style="flex:1;text-align:center;font-size:8px;color:var(--txm)">'+yr.date.substring(0,4)+'</div>';
       }).join('');
+      // Legend
+      var legEl = document.getElementById('revenue-legend');
+      if (legEl) legEl.style.display = 'flex';
     }
   }
+
+  // Peer comparison
+  loadPeerComparison(currentSym, d);
+}
+
+// ── PEER COMPARISON ──────────────────────────────────────────────
+var PEERS = {
+  'RELIANCE':['ONGC','BPCL','IOC','GAIL'],
+  'TCS':['INFY','WIPRO','HCLTECH','TECHM','MPHASIS'],
+  'HDFCBANK':['ICICIBANK','KOTAKBANK','AXISBANK','SBIN','IDFCFIRSTB'],
+  'ICICIBANK':['HDFCBANK','KOTAKBANK','AXISBANK','SBIN','IDFCFIRSTB'],
+  'SBIN':['HDFCBANK','ICICIBANK','PNB','BANKBARODA','CANBK'],
+  'KOTAKBANK':['HDFCBANK','ICICIBANK','AXISBANK','IDFCFIRSTB','FEDERALBNK'],
+  'INFY':['TCS','WIPRO','HCLTECH','TECHM','MPHASIS'],
+  'WIPRO':['TCS','INFY','HCLTECH','TECHM','COFORGE'],
+  'HCLTECH':['TCS','INFY','WIPRO','TECHM','LTTS'],
+  'SUNPHARMA':['DRREDDY','CIPLA','LUPIN','AUROPHARMA','TORNTPHARM'],
+  'DRREDDY':['SUNPHARMA','CIPLA','LUPIN','AUROPHARMA','DIVISLAB'],
+  'CIPLA':['SUNPHARMA','DRREDDY','LUPIN','AUROPHARMA','ALKEM'],
+  'MARUTI':['TATAMOTORS','MM','TVSMOTOR','HEROMOTOCO','BAJAJ-AUTO'],
+  'TATAMOTORS':['MARUTI','MM','TVSMOTOR','EICHERMOT','ASHOKLEY'],
+  'BAJFINANCE':['BAJAJFINSV','CHOLAFIN','MUTHOOTFIN','L&TFH','MANAPPURAM'],
+  'HINDUNILVR':['ITC','DABUR','MARICO','COLPAL','GODREJCP'],
+  'ITC':['HINDUNILVR','DABUR','MARICO','BRITANNIA','NESTLEIND'],
+  'ASIANPAINT':['BERGER','KANSAINER','SHEENLAC','INDIGO'],
+  'LT':['BHEL','RVNL','ABB','SIEMENS','CUMMINSIND'],
+  'ADANIPORTS':['CONCOR','GATEWAY','GPPL'],
+  'NTPC':['POWERGRID','TATAPOWER','ADANIPOWER','CESC','NHPC'],
+  'AXISBANK':['HDFCBANK','ICICIBANK','KOTAKBANK','IDFCFIRSTB','YESBANK'],
+};
+
+async function loadPeerComparison(sym, myFund) {
+  var peers = PEERS[sym];
+  var peerEl = document.getElementById('peer-section');
+  if (!peerEl) return;
+  if (!peers || !peers.length) { peerEl.style.display = 'none'; return; }
+  peerEl.style.display = 'block';
+
+  var peerGrid = document.getElementById('peer-grid');
+  if (!peerGrid) return;
+  peerGrid.innerHTML = '<div style="font-size:10px;color:var(--txm);padding:4px 0">Loading peers…</div>';
+
+  var allSyms = [sym].concat(peers).join(',');
+  var data = await api('batch', {symbols: allSyms});
+  if (!data || !data.quotes) return;
+
+  var html = [sym].concat(peers).map(function(s) {
+    var q = data.quotes[s] || {};
+    var isSelf = s === sym;
+    var up = (q.changePct||0) >= 0;
+    var col = up ? 'var(--g)' : 'var(--err)';
+    var bg = isSelf ? 'background:var(--gold-bg);border-left:2px solid var(--gold);' : '';
+    return '<div style="display:flex;align-items:center;gap:8px;padding:7px 6px;border-bottom:1px solid var(--bord);cursor:pointer;'+bg+'" onclick="doSearchSym(\'' + s + '\')">'
+      + '<div style="font-size:11px;font-weight:700;flex:1;color:' + (isSelf?'var(--gold)':'var(--tx)') + '">' + s + (isSelf?' ★':'') + '</div>'
+      + '<div style="font-family:monospace;font-size:11px">' + (q.price ? fmtPrice(q.price) : '—') + '</div>'
+      + '<div style="font-size:10px;font-weight:700;color:' + col + ';min-width:52px;text-align:right">' + (q.changePct!=null?(up?'+':'')+q.changePct.toFixed(2)+'%':'—') + '</div>'
+      + '<div style="font-size:9px;color:var(--txm);min-width:40px;text-align:right">' + (q.pe>0?q.pe.toFixed(1)+'x':'—') + '</div>'
+      + '</div>';
+  }).join('');
+
+  peerGrid.innerHTML = html;
 }
 
 function setQA(id, val, cls) {
