@@ -1719,10 +1719,14 @@ async function loadIndices() {
     const up = idx.changePct >= 0;
     const col = up ? 'var(--g)' : 'var(--err)';
     const absChg = idx.change != null ? (up?'+':'') + fmtPrice(Math.abs(idx.change)) : '';
-    const sym = idx.name === 'NIFTY 50' ? '^NSEI' : idx.name === 'SENSEX' ? '^BSESN' : idx.name === 'NIFTY BANK' ? '^NSEBANK' : '^NSEI';
+    const symMap = {'NIFTY 50':'^NSEI','SENSEX':'^BSESN','NIFTY BANK':'^NSEBANK','NIFTY IT':'^CNXIT','NIFTY PHARMA':'^CNXPHARMA','NIFTY AUTO':'^CNXAUTO','NIFTY FMCG':'^CNXFMCG','INDIA VIX':'^INDIAVIX','NIFTY METAL':'^CNXMETAL','NIFTY REALTY':'^CNXREALTY'};
+    const sym = symMap[idx.name] || '^NSEI';
     const sparkId = 'spark-' + idx.name.replace(/\s/g,'');
-    return `<div class="idx-card" onclick="openIndexChart('${idx.name}','${sym}')" style="cursor:pointer">
-      <div class="idx-name">${idx.name}</div>
+    return `<div class="idx-card" onclick="openIndexChart('${idx.name}','${sym}')" style="cursor:pointer;position:relative">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div class="idx-name">${idx.name}</div>
+        <span style="font-size:13px;opacity:.5" title="Tap to view chart">📈</span>
+      </div>
       <div class="idx-val" style="color:${col}">${idx.value?.toLocaleString('en-IN',{maximumFractionDigits:0})}</div>
       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:3px">
         <span style="font-size:11px;font-weight:700;color:${col}">${up?'▲':'▼'} ${Math.abs(idx.changePct).toFixed(2)}%</span>
@@ -1734,7 +1738,8 @@ async function loadIndices() {
   // Load sparklines after render
   setTimeout(() => {
     show.forEach(idx => {
-      const sym = idx.name === 'NIFTY 50' ? '^NSEI' : idx.name === 'SENSEX' ? '^BSESN' : idx.name === 'NIFTY BANK' ? '^NSEBANK' : '^NSEI';
+      const symMap2 = {'NIFTY 50':'^NSEI','SENSEX':'^BSESN','NIFTY BANK':'^NSEBANK','NIFTY IT':'^CNXIT','NIFTY PHARMA':'^CNXPHARMA','NIFTY AUTO':'^CNXAUTO','NIFTY FMCG':'^CNXFMCG'};
+      const sym = symMap2[idx.name] || '^NSEI';
       const sparkId = 'spark-' + idx.name.replace(/\s/g,'');
       loadSparkline(sym, sparkId, idx.changePct >= 0);
     });
@@ -2958,6 +2963,25 @@ async function loadIdxChart(sym, range, interval, btn) {
   if (!box) return;
   box.innerHTML = '<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--txd)">Loading…</div>';
   var data = await api('history', {symbol: sym, range: range, interval: interval});
+  // Weekend fallback: 1d intraday is empty on weekends, try 5d instead
+  if ((!data || !data.history || !data.history.length) && range === '1d') {
+    data = await api('history', {symbol: sym, range: '5d', interval: '15m'});
+    if (data && data.history && data.history.length) {
+      box.innerHTML = '';
+      // Update the 1D button to show it's using 5D data
+      var activeTf = box.closest('.idx-modal-body');
+      if (activeTf) {
+        var note = activeTf.querySelector('.weekend-note');
+        if (!note) {
+          note = document.createElement('div');
+          note.className = 'weekend-note';
+          note.style.cssText = 'font-size:9px;color:#F0B429;text-align:center;padding:4px 0;';
+          note.textContent = '📅 Weekend — showing last 5 trading days';
+          activeTf.insertBefore(note, activeTf.querySelector('.idx-chart-box'));
+        }
+      }
+    }
+  }
   if (!data || !data.history || !data.history.length) {
     box.innerHTML = '<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--txd)">Data unavailable</div>';
     return;
