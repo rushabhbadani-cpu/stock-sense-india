@@ -124,7 +124,7 @@ function openIndexChart(name, sym) {
     + '<div class="idx-tf-row">'
     + ['1D|1d|5m','1W|5d|15m','1M|1mo|1d','3M|3mo|1d','1Y|1y|1wk'].map(function(t,i) {
         var parts = t.split('|');
-        return '<button class="tf-btn' + (i===0?' active':'') + '" onclick="loadIdxChart('' + sym + '','' + parts[1] + '','' + parts[2] + '',this)">' + parts[0] + '</button>';
+        return '<button class="tf-btn' + (i===0?' active':'') + '" onclick="loadIdxChart(\'' + sym + '\',\'' + parts[1] + '\',\'' + parts[2] + '\',this)">' + parts[0] + '</button>';
       }).join('')
     + '</div>'
     + '<div class="idx-chart-box" id="idx-chart-box"></div>'
