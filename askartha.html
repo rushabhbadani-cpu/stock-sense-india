@@ -318,12 +318,12 @@ button{font-family:inherit;cursor:pointer}
 .tf-btn.active{background:var(--gold-bg);border-color:var(--gold);color:var(--gold)}
 
 /* Index chart modal */
-.idx-modal{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:800;display:flex;flex-direction:column}
+.idx-modal{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:800;display:flex;flex-direction:column;height:100dvh}
 .idx-modal-bar{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:var(--surf);border-bottom:1px solid var(--bord)}
 .idx-modal-title{font-family:'Sora',sans-serif;font-size:16px;font-weight:700;color:var(--tx)}
-.idx-modal-body{flex:1;display:flex;flex-direction:column;padding:14px 16px;gap:10px}
+.idx-modal-body{flex:1;display:flex;flex-direction:column;padding:14px 16px;gap:10px;min-height:0}
 .idx-tf-row{display:flex;gap:8px}
-.idx-chart-box{flex:1;border-radius:12px;overflow:hidden;background:var(--dark)}
+.idx-chart-box{flex:1;min-height:280px;border-radius:12px;overflow:hidden;background:var(--dark)}
 
 /* Artha Scorecard */
 .sc-item{background:var(--elev);border:1px solid var(--bord);border-radius:10px;padding:10px 12px}
@@ -2869,13 +2869,14 @@ async function loadStockChart(sym, range, interval) {
   if (loading) loading.style.display = 'flex';
   if (_stockChart) { try { _stockChart.remove(); } catch(e){} _stockChart = null; }
   var data = await api('history', {symbol: sym, range: range, interval: interval});
-  if (!data || !data.history || !data.history.length) {
+  if (!data || !data.prices || !data.prices.length) {
     if (loading) { loading.style.display = 'flex'; loading.textContent = 'Chart data unavailable'; }
     return;
   }
   if (loading) loading.style.display = 'none';
   wrap.innerHTML = '';
   var isCandle = range === '1d' || range === '5d';
+  await new Promise(function(r){ setTimeout(r, 50); }); // Wait for box to render
   try {
     _stockChart = LightweightCharts.createChart(wrap, {
       width: wrap.clientWidth || 340, height: 200,
@@ -2892,10 +2893,10 @@ async function loadStockChart(sym, range, interval) {
         borderUpColor: '#00C076', borderDownColor: '#FF4D4D',
         wickUpColor: '#00C076', wickDownColor: '#FF4D4D',
       });
-      series.setData(data.history.filter(function(d){ return d.open&&d.high&&d.low&&d.close; }).map(function(d){ return {time:d.time,open:d.open,high:d.high,low:d.low,close:d.close}; }));
+      series.setData(data.prices.filter(function(d){ return d.open&&d.high&&d.low&&d.close; }).map(function(d){ return {time:d.date,open:d.open,high:d.high,low:d.low,close:d.close}; }));
     } else {
       var series = _stockChart.addLineSeries({ color: '#C9922A', lineWidth: 2, priceLineVisible: false, crosshairMarkerVisible: true });
-      series.setData(data.history.filter(function(d){ return d.close; }).map(function(d){ return {time:d.time,value:d.close}; }));
+      series.setData(data.prices.filter(function(d){ return d.close; }).map(function(d){ return {time:d.date,value:d.close}; }));
     }
     _stockChart.timeScale().fitContent();
   } catch(e) {
@@ -2908,8 +2909,8 @@ async function loadSparkline(sym, containerId, isUp) {
   var el = document.getElementById(containerId);
   if (!el) return;
   var data = await api('history', {symbol: sym, range: '5d', interval: '30m'});
-  if (!data || !data.history || data.history.length < 2) return;
-  var prices = data.history.map(function(d){ return d.close; }).filter(Boolean);
+  if (!data || !data.prices || data.prices.length < 2) return;
+  var prices = data.prices.map(function(d){ return d.close; }).filter(Boolean);
   if (prices.length < 2) return;
   var min = Math.min.apply(null, prices);
   var max = Math.max.apply(null, prices);
@@ -2962,36 +2963,45 @@ async function loadIdxChart(sym, range, interval, btn) {
   var box = document.getElementById('idx-chart-box');
   if (!box) return;
   box.innerHTML = '<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--txd)">Loading…</div>';
+  // Try primary symbol
   var data = await api('history', {symbol: sym, range: range, interval: interval});
-  // Weekend fallback: 1d intraday is empty on weekends, try 5d instead
-  if ((!data || !data.history || !data.history.length) && range === '1d') {
+
+  // Fallback 1: if 1D empty (weekend/holiday), try 5D
+  if ((!data || !data.prices || !data.prices.length) && range === '1d') {
     data = await api('history', {symbol: sym, range: '5d', interval: '15m'});
-    if (data && data.history && data.history.length) {
-      box.innerHTML = '';
-      // Update the 1D button to show it's using 5D data
-      var activeTf = box.closest('.idx-modal-body');
-      if (activeTf) {
-        var note = activeTf.querySelector('.weekend-note');
-        if (!note) {
-          note = document.createElement('div');
-          note.className = 'weekend-note';
-          note.style.cssText = 'font-size:9px;color:#F0B429;text-align:center;padding:4px 0;';
-          note.textContent = '📅 Weekend — showing last 5 trading days';
-          activeTf.insertBefore(note, activeTf.querySelector('.idx-chart-box'));
-        }
-      }
+    if (data && data.prices && data.prices.length) {
+      var note = document.createElement('div');
+      note.style.cssText = 'font-size:9px;color:#F0B429;text-align:center;padding:4px 0 0;';
+      note.textContent = '📅 Weekend — showing last 5 trading days';
+      box.parentNode && box.parentNode.insertBefore(note, box);
     }
   }
-  if (!data || !data.history || !data.history.length) {
-    box.innerHTML = '<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--txd)">Data unavailable</div>';
+
+  // Fallback 2: for any empty result, try with longer range / daily interval
+  if (!data || !data.prices || !data.prices.length) {
+    var fallbackRange = range === '1mo' ? '3mo' : range === '5d' ? '1mo' : range;
+    var fallbackInterval = '1d';
+    data = await api('history', {symbol: sym, range: fallbackRange, interval: fallbackInterval});
+  }
+
+  // Fallback 3: try without ^ prefix (some NSE index codes)
+  if (!data || !data.prices || !data.prices.length) {
+    var altSym = sym.startsWith('^') ? sym.slice(1) + '.NS' : sym;
+    data = await api('history', {symbol: altSym, range: range, interval: '1d'});
+  }
+
+  if (!data || !data.prices || !data.prices.length) {
+    box.innerHTML = '<div style="height:100%;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px"><div><div style="font-size:24px;margin-bottom:8px">📊</div><div style="font-size:11px;color:var(--txd)">Chart data unavailable<br><span style="font-size:10px;color:var(--txm)">Try 1W, 1M, 3M or 1Y tabs</span></div></div></div>';
     return;
   }
   box.innerHTML = '';
   if (_idxChart) { try { _idxChart.remove(); } catch(e){} _idxChart = null; }
   var isCandle = range === '1d' || range === '5d';
   try {
+    var chartH = Math.max(280, box.clientHeight || 280);
+    var chartW = box.clientWidth || window.innerWidth - 32;
     _idxChart = LightweightCharts.createChart(box, {
-      width: box.clientWidth || window.innerWidth - 32, height: box.clientHeight || 300,
+      width: chartW, height: chartH,
       layout: { background: { color: '#080E14' }, textColor: '#7A90A8' },
       grid: { vertLines: { color: 'rgba(26,42,56,.4)' }, horzLines: { color: 'rgba(26,42,56,.4)' } },
       timeScale: { borderColor: '#1A2A38', timeVisible: true },
@@ -3001,10 +3011,10 @@ async function loadIdxChart(sym, range, interval, btn) {
     });
     if (isCandle) {
       var series = _idxChart.addCandlestickSeries({ upColor:'#00C076',downColor:'#FF4D4D',borderUpColor:'#00C076',borderDownColor:'#FF4D4D',wickUpColor:'#00C076',wickDownColor:'#FF4D4D' });
-      series.setData(data.history.filter(function(d){ return d.open&&d.high&&d.low&&d.close; }).map(function(d){ return {time:d.time,open:d.open,high:d.high,low:d.low,close:d.close}; }));
+      series.setData(data.prices.filter(function(d){ return d.open&&d.high&&d.low&&d.close; }).map(function(d){ return {time:d.date,open:d.open,high:d.high,low:d.low,close:d.close}; }));
     } else {
       var series = _idxChart.addLineSeries({ color: '#C9922A', lineWidth: 2, priceLineVisible: false });
-      series.setData(data.history.filter(function(d){ return d.close; }).map(function(d){ return {time:d.time,value:d.close}; }));
+      series.setData(data.prices.filter(function(d){ return d.close; }).map(function(d){ return {time:d.date,value:d.close}; }));
     }
     _idxChart.timeScale().fitContent();
   } catch(e) {
