@@ -1497,45 +1497,122 @@ button{font-family:inherit;cursor:pointer}
           <span onclick="doSearchSym('ZOMATO')" style="cursor:pointer;background:var(--elev);border:1px solid var(--bord);border-radius:20px;padding:5px 12px;font-size:11px;font-weight:600;color:var(--txd)">ZOMATO</span>
         </div>
         <div class="stock-result" id="stock-result">
-          <div class="card">
+          <!-- Header: symbol, name, price -->
+          <div class="card" style="margin-bottom:10px">
             <div class="stock-header">
               <div><div class="stock-sym" id="st-sym">—</div><div class="stock-name" id="st-name">—</div></div>
               <div class="stock-price"><div class="stock-p" id="st-price">—</div><div class="stock-chg" id="st-chg">—</div></div>
             </div>
-            <div class="price-grid">
+            <!-- OHLC row -->
+            <div class="price-grid" style="margin-bottom:10px">
               <div class="pg-item"><div class="pg-label">Open</div><div class="pg-val" id="st-open">—</div></div>
               <div class="pg-item"><div class="pg-label">High</div><div class="pg-val up" id="st-high">—</div></div>
               <div class="pg-item"><div class="pg-label">Low</div><div class="pg-val dn" id="st-low">—</div></div>
               <div class="pg-item"><div class="pg-label">P/E</div><div class="pg-val" id="st-pe">—</div></div>
             </div>
-            <div class="w52-bar">
-              <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--txd);margin-bottom:6px"><span>52W Low: <span id="st-52l">—</span></span><span id="st-52pos">—</span><span>52W High: <span id="st-52h">—</span></span></div>
+            <!-- Chart -->
+            <div style="display:flex;gap:6px;margin-bottom:8px">
+              <button class="tf-btn active" onclick="setTF(this,'1d','5m')">1D</button>
+              <button class="tf-btn" onclick="setTF(this,'5d','15m')">1W</button>
+              <button class="tf-btn" onclick="setTF(this,'1mo','1d')">1M</button>
+              <button class="tf-btn" onclick="setTF(this,'3mo','1d')">3M</button>
+              <button class="tf-btn" onclick="setTF(this,'1y','1wk')">1Y</button>
+            </div>
+            <div id="stock-chart-wrap" style="height:190px;border-radius:10px;overflow:hidden;background:var(--dark)">
+              <div id="stock-chart-loading" style="height:190px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--txd)">Loading chart…</div>
+            </div>
+            <!-- Reference annotation -->
+            <div id="st-ref-line" style="display:none;font-size:10px;color:var(--txm);margin-top:5px;padding:5px 8px;background:var(--elev);border-radius:6px;border-left:2px solid var(--gold)"></div>
+            <div style="font-size:9px;color:var(--txm);margin-top:5px;text-align:right">1D/1W = Candlestick · 1M/3M/1Y = Line chart</div>
+            <!-- 52W bar -->
+            <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--bord)">
+              <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--txd);margin-bottom:6px">
+                <span>52W Low: <span id="st-52l">—</span></span><span id="st-52pos" style="color:var(--txm)">—</span><span>52W High: <span id="st-52h">—</span></span>
+              </div>
               <div class="w52-track"><div class="w52-fill" id="st-52fill" style="left:50%"></div></div>
             </div>
-            <!-- Chart timeframe selector -->
-            <div style="margin-top:14px">
-              <div style="display:flex;gap:6px;margin-bottom:8px">
-                <button class="tf-btn active" onclick="setTF(this,'1d','5m')">1D</button>
-                <button class="tf-btn" onclick="setTF(this,'5d','15m')">1W</button>
-                <button class="tf-btn" onclick="setTF(this,'1mo','1d')">1M</button>
-                <button class="tf-btn" onclick="setTF(this,'3mo','1d')">3M</button>
-                <button class="tf-btn" onclick="setTF(this,'1y','1wk')">1Y</button>
-              </div>
-              <div id="stock-chart-wrap" style="height:200px;border-radius:10px;overflow:hidden;background:var(--dark)">
-                <div id="stock-chart-loading" style="height:200px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--txd)">Loading chart…</div>
-              </div>
-              <div style="font-size:9px;color:var(--txm);margin-top:4px;text-align:right">📊 1D/1W = Candlestick · 1M/3M/1Y = Line</div>
-            </div>
+            <!-- Actions -->
             <div style="display:flex;gap:8px;margin-top:12px">
-              <button onclick="addToWatchlist()" style="flex:1;background:var(--elev);border:1px solid var(--bord);border-radius:var(--r10);padding:10px;font-size:12px;font-weight:700;color:var(--blue-l)">☆ Watchlist</button>
-              <button onclick="openPanel('Add to Portfolio',panelPortfolio())" style="flex:1;background:var(--gold);border:none;border-radius:var(--r10);padding:10px;font-size:12px;font-weight:700;color:#fff">+ Portfolio</button>
+              <button onclick="addToWatchlist()" style="flex:1;background:var(--elev);border:1px solid var(--bord);border-radius:var(--r10);padding:9px;font-size:12px;font-weight:700;color:var(--txd)">☆ Watchlist</button>
+              <button onclick="openPanel('Add to Portfolio',panelPortfolio())" style="flex:1;background:var(--gold);border:none;border-radius:var(--r10);padding:9px;font-size:12px;font-weight:700;color:#000">+ Portfolio</button>
             </div>
           </div>
+
+          <!-- Three-tab analysis card -->
+          <div class="card" style="padding:0;overflow:hidden;margin-bottom:10px">
+            <!-- Tab bar -->
+            <div style="display:flex;border-bottom:1px solid var(--bord)">
+              <button id="atab-tech" onclick="switchATab('tech')" style="flex:1;padding:11px 4px;font-size:11px;font-weight:700;color:var(--gold);background:transparent;border:none;border-bottom:2px solid var(--gold);cursor:pointer;font-family:'DM Sans',sans-serif">Technical</button>
+              <button id="atab-fund" onclick="switchATab('fund')" style="flex:1;padding:11px 4px;font-size:11px;font-weight:700;color:var(--txm);background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:'DM Sans',sans-serif">Fundamental</button>
+              <button id="atab-peer" onclick="switchATab('peer')" style="flex:1;padding:11px 4px;font-size:11px;font-weight:700;color:var(--txm);background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:'DM Sans',sans-serif">Peers</button>
+            </div>
+
+            <!-- TECHNICAL panel -->
+            <div id="apanel-tech" style="padding:14px">
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px">
+                <div style="background:var(--elev);border-radius:var(--r8);padding:9px 6px;text-align:center">
+                  <div style="font-size:9px;color:var(--txm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">52W pos.</div>
+                  <div id="st-52pct" style="font-size:16px;font-weight:700;font-family:'DM Mono',monospace;color:var(--tx)">—</div>
+                  <div style="font-size:9px;color:var(--txm);margin-top:2px">0% = 52W low</div>
+                </div>
+                <div style="background:var(--elev);border-radius:var(--r8);padding:9px 6px;text-align:center">
+                  <div style="font-size:9px;color:var(--txm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Vol vs avg</div>
+                  <div id="st-volvavg" style="font-size:16px;font-weight:700;font-family:'DM Mono',monospace;color:var(--tx)">—</div>
+                  <div style="font-size:9px;color:var(--txm);margin-top:2px">10D avg = 1×</div>
+                </div>
+                <div style="background:var(--elev);border-radius:var(--r8);padding:9px 6px;text-align:center">
+                  <div style="font-size:9px;color:var(--txm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">P/E ratio</div>
+                  <div id="st-pe2" style="font-size:16px;font-weight:700;font-family:'DM Mono',monospace;color:var(--tx)">—</div>
+                  <div style="font-size:9px;color:var(--txm);margin-top:2px">vs peers →</div>
+                </div>
+              </div>
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--txm);margin-bottom:8px">52W range vs sector peers</div>
+              <div id="st-peer-52w" style="font-size:11px;color:var(--txd)">Search a stock to see peer comparison</div>
+              <div style="border-top:1px solid var(--bord);margin-top:12px;padding-top:10px;display:flex;justify-content:flex-end">
+                <span onclick="switchTab('learn')" style="font-size:10px;color:var(--gold);cursor:pointer;border:1px solid var(--gold-bord);border-radius:6px;padding:3px 9px;background:var(--gold-bg)">Learn: How to read charts →</span>
+              </div>
+            </div>
+
+            <!-- FUNDAMENTAL panel -->
+            <div id="apanel-fund" style="display:none;padding:14px">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--txm);margin-bottom:8px">Where does revenue go? (latest annual)</div>
+              <div id="st-income-flow" style="font-size:11px;color:var(--txd)">Search a stock to see income breakdown</div>
+              <div id="st-cashflow-section" style="display:none;margin-top:14px">
+                <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--txm);margin-bottom:6px">Net profit vs operating cash flow</div>
+                <div style="font-size:11px;color:var(--txd);line-height:1.6;margin-bottom:8px;padding:8px;background:var(--elev);border-radius:var(--r8);border-left:2px solid var(--gold)">Net profit is an accounting figure. Operating cash flow shows cash actually received. When cash flow exceeds profit, the business collects more than it reports.</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" id="st-cashflow-bars"></div>
+              </div>
+              <div id="st-balance-section" style="display:none;margin-top:14px">
+                <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--txm);margin-bottom:8px">Balance sheet</div>
+                <div id="st-balance-rows"></div>
+              </div>
+              <div style="border-top:1px solid var(--bord);margin-top:12px;padding-top:10px;display:flex;justify-content:flex-end">
+                <span onclick="switchTab('learn')" style="font-size:10px;color:var(--gold);cursor:pointer;border:1px solid var(--gold-bord);border-radius:6px;padding:3px 9px;background:var(--gold-bg)">Learn: Cash flow vs net profit →</span>
+              </div>
+            </div>
+
+            <!-- PEERS panel -->
+            <div id="apanel-peer" style="display:none;padding:14px">
+              <div id="st-peer-table" style="font-size:11px;color:var(--txd)">Search a stock to see peer data</div>
+              <div style="font-size:9px;color:var(--txm);margin-top:10px;line-height:1.5">All sector peers shown. Past returns do not indicate future performance. Data for learning only.</div>
+              <div style="border-top:1px solid var(--bord);margin-top:10px;padding-top:10px;display:flex;justify-content:flex-end">
+                <span onclick="switchTab('learn')" style="font-size:10px;color:var(--gold);cursor:pointer;border:1px solid var(--gold-bord);border-radius:6px;padding:3px 9px;background:var(--gold-bg)">Learn: How to use P/E ratio →</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Price vs Business connector -->
+          <div id="st-connector" style="display:none;border-left:2px solid var(--gold);border-radius:0 var(--r10) var(--r10) 0;background:var(--gold-bg);padding:10px 12px;margin-bottom:10px">
+            <div style="font-size:10px;font-weight:700;color:var(--gold);margin-bottom:5px;letter-spacing:.3px">PRICE vs BUSINESS — WHAT THE DATA SHOWS</div>
+            <div id="st-connector-txt" style="font-size:12px;color:var(--txd);line-height:1.7"></div>
+          </div>
+
+          <!-- Artha says -->
           <div class="ai-bub">
-            <div class="ai-head"><div class="ai-av">🤖</div><div class="ai-nm">Artha · Stock Insight</div></div>
+            <div class="ai-head"><div class="ai-av">🤖</div><div class="ai-nm">Artha · facts only, no advice</div></div>
             <div class="ai-txt" id="st-why">—</div>
           </div>
-          <div class="disc">⚠️ Educational only. Not investment advice. Always do your own research.</div>
+          <div class="disc">⚠️ Educational only. Not investment advice. Always do your own research before making any financial decision.</div>
         </div>
         <div class="card">
           <div class="section-title">Stock Screener</div>
@@ -2422,44 +2499,288 @@ function doSearch() {
   if (sym) doSearchSym(sym);
 }
 
+// ── Tab switcher for Analyse card ─────────────────────────────────
+function switchATab(tab) {
+  ['tech','fund','peer'].forEach(function(t) {
+    var panel = document.getElementById('apanel-' + t);
+    var btn   = document.getElementById('atab-' + t);
+    if (!panel || !btn) return;
+    var active = t === tab;
+    panel.style.display = active ? 'block' : 'none';
+    btn.style.color = active ? 'var(--gold)' : 'var(--txm)';
+    btn.style.borderBottomColor = active ? 'var(--gold)' : 'transparent';
+  });
+}
+
+// ── Peer map by symbol ─────────────────────────────────────────────
+var PEER_MAP = {
+  'TCS':['INFY','WIPRO','HCLTECH','LTIM','TECHM'],
+  'INFY':['TCS','WIPRO','HCLTECH','LTIM','TECHM'],
+  'WIPRO':['TCS','INFY','HCLTECH','LTIM','TECHM'],
+  'HCLTECH':['TCS','INFY','WIPRO','LTIM','TECHM'],
+  'LTIM':['TCS','INFY','WIPRO','HCLTECH','TECHM'],
+  'TECHM':['TCS','INFY','WIPRO','HCLTECH','LTIM'],
+  'HDFCBANK':['ICICIBANK','KOTAKBANK','AXISBANK','SBIN','INDUSINDBK'],
+  'ICICIBANK':['HDFCBANK','KOTAKBANK','AXISBANK','SBIN','INDUSINDBK'],
+  'KOTAKBANK':['HDFCBANK','ICICIBANK','AXISBANK','SBIN','INDUSINDBK'],
+  'AXISBANK':['HDFCBANK','ICICIBANK','KOTAKBANK','SBIN','INDUSINDBK'],
+  'SBIN':['HDFCBANK','ICICIBANK','KOTAKBANK','AXISBANK','INDUSINDBK'],
+  'RELIANCE':['ONGC','BPCL','NTPC','POWERGRID'],
+  'SUNPHARMA':['DRREDDY','CIPLA','DIVISLAB'],
+  'DRREDDY':['SUNPHARMA','CIPLA','DIVISLAB'],
+  'CIPLA':['SUNPHARMA','DRREDDY','DIVISLAB'],
+  'MARUTI':['TATAMOTORS','MM','BAJAJ-AUTO','HEROMOTOCO'],
+  'TATAMOTORS':['MARUTI','MM','BAJAJ-AUTO','HEROMOTOCO'],
+  'ITC':['HINDUNILVR','NESTLEIND','BRITANNIA'],
+  'HINDUNILVR':['ITC','NESTLEIND','BRITANNIA'],
+  'BAJFINANCE':['BAJAJFINSV','HDFCLIFE','SBILIFE'],
+  'TATASTEEL':['JSWSTEEL','HINDALCO','COALINDIA'],
+};
+
 async function doSearchSym(sym) {
   currentSym = sym;
   document.getElementById('search-inp').value = sym;
   const result = document.getElementById('stock-result');
   result.classList.remove('show');
-  // Show loading state
   setEl('st-sym','textContent', sym);
   setEl('st-name','textContent', 'Loading…');
   setEl('st-price','textContent', '—');
   result.classList.add('show');
+  switchATab('tech');
 
   const data = await api('quote', {symbol: sym});
   if (!data || !data.price) {
-    setEl('st-name','textContent', 'Not found — try another symbol');
+    setEl('st-name','textContent', 'Symbol not found — check NSE code');
     return;
   }
   const up = (data.changePct||0) >= 0;
+
+  // ── Header ──
   setEl('st-sym','textContent', sym);
   setEl('st-name','textContent', data.longName || sym);
   setEl('st-price','textContent', fmtPrice(data.price));
-  document.getElementById('st-price').className   = 'stock-p ' + (up?'up':'dn');
+  document.getElementById('st-price').className = 'stock-p ' + (up?'up':'dn');
   setEl('st-chg','textContent', (up?'+':'') + (data.changePct||0).toFixed(2) + '% today');
-  document.getElementById('st-chg').className     = 'stock-chg ' + (up?'up':'dn');
+  document.getElementById('st-chg').className = 'stock-chg ' + (up?'up':'dn');
+
+  // ── OHLC ──
   setEl('st-open','textContent', data.open > 0 ? fmtPrice(data.open) : '—');
   setEl('st-high','textContent', data.high > 0 ? fmtPrice(data.high) : '—');
-  setEl('st-low','textContent', data.low  > 0 ? fmtPrice(data.low)  : '—');
-  setEl('st-pe','textContent', data.pe   > 0 ? data.pe.toFixed(1)+'x' : 'N/A');
+  setEl('st-low','textContent',  data.low  > 0 ? fmtPrice(data.low)  : '—');
+  setEl('st-pe','textContent',   data.pe   > 0 ? data.pe.toFixed(1)+'x' : 'N/A');
+
+  // ── 52W bar ──
   setEl('st-52l','textContent', data.w52Low  > 0 ? fmtPrice(data.w52Low)  : '—');
   setEl('st-52h','textContent', data.w52High > 0 ? fmtPrice(data.w52High) : '—');
   const pct52 = data.w52High > data.w52Low ? ((data.price - data.w52Low)/(data.w52High - data.w52Low)*100) : 50;
-  setEl('st-52pos','textContent', `At ${Math.round(pct52)}% of 52W range`);
+  setEl('st-52pos','textContent', Math.round(pct52) + '% of 52W range');
   document.getElementById('st-52fill').style.left = Math.min(94,Math.max(6,pct52)) + '%';
 
-  // AI insight
-  const insight = up
-    ? `${sym} is up ${(data.changePct||0).toFixed(2)}% today at ${fmtPrice(data.price)}. ${pct52 > 70 ? 'Trading near 52-week highs — strong momentum. Watch for resistance.' : 'Mid-range position with room to move higher.'} ${data.pe > 0 ? `P/E of ${data.pe.toFixed(1)}x — compare with sector average.` : ''}`
-    : `${sym} is down ${Math.abs(data.changePct||0).toFixed(2)}% today at ${fmtPrice(data.price)}. ${pct52 < 30 ? 'Near 52-week lows — check if business fundamentals are intact before concluding it\'s cheap.' : 'Pulling back from highs — could be normal consolidation.'} ${data.pe > 0 ? `P/E: ${data.pe.toFixed(1)}x.` : ''}`;
-  setEl('st-why','textContent', insight);
+  // ── Technical tab: stat boxes ──
+  var el52pct = document.getElementById('st-52pct');
+  if (el52pct) el52pct.textContent = Math.round(pct52) + '%';
+  var elvol = document.getElementById('st-volvavg');
+  if (elvol) {
+    var volRatio = (data.volume && data.avgVolume && data.avgVolume > 0) ? (data.volume / data.avgVolume).toFixed(1) + '×' : '—';
+    elvol.textContent = volRatio;
+  }
+  var elpe2 = document.getElementById('st-pe2');
+  if (elpe2) elpe2.textContent = data.pe > 0 ? data.pe.toFixed(1)+'x' : 'N/A';
+
+  // ── Load chart immediately ──
+  loadStockChart(sym, '1d', '5m');
+
+  // ── Reference line annotation ──
+  var refEl = document.getElementById('st-ref-line');
+  if (refEl && data.w52Low > 0 && data.w52High > 0) {
+    var priceChg = data.change ? (up?'+':'')+fmtPrice(Math.abs(data.change))+' today' : '';
+    refEl.textContent = 'Price is ' + Math.round(pct52) + '% through its 52-week range (' + fmtPrice(data.w52Low) + ' low → ' + fmtPrice(data.w52High) + ' high). ' + priceChg;
+    refEl.style.display = 'block';
+  }
+
+  // ── Artha says (facts only) ──
+  var factsTxt = sym + ' is ' + (up?'up':'down') + ' ' + Math.abs(data.changePct||0).toFixed(2) + '% today at ' + fmtPrice(data.price) + '. ';
+  factsTxt += '52-week range: ' + fmtPrice(data.w52Low) + ' to ' + fmtPrice(data.w52High) + '. Current price is at ' + Math.round(pct52) + '% of that range. ';
+  if (data.pe > 0) factsTxt += 'P/E ratio: ' + data.pe.toFixed(1) + 'x. ';
+  factsTxt += 'This is information to help you learn — not a recommendation to buy or sell.';
+  setEl('st-why','textContent', factsTxt);
+
+  // ── Peers: fetch all sector peers async ──
+  var peers = PEER_MAP[sym] || [];
+  renderPeerSection(sym, data, peers, pct52);
+
+  // ── Fundamental: build income flow from quote data available ──
+  renderFundamentalSection(data, sym);
+
+  // ── Connector box ──
+  renderConnector(sym, data, pct52);
+}
+
+function renderPeerSection(sym, selfData, peers, selfPct52) {
+  var p52El = document.getElementById('st-peer-52w');
+  var ptEl  = document.getElementById('st-peer-table');
+  if (!peers.length) {
+    if (p52El) p52El.innerHTML = '<div style="font-size:11px;color:var(--txd)">No peer data available for this symbol</div>';
+    if (ptEl)  ptEl.innerHTML  = '<div style="font-size:11px;color:var(--txd)">No peer data available for this symbol</div>';
+    return;
+  }
+  // Render placeholders immediately
+  if (p52El) {
+    p52El.innerHTML = [sym].concat(peers).map(function(s) {
+      var pct = s === sym ? selfPct52 : null;
+      var col = s === sym ? 'var(--gold)' : 'var(--txd)';
+      var bg  = s === sym ? 'var(--gold-bg)' : 'var(--elev)';
+      var barW = pct !== null ? Math.round(pct) + '%' : '0%';
+      return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
+        + '<div style="font-size:11px;font-family:\'DM Mono\',monospace;width:52px;flex-shrink:0;color:' + col + ';font-weight:' + (s===sym?'700':'400') + '">' + s + '</div>'
+        + '<div style="flex:1;height:6px;background:var(--bord);border-radius:3px;overflow:hidden">'
+        + '<div id="p52bar-'+s+'" style="height:100%;width:'+barW+';background:' + (s===sym?'var(--gold)':'var(--txm)') + ';border-radius:3px;transition:width .5s ease"></div>'
+        + '</div>'
+        + '<div id="p52pct-'+s+'" style="font-size:10px;width:28px;text-align:right;color:' + col + '">' + (pct!==null ? Math.round(pct)+'%' : '—') + '</div>'
+        + '</div>';
+    }).join('');
+  }
+  if (ptEl) {
+    ptEl.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:11px">'
+      + '<tr><th style="text-align:left;color:var(--txm);font-weight:400;font-size:10px;padding:0 4px 6px">Stock</th>'
+      + '<th style="text-align:right;color:var(--txm);font-weight:400;font-size:10px;padding:0 4px 6px">Price</th>'
+      + '<th style="text-align:right;color:var(--txm);font-weight:400;font-size:10px;padding:0 4px 6px">P/E</th>'
+      + '<th style="text-align:right;color:var(--txm);font-weight:400;font-size:10px;padding:0 4px 6px">Today</th>'
+      + '</tr>'
+      + '<tr style="background:var(--gold-bg)">'
+      + '<td style="padding:7px 4px;border-bottom:1px solid var(--bord);font-weight:700;color:var(--gold);font-family:\'DM Mono\',monospace">' + sym + '</td>'
+      + '<td style="padding:7px 4px;border-bottom:1px solid var(--bord);text-align:right;font-family:\'DM Mono\',monospace;color:var(--tx)">' + fmtPrice(selfData.price) + '</td>'
+      + '<td style="padding:7px 4px;border-bottom:1px solid var(--bord);text-align:right;color:var(--tx)">' + (selfData.pe>0?selfData.pe.toFixed(1)+'x':'—') + '</td>'
+      + '<td style="padding:7px 4px;border-bottom:1px solid var(--bord);text-align:right;color:' + ((selfData.changePct||0)>=0?'var(--g)':'var(--err)') + '">' + ((selfData.changePct||0)>=0?'+':'') + (selfData.changePct||0).toFixed(2) + '%</td>'
+      + '</tr>'
+      + peers.map(function(p){
+          return '<tr><td id="pt-name-'+p+'" style="padding:7px 4px;border-bottom:1px solid var(--bord);font-family:\'DM Mono\',monospace;color:var(--tx)">'+p+'</td>'
+            + '<td id="pt-price-'+p+'" style="padding:7px 4px;border-bottom:1px solid var(--bord);text-align:right;font-family:\'DM Mono\',monospace;color:var(--txd)">—</td>'
+            + '<td id="pt-pe-'+p+'" style="padding:7px 4px;border-bottom:1px solid var(--bord);text-align:right;color:var(--txd)">—</td>'
+            + '<td id="pt-chg-'+p+'" style="padding:7px 4px;border-bottom:1px solid var(--bord);text-align:right;color:var(--txd)">—</td>'
+            + '</tr>';
+        }).join('')
+      + '</table>';
+  }
+  // Fetch peer data async
+  peers.forEach(async function(p) {
+    var pd = await api('quote', {symbol: p});
+    if (!pd || !pd.price) return;
+    var pup = (pd.changePct||0) >= 0;
+    var ppct52 = pd.w52High > pd.w52Low ? ((pd.price - pd.w52Low)/(pd.w52High - pd.w52Low)*100) : 50;
+    // Update 52W bar
+    var bar = document.getElementById('p52bar-'+p);
+    var pct = document.getElementById('p52pct-'+p);
+    if (bar) bar.style.width = Math.round(ppct52) + '%';
+    if (pct) pct.textContent = Math.round(ppct52) + '%';
+    // Update peer table
+    var tp = document.getElementById('pt-price-'+p); if(tp){tp.textContent=fmtPrice(pd.price);tp.style.color='var(--tx)';}
+    var tpe = document.getElementById('pt-pe-'+p); if(tpe){tpe.textContent=pd.pe>0?pd.pe.toFixed(1)+'x':'—';tpe.style.color='var(--tx)';}
+    var tc = document.getElementById('pt-chg-'+p); if(tc){tc.textContent=(pup?'+':'')+pd.changePct.toFixed(2)+'%';tc.style.color=pup?'var(--g)':'var(--err)';}
+  });
+}
+
+function renderFundamentalSection(data, sym) {
+  var ifEl = document.getElementById('st-income-flow');
+  if (!ifEl) return;
+  // Use available quote data to show what we have
+  var hasRevenue  = data.revenue && data.revenue > 0;
+  var hasProfit   = data.netIncome && data.netIncome > 0;
+  var hasOCF      = data.operatingCashflow && data.operatingCashflow > 0;
+  var hasMktCap   = data.marketCap && data.marketCap > 0;
+  var hasDebt     = data.totalDebt !== undefined && data.totalDebt !== null;
+  var hasCash     = data.cash && data.cash > 0;
+  var hasROE      = data.roe && data.roe > 0;
+
+  if (!hasRevenue && !hasProfit) {
+    ifEl.innerHTML = '<div style="font-size:11px;color:var(--txd);padding:8px;background:var(--elev);border-radius:var(--r8)">Annual financial data not available for ' + sym + '. This may be an index or ETF.</div>';
+    return;
+  }
+
+  // Income waterfall
+  var revCr   = hasRevenue ? fmtCr(data.revenue) : '—';
+  var profCr  = hasProfit  ? fmtCr(data.netIncome) : '—';
+  var margin  = (hasRevenue && hasProfit) ? ((data.netIncome/data.revenue)*100).toFixed(1)+'%' : '—';
+  var revW = 100;
+  var profW = hasRevenue && hasProfit ? Math.max(10, Math.round((data.netIncome/data.revenue)*100)) : 40;
+
+  ifEl.innerHTML =
+    '<div style="margin-bottom:6px">'
+    + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">'
+    + '<div style="font-size:11px;color:var(--txd);width:86px;flex-shrink:0">Revenue</div>'
+    + '<div style="flex:1;height:22px;background:var(--bord);border-radius:4px;overflow:hidden">'
+    + '<div style="width:100%;height:100%;background:rgba(26,77,143,.5);border-radius:4px;display:flex;align-items:center;padding-left:8px;font-size:10px;font-weight:500;color:var(--blue-l)">' + revCr + '</div>'
+    + '</div></div>'
+    + '<div style="padding-left:86px;font-size:9px;color:var(--txm);margin-bottom:4px">↓ minus operating costs</div>'
+    + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">'
+    + '<div style="font-size:11px;color:var(--txd);width:86px;flex-shrink:0">Net profit</div>'
+    + '<div style="flex:1;height:22px;background:var(--bord);border-radius:4px;overflow:hidden">'
+    + '<div style="width:' + profW + '%;height:100%;background:rgba(0,192,118,.3);border-radius:4px;display:flex;align-items:center;padding-left:8px;font-size:10px;font-weight:500;color:var(--g)">' + profCr + '</div>'
+    + '</div></div>'
+    + '<div style="font-size:10px;color:var(--txm);padding-left:86px">Profit margin: ' + margin + '</div>'
+    + '</div>';
+
+  // Cash flow comparison
+  var cfSection = document.getElementById('st-cashflow-section');
+  var cfBars    = document.getElementById('st-cashflow-bars');
+  if (cfSection && cfBars && hasProfit) {
+    cfSection.style.display = 'block';
+    var profH = 40;
+    var ocfH  = hasOCF ? Math.max(8, Math.round((data.operatingCashflow/data.netIncome)*40)) : profH;
+    cfBars.innerHTML =
+      '<div style="background:var(--elev);border-radius:var(--r8);padding:10px;text-align:center">'
+      + '<div style="font-size:10px;color:var(--txm);margin-bottom:4px">Net profit</div>'
+      + '<div style="font-size:13px;font-weight:700;font-family:\'DM Mono\',monospace;color:var(--tx)">' + profCr + '</div>'
+      + '<div style="font-size:9px;color:var(--txm);margin-top:2px">(accounting)</div>'
+      + '<div style="height:' + profH + 'px;width:32px;background:rgba(26,77,143,.5);border-radius:3px 3px 0 0;margin:8px auto 0"></div>'
+      + '</div>'
+      + '<div style="background:var(--elev);border-radius:var(--r8);padding:10px;text-align:center">'
+      + '<div style="font-size:10px;color:var(--txm);margin-bottom:4px">Operating cash flow</div>'
+      + '<div style="font-size:13px;font-weight:700;font-family:\'DM Mono\',monospace;color:var(--g)">' + (hasOCF?fmtCr(data.operatingCashflow):'—') + '</div>'
+      + '<div style="font-size:9px;color:var(--txm);margin-top:2px">(actual cash)</div>'
+      + '<div style="height:' + ocfH + 'px;width:32px;background:rgba(0,192,118,.4);border-radius:3px 3px 0 0;margin:8px auto 0"></div>'
+      + '</div>';
+  }
+
+  // Balance sheet
+  var bsSection = document.getElementById('st-balance-section');
+  var bsRows    = document.getElementById('st-balance-rows');
+  if (bsSection && bsRows && (hasMktCap || hasDebt || hasCash || hasROE)) {
+    bsSection.style.display = 'block';
+    var rows = [];
+    if (hasMktCap) rows.push(['Market cap', fmtCr(data.marketCap)]);
+    if (hasCash)   rows.push(['Cash & equivalents', fmtCr(data.cash)]);
+    if (hasDebt)   rows.push(['Total debt', data.totalDebt > 0 ? fmtCr(data.totalDebt) : '₹0']);
+    if (hasDebt && data.totalEquity > 0) rows.push(['Debt / Equity', (data.totalDebt/data.totalEquity).toFixed(2)]);
+    if (hasROE)    rows.push(['Return on Equity (ROE)', data.roe.toFixed(1) + '%']);
+    if (data.promoterHolding > 0) rows.push(['Promoter holding', data.promoterHolding.toFixed(1) + '%']);
+    bsRows.innerHTML = rows.map(function(r){
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--bord)">'
+        + '<div style="font-size:12px;color:var(--txd)">' + r[0] + '</div>'
+        + '<div style="font-size:12px;font-weight:500;font-family:\'DM Mono\',monospace;color:var(--tx)">' + r[1] + '</div>'
+        + '</div>';
+    }).join('') + '<div style="height:1px"></div>';
+  }
+}
+
+function renderConnector(sym, data, pct52) {
+  var el = document.getElementById('st-connector');
+  var txt = document.getElementById('st-connector-txt');
+  if (!el || !txt) return;
+  var parts = [];
+  var up = (data.changePct||0) >= 0;
+  parts.push(sym + ' moved ' + (up?'+':'') + (data.changePct||0).toFixed(2) + '% today.');
+  if (data.w52Low > 0 && data.w52High > 0) {
+    parts.push('It is at ' + Math.round(pct52) + '% of its 52-week price range.');
+  }
+  if (data.pe > 0) parts.push('P/E ratio is ' + data.pe.toFixed(1) + 'x.');
+  if (data.revenue > 0 && data.netIncome > 0) {
+    var margin = ((data.netIncome/data.revenue)*100).toFixed(1);
+    parts.push('For every ₹100 of revenue, ₹' + margin + ' reaches net profit.');
+  }
+  parts.push('What these numbers mean for the business is for you to interpret.');
+  txt.textContent = parts.join(' ');
+  el.style.display = 'block';
 }
 
 function addToWatchlist() {
@@ -2848,27 +3169,52 @@ function renderHeatmap(quotes) {
   }).join('');
 }
 
-function showSectorPanel(name, syms) {
-  const quotes = window._nifty50Quotes || {};
-  const rows = syms.map(function(sym) {
-    const q = quotes[sym];
-    const up = q ? (q.changePct||0) >= 0 : null;
-    const col = up === null ? 'var(--txd)' : up ? 'var(--g)' : 'var(--err)';
-    let priceHtml = '<div style="font-size:11px;color:var(--txd)">Loading…</div>';
-    if (q) {
-      priceHtml = '<div style="font-size:13px;font-weight:600;font-family:\'DM Mono\',monospace">₹' + (q.price ? q.price.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}) : '—') + '</div>'
+async function showSectorPanel(name, syms) {
+  // Build panel immediately with cached data, then fetch missing quotes live
+  var cached = window._nifty50Quotes || {};
+  var missing = syms.filter(function(s){ return !cached[s]; });
+
+  function buildRow(sym, q) {
+    var up = q ? (q.changePct||0) >= 0 : null;
+    var col = up === null ? 'var(--txd)' : up ? 'var(--g)' : 'var(--err)';
+    var priceHtml = '<div id="sprice-' + sym + '" style="font-size:11px;color:var(--txd)">Loading…</div>';
+    if (q && q.price) {
+      priceHtml = '<div style="font-size:13px;font-weight:600;font-family:\'DM Mono\',monospace">₹' + q.price.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}) + '</div>'
         + '<div style="font-size:11px;font-weight:700;color:' + col + '">'
-        + (up?'▲':'▼') + ' ' + Math.abs(q.changePct||0).toFixed(2) + '% &nbsp; '
+        + (up?'▲':'▼') + ' ' + Math.abs(q.changePct||0).toFixed(2) + '% '
         + (up?'+':'') + '₹' + Math.abs(q.change||0).toFixed(2)
         + '</div>';
     }
     return '<div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--bord);cursor:pointer" onclick="doSearchSym(\'' + sym + '\');closePanel();switchTab(\'analyse\')">'
       + '<div><div style="font-size:13px;font-weight:700;font-family:\'DM Mono\',monospace">' + sym + '</div>'
-      + '<div style="font-size:10px;color:var(--txd)">' + ((q && q.longName) ? q.longName.substring(0,26) : 'Tap to research →') + '</div></div>'
-      + '<div style="text-align:right">' + priceHtml + '</div>'
+      + '<div style="font-size:10px;color:var(--txd)">' + ((q && q.longName) ? q.longName.substring(0,26) : 'Tap to analyse →') + '</div></div>'
+      + '<div id="spwrap-' + sym + '" style="text-align:right">' + priceHtml + '</div>'
       + '</div>';
-  }).join('');
+  }
+
+  var rows = syms.map(function(sym){ return buildRow(sym, cached[sym]); }).join('');
   openPanel(name + ' Sector', rows);
+
+  // Fetch missing quotes and update panel live
+  if (missing.length) {
+    missing.forEach(async function(sym) {
+      var data = await api('quote', {symbol: sym});
+      if (!data || !data.price) return;
+      // Cache it
+      if (!window._nifty50Quotes) window._nifty50Quotes = {};
+      window._nifty50Quotes[sym] = data;
+      // Update row in panel
+      var wrap = document.getElementById('spwrap-' + sym);
+      if (!wrap) return;
+      var up = (data.changePct||0) >= 0;
+      var col = up ? 'var(--g)' : 'var(--err)';
+      wrap.innerHTML = '<div style="font-size:13px;font-weight:600;font-family:\'DM Mono\',monospace">₹' + data.price.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}) + '</div>'
+        + '<div style="font-size:11px;font-weight:700;color:' + col + '">'
+        + (up?'▲':'▼') + ' ' + Math.abs(data.changePct||0).toFixed(2) + '% '
+        + (up?'+':'') + '₹' + Math.abs(data.change||0).toFixed(2)
+        + '</div>';
+    });
+  }
 }
 
 // ── GLOBAL MARKETS ─────────────────────────────────────────────────
