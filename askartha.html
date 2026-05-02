@@ -124,7 +124,7 @@ function openIndexChart(name, sym) {
     + '<div class="idx-tf-row">'
     + ['1D|1d|5m','1W|5d|15m','1M|1mo|1d','3M|3mo|1d','1Y|1y|1wk'].map(function(t,i) {
         var parts = t.split('|');
-        return '<button class="tf-btn' + (i===0?' active':'') + '" onclick="loadIdxChart(\'' + sym + '\',\'' + parts[1] + '\',\'' + parts[2] + '\',this)">' + parts[0] + '</button>';
+        return '<button class="tf-btn' + (i===0?' active':'') + '" onclick="loadIdxChart('' + sym + '','' + parts[1] + '','' + parts[2] + '',this)">' + parts[0] + '</button>';
       }).join('')
     + '</div>'
     + '<div class="idx-chart-box" id="idx-chart-box"></div>'
@@ -188,6 +188,114 @@ async function loadIdxChart(sym, range, interval, btn) {
   } catch(e) {
     box.innerHTML = '<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--txd)">Chart error</div>';
   }
+}
+
+// ── ARTHA SIGNAL READER ─────────────────────────────────────────
+function buildArthaSCorecard(data, pct52, up) {
+  var sc = document.getElementById('artha-scorecard');
+  if (!sc) return;
+  sc.style.display = 'block';
+
+  // ── TECHNICAL SIGNALS ── (plain English only, no scoring)
+  // 1. 52W position
+  var s52 = pct52 > 70
+    ? {val: Math.round(pct52)+'%', verdict: 'Trading near its 52-week high. Momentum is strong — learn about resistance levels in Chart School C3.', cls:'sc-pos'}
+    : pct52 < 30
+    ? {val: Math.round(pct52)+'%', verdict: 'Trading near its 52-week low. Worth understanding why — check the company news and financials.', cls:'sc-neg'}
+    : {val: Math.round(pct52)+'%', verdict: 'In the middle of its 52-week range. No extreme signals in either direction.', cls:'sc-neu'};
+  setScItem('sc-52w','sv-52w', s52.val, s52.verdict, s52.cls);
+
+  // 2. Day move
+  var chg = data.changePct || 0;
+  var sDay = Math.abs(chg) > 3
+    ? {val: (chg>0?'+':'')+chg.toFixed(2)+'%', verdict: chg>0 ? 'Large move up today — strong buying. Check if there is news driving this.' : 'Large fall today — heavy selling. Check for news or results.', cls: chg>0?'sc-pos':'sc-neg'}
+    : Math.abs(chg) > 1
+    ? {val: (chg>0?'+':'')+chg.toFixed(2)+'%', verdict: chg>0 ? 'Moderate gain today.' : 'Moderate fall today.', cls: chg>0?'sc-pos':'sc-neg'}
+    : {val: (chg>0?'+':'')+chg.toFixed(2)+'%', verdict: 'Flat day — low activity. Market has no strong view today.', cls:'sc-neu'};
+  setScItem('sc-day','sv-day', sDay.val, sDay.verdict, sDay.cls);
+
+  // 3. Volume — honest N/A from quote
+  setScItem('sc-vol','sv-vol', 'See chart', 'Volume bars are visible on the 1D and 1W chart above. High volume confirms moves.', 'sc-neu');
+
+  // 4. Price vs Open
+  var openDiff = data.open > 0 ? ((data.price - data.open)/data.open*100) : 0;
+  var sOpen = openDiff > 1
+    ? {val: '+'+openDiff.toFixed(1)+'% vs open', verdict: 'Price has moved up from the opening. Buyers have been active through the day.', cls:'sc-pos'}
+    : openDiff < -1
+    ? {val: openDiff.toFixed(1)+'% vs open', verdict: 'Price slipped below the opening level. Sellers stepped in after market open.', cls:'sc-neg'}
+    : {val: openDiff.toFixed(1)+'% vs open', verdict: 'Holding near the opening price. Neither buyers nor sellers have dominated today.', cls:'sc-neu'};
+  setScItem('sc-open','sv-open', sOpen.val, sOpen.verdict, sOpen.cls);
+
+  // ── FUNDAMENTAL SIGNALS ──
+  // 5. P/E
+  var pe = data.pe || 0;
+  var sPE = pe <= 0
+    ? {val:'N/A', verdict:'P/E data not available. This is common for loss-making companies or some PSUs.', cls:'sc-neu'}
+    : pe < 15
+    ? {val:pe.toFixed(1)+'x', verdict:'Low P/E compared to most sectors. Could mean undervalued or lower growth expectations — check Fundamentals School F7 to understand P/E.', cls:'sc-pos'}
+    : pe < 30
+    ? {val:pe.toFixed(1)+'x', verdict:'P/E in a fair range for most Indian sectors. Neither cheap nor expensive on this metric alone.', cls:'sc-neu'}
+    : pe < 60
+    ? {val:pe.toFixed(1)+'x', verdict:'High P/E — market expects strong future growth. Common in IT, FMCG, and quality compounders.', cls:'sc-neu'}
+    : {val:pe.toFixed(1)+'x', verdict:'Very high P/E. The stock is priced for a lot of growth. Any disappointment in results could cause sharp moves.', cls:'sc-neg'};
+  setScItem('sc-pe','sv-pe', sPE.val, sPE.verdict, sPE.cls);
+
+  // 6. Market cap
+  var mcap = data.marketCap || 0;
+  var sMcap = mcap <= 0
+    ? {val:'N/A', verdict:'Market cap data unavailable.', cls:'sc-neu'}
+    : mcap > 2000000000000
+    ? {val:fmtCr(mcap/1e7), verdict:'Large cap company. Generally more stable, followed by institutional investors and analysts.', cls:'sc-pos'}
+    : mcap > 200000000000
+    ? {val:fmtCr(mcap/1e7), verdict:'Mid cap company. Higher growth potential than large caps but also more volatile.', cls:'sc-neu'}
+    : {val:fmtCr(mcap/1e7), verdict:'Small cap company. Can deliver high growth but also carries higher risk — read Fundamentals School F33.', cls:'sc-neu'};
+  setScItem('sc-mcap','sv-mcap', sMcap.val, sMcap.verdict, sMcap.cls);
+
+  // 7. 52W range breadth (volatility indicator)
+  var rangePct = data.w52High > 0 && data.w52Low > 0 ? ((data.w52High - data.w52Low)/data.w52Low*100) : 0;
+  var sRng = rangePct > 80
+    ? {val:rangePct.toFixed(0)+'% range', verdict:'Very wide 52-week range — this stock moves a lot. Higher risk and higher opportunity.', cls:'sc-neg'}
+    : rangePct > 40
+    ? {val:rangePct.toFixed(0)+'% range', verdict:'Moderate yearly range — normal for most stocks.', cls:'sc-neu'}
+    : rangePct > 0
+    ? {val:rangePct.toFixed(0)+'% range', verdict:'Tight yearly range — relatively stable stock with lower price swings.', cls:'sc-pos'}
+    : {val:'N/A', verdict:'Range data unavailable.', cls:'sc-neu'};
+  setScItem('sc-rng','sv-rng', sRng.val, sRng.verdict, sRng.cls);
+
+  // 8. Dividend
+  var dy = data.dividendYield || 0;
+  var sDiv = dy <= 0
+    ? {val:'None / N/A', verdict:'No dividend declared. Company may be reinvesting profits for growth, or data is unavailable.', cls:'sc-neu'}
+    : dy < 1
+    ? {val:dy.toFixed(2)+'%', verdict:'Low dividend yield. Growth-focused company — profits likely reinvested.', cls:'sc-neu'}
+    : dy < 4
+    ? {val:dy.toFixed(2)+'%', verdict:'Healthy dividend yield — provides regular income along with price appreciation.', cls:'sc-pos'}
+    : {val:dy.toFixed(2)+'%', verdict:'High dividend yield — verify if the payout is sustainable by checking the dividend payout ratio in Fundamentals School F22.', cls:'sc-neu'};
+  setScItem('sc-div','sv-div', sDiv.val, sDiv.verdict, sDiv.cls);
+
+  // ── SUMMARY (no score, just context) ──
+  var summaryText = 'These signals help you understand what this stock is doing — not whether to buy or sell. '
+    + 'Use Chart School and Fundamentals School to learn how to read each signal properly before making any decisions.';
+  var verdictEl = document.getElementById('score-verdict');
+  if (verdictEl) verdictEl.textContent = summaryText;
+
+  // Learn tip — connect to relevant lesson
+  var pe2 = data.pe || 0;
+  var tip = pct52 > 70
+    ? '📚 This stock is near its 52W high. Chart School C3 (Support & Resistance) explains what typically happens at these levels.'
+    : pct52 < 30
+    ? '📚 Near 52W lows. Before concluding it is cheap, study Fundamentals School F7 (P/E Ratio) and F32 (Red Flags in Financials).'
+    : pe2 > 40
+    ? '📚 High P/E detected. Study Fundamentals School F7 (P/E Ratio) and F23 (PEG Ratio) to understand growth-adjusted valuation.'
+    : '📚 Study Chart School C2 (Candlesticks) and Fundamentals School F1 (P&L Statement) to read this stock more deeply.';
+  setEl('sc-learn-tip','textContent', tip);
+}
+
+function setScItem(valId, verdictId, val, verdict, cls) {
+  var v = document.getElementById(valId);
+  var vd = document.getElementById(verdictId);
+  if (v) { v.textContent = val; v.className = 'sc-val ' + (cls||''); }
+  if (vd) { vd.textContent = verdict; vd.className = 'sc-verdict ' + (cls||''); }
 }
 
 </script>
@@ -507,6 +615,15 @@ button{font-family:inherit;cursor:pointer}
 .idx-modal-body{flex:1;display:flex;flex-direction:column;padding:14px 16px;gap:10px}
 .idx-tf-row{display:flex;gap:8px}
 .idx-chart-box{flex:1;border-radius:12px;overflow:hidden;background:var(--dark)}
+
+/* Artha Scorecard */
+.sc-item{background:var(--elev);border:1px solid var(--bord);border-radius:10px;padding:10px 12px}
+.sc-label{font-size:9px;font-weight:600;color:var(--txm);letter-spacing:.3px;margin-bottom:4px;text-transform:uppercase}
+.sc-val{font-size:13px;font-weight:800;font-family:'DM Mono',monospace;color:var(--tx);margin-bottom:3px}
+.sc-verdict{font-size:10px;color:var(--txd);line-height:1.4}
+.sc-pos{color:var(--g)}
+.sc-neg{color:var(--err)}
+.sc-neu{color:var(--txd)}
 </style>
 </head>
 <body>
@@ -688,7 +805,7 @@ button{font-family:inherit;cursor:pointer}
 
     <!-- ═══ LEARN TAB ═══ -->
     <!-- ════ LEARN TAB ════ -->
-    <div class="tab-panel" id="tab-learn">
+    <div class="tab-pane" id="tab-learn">
 
       <!-- Progress Hero -->
       <div class="learn-hero">
@@ -704,7 +821,7 @@ button{font-family:inherit;cursor:pointer}
           </div>
           <div style="flex:1">
             <div style="font-family:'Sora',sans-serif;font-size:14px;font-weight:700;color:var(--tx);margin-bottom:2px">AskArtha University</div>
-            <div style="font-size:11px;color:var(--txd)" id="learn-count">0 of 91 lessons complete</div>
+            <div style="font-size:11px;color:var(--txd)" id="learn-count">0 of 88 lessons complete</div>
             <div style="display:flex;gap:12px;margin-top:4px">
               <div style="font-size:11px;color:var(--txd)">&#x1F525; <span style="color:var(--gold-l);font-weight:700" id="streak-count">0</span> day streak</div>
               <div style="font-size:11px;color:var(--txd)">&#x2B50; <span style="color:var(--gold-l);font-weight:700" id="xp-count">0</span> XP</div>
@@ -1497,103 +1614,81 @@ button{font-family:inherit;cursor:pointer}
           <span onclick="doSearchSym('ZOMATO')" style="cursor:pointer;background:var(--elev);border:1px solid var(--bord);border-radius:20px;padding:5px 12px;font-size:11px;font-weight:600;color:var(--txd)">ZOMATO</span>
         </div>
         <div class="stock-result" id="stock-result">
-          <div class="card" style="margin-bottom:10px">
+          <div class="card">
             <div class="stock-header">
               <div><div class="stock-sym" id="st-sym">—</div><div class="stock-name" id="st-name">—</div></div>
               <div class="stock-price"><div class="stock-p" id="st-price">—</div><div class="stock-chg" id="st-chg">—</div></div>
             </div>
-            <div class="price-grid" style="margin-bottom:10px">
+            <div class="price-grid">
               <div class="pg-item"><div class="pg-label">Open</div><div class="pg-val" id="st-open">—</div></div>
               <div class="pg-item"><div class="pg-label">High</div><div class="pg-val up" id="st-high">—</div></div>
               <div class="pg-item"><div class="pg-label">Low</div><div class="pg-val dn" id="st-low">—</div></div>
               <div class="pg-item"><div class="pg-label">P/E</div><div class="pg-val" id="st-pe">—</div></div>
             </div>
-            <div style="display:flex;gap:6px;margin-bottom:8px">
-              <button class="tf-btn active" onclick="setTF(this,'1d','5m')">1D</button>
-              <button class="tf-btn" onclick="setTF(this,'5d','15m')">1W</button>
-              <button class="tf-btn" onclick="setTF(this,'1mo','1d')">1M</button>
-              <button class="tf-btn" onclick="setTF(this,'3mo','1d')">3M</button>
-              <button class="tf-btn" onclick="setTF(this,'1y','1wk')">1Y</button>
-            </div>
-            <div id="stock-chart-wrap" style="height:190px;border-radius:10px;overflow:hidden;background:var(--dark)">
-              <div id="stock-chart-loading" style="height:190px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--txd)">Loading chart…</div>
-            </div>
-            <div id="st-ref-line" style="display:none;font-size:10px;color:var(--txm);margin-top:5px;padding:5px 8px;background:var(--elev);border-radius:6px;border-left:2px solid var(--gold)"></div>
-            <div style="font-size:9px;color:var(--txm);margin-top:5px;text-align:right">1D/1W = Candlestick · 1M/3M/1Y = Line</div>
-            <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--bord)">
-              <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--txd);margin-bottom:6px">
-                <span>52W Low: <span id="st-52l">—</span></span><span id="st-52pos" style="color:var(--txm)">—</span><span>52W High: <span id="st-52h">—</span></span>
-              </div>
+            <div class="w52-bar">
+              <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--txd);margin-bottom:6px"><span>52W Low: <span id="st-52l">—</span></span><span id="st-52pos">—</span><span>52W High: <span id="st-52h">—</span></span></div>
               <div class="w52-track"><div class="w52-fill" id="st-52fill" style="left:50%"></div></div>
             </div>
+            <!-- Chart timeframe selector -->
+            <div style="margin-top:14px">
+              <div style="display:flex;gap:6px;margin-bottom:8px">
+                <button class="tf-btn active" onclick="setTF(this,'1d','5m')">1D</button>
+                <button class="tf-btn" onclick="setTF(this,'5d','15m')">1W</button>
+                <button class="tf-btn" onclick="setTF(this,'1mo','1d')">1M</button>
+                <button class="tf-btn" onclick="setTF(this,'3mo','1d')">3M</button>
+                <button class="tf-btn" onclick="setTF(this,'1y','1wk')">1Y</button>
+              </div>
+              <div id="stock-chart-wrap" style="height:200px;border-radius:10px;overflow:hidden;background:var(--dark)">
+                <div id="stock-chart-loading" style="height:200px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--txd)">Loading chart…</div>
+              </div>
+              <div style="font-size:9px;color:var(--txm);margin-top:4px;text-align:right">📊 1D/1W = Candlestick · 1M/3M/1Y = Line</div>
+            </div>
+            <!-- ── ARTHA SCORECARD ── -->
+            <div id="artha-scorecard" style="display:none;margin-top:16px">
+              <div style="font-family:'Sora',sans-serif;font-size:12px;font-weight:700;color:var(--tx);margin-bottom:10px;display:flex;align-items:center;gap:6px">
+                🔍 Artha Signal Reader
+                <span style="font-size:9px;font-weight:500;color:var(--txm);margin-left:4px">Education only · Not advice</span>
+              </div>
+
+              <!-- Signal summary — no scoring, education only -->
+              <div style="background:var(--elev);border:1px solid var(--bord);border-radius:12px;padding:12px;margin-bottom:14px">
+                <div style="font-size:11px;color:var(--txd);line-height:1.6" id="score-verdict">Reading signals…</div>
+              </div>
+
+              <!-- Technical signals -->
+              <div style="font-size:10px;font-weight:700;color:var(--blue-l);letter-spacing:.5px;margin-bottom:6px">📊 TECHNICAL</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px" id="tech-grid">
+                <div class="sc-item"><div class="sc-label">52W Position</div><div class="sc-val" id="sc-52w">—</div><div class="sc-verdict" id="sv-52w">—</div></div>
+                <div class="sc-item"><div class="sc-label">Day Move</div><div class="sc-val" id="sc-day">—</div><div class="sc-verdict" id="sv-day">—</div></div>
+                <div class="sc-item"><div class="sc-label">Volume Signal</div><div class="sc-val" id="sc-vol">—</div><div class="sc-verdict" id="sv-vol">—</div></div>
+                <div class="sc-item"><div class="sc-label">Price vs Open</div><div class="sc-val" id="sc-open">—</div><div class="sc-verdict" id="sv-open">—</div></div>
+              </div>
+
+              <!-- Fundamental signals -->
+              <div style="font-size:10px;font-weight:700;color:var(--gold);letter-spacing:.5px;margin-bottom:6px">📋 FUNDAMENTAL</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px" id="fund-grid">
+                <div class="sc-item"><div class="sc-label">P/E Ratio</div><div class="sc-val" id="sc-pe">—</div><div class="sc-verdict" id="sv-pe">—</div></div>
+                <div class="sc-item"><div class="sc-label">Market Cap</div><div class="sc-val" id="sc-mcap">—</div><div class="sc-verdict" id="sv-mcap">—</div></div>
+                <div class="sc-item"><div class="sc-label">52W Range</div><div class="sc-val" id="sc-rng">—</div><div class="sc-verdict" id="sv-rng">—</div></div>
+                <div class="sc-item"><div class="sc-label">Dividend</div><div class="sc-val" id="sc-div">—</div><div class="sc-verdict" id="sv-div">—</div></div>
+              </div>
+
+              <!-- Learn connect -->
+              <div style="background:var(--blue-bg);border:1px solid var(--blue-bord);border-radius:10px;padding:10px 12px;font-size:11px;color:var(--blue-l);line-height:1.6" id="sc-learn-tip">
+                📚 Open Chart School to understand what these signals mean
+              </div>
+            </div>
+
             <div style="display:flex;gap:8px;margin-top:12px">
-              <button onclick="addToWatchlist()" style="flex:1;background:var(--elev);border:1px solid var(--bord);border-radius:var(--r10);padding:9px;font-size:12px;font-weight:700;color:var(--txd)">☆ Watchlist</button>
-              <button onclick="openPanel('Add to Portfolio',panelPortfolio())" style="flex:1;background:var(--gold);border:none;border-radius:var(--r10);padding:9px;font-size:12px;font-weight:700;color:#000">+ Portfolio</button>
+              <button onclick="addToWatchlist()" style="flex:1;background:var(--elev);border:1px solid var(--bord);border-radius:var(--r10);padding:10px;font-size:12px;font-weight:700;color:var(--blue-l)">☆ Watchlist</button>
+              <button onclick="openPanel('Add to Portfolio',panelPortfolio())" style="flex:1;background:var(--gold);border:none;border-radius:var(--r10);padding:10px;font-size:12px;font-weight:700;color:#fff">+ Portfolio</button>
             </div>
-          </div>
-          <div class="card" style="padding:0;overflow:hidden;margin-bottom:10px">
-            <div style="display:flex;border-bottom:1px solid var(--bord)">
-              <button id="atab-tech" onclick="switchATab('tech')" style="flex:1;padding:11px 4px;font-size:11px;font-weight:700;color:var(--gold);background:transparent;border:none;border-bottom:2px solid var(--gold);cursor:pointer;font-family:'DM Sans',sans-serif">Technical</button>
-              <button id="atab-fund" onclick="switchATab('fund')" style="flex:1;padding:11px 4px;font-size:11px;font-weight:700;color:var(--txm);background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:'DM Sans',sans-serif">Fundamental</button>
-              <button id="atab-peer" onclick="switchATab('peer')" style="flex:1;padding:11px 4px;font-size:11px;font-weight:700;color:var(--txm);background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:'DM Sans',sans-serif">Peers</button>
-            </div>
-            <div id="apanel-tech" style="padding:14px">
-              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px">
-                <div style="background:var(--elev);border-radius:var(--r8);padding:9px 6px;text-align:center">
-                  <div style="font-size:9px;color:var(--txm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">52W pos.</div>
-                  <div id="st-52pct" style="font-size:16px;font-weight:700;color:var(--tx)">—</div>
-                  <div style="font-size:9px;color:var(--txm);margin-top:2px">0% = 52W low</div>
-                </div>
-                <div style="background:var(--elev);border-radius:var(--r8);padding:9px 6px;text-align:center">
-                  <div style="font-size:9px;color:var(--txm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Vol vs avg</div>
-                  <div id="st-volvavg" style="font-size:16px;font-weight:700;color:var(--tx)">—</div>
-                  <div style="font-size:9px;color:var(--txm);margin-top:2px">10D avg = 1×</div>
-                </div>
-                <div style="background:var(--elev);border-radius:var(--r8);padding:9px 6px;text-align:center">
-                  <div style="font-size:9px;color:var(--txm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">P/E ratio</div>
-                  <div id="st-pe2" style="font-size:16px;font-weight:700;color:var(--tx)">—</div>
-                  <div style="font-size:9px;color:var(--txm);margin-top:2px">vs peers →</div>
-                </div>
-              </div>
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--txm);margin-bottom:8px">52W range vs sector peers</div>
-              <div id="st-peer-52w" style="font-size:11px;color:var(--txd)">Search a stock to see peer comparison</div>
-              <div style="border-top:1px solid var(--bord);margin-top:12px;padding-top:10px;display:flex;justify-content:flex-end">
-                <span onclick="switchTab('learn')" style="font-size:10px;color:var(--gold);cursor:pointer;border:1px solid var(--gold-bord);border-radius:6px;padding:3px 9px;background:var(--gold-bg)">Learn: How to read charts →</span>
-              </div>
-            </div>
-            <div id="apanel-fund" style="display:none;padding:14px">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--txm);margin-bottom:8px">Where does revenue go? (latest annual)</div>
-              <div id="st-income-flow" style="font-size:11px;color:var(--txd)">Search a stock to see income breakdown</div>
-              <div id="st-cashflow-section" style="display:none;margin-top:14px">
-                <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--txm);margin-bottom:6px">Net profit vs operating cash flow</div>
-                <div style="font-size:11px;color:var(--txd);line-height:1.6;margin-bottom:8px;padding:8px;background:var(--elev);border-radius:var(--r8);border-left:2px solid var(--gold)">Net profit is an accounting figure. Operating cash flow shows cash actually received. When cash flow exceeds profit, the business collected more cash than it reported as profit.</div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" id="st-cashflow-bars"></div>
-              </div>
-              <div id="st-balance-section" style="display:none;margin-top:14px">
-                <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--txm);margin-bottom:8px">Balance sheet</div>
-                <div id="st-balance-rows"></div>
-              </div>
-              <div style="border-top:1px solid var(--bord);margin-top:12px;padding-top:10px;display:flex;justify-content:flex-end">
-                <span onclick="switchTab('learn')" style="font-size:10px;color:var(--gold);cursor:pointer;border:1px solid var(--gold-bord);border-radius:6px;padding:3px 9px;background:var(--gold-bg)">Learn: Cash flow vs net profit →</span>
-              </div>
-            </div>
-            <div id="apanel-peer" style="display:none;padding:14px">
-              <div id="st-peer-table" style="font-size:11px;color:var(--txd)">Search a stock to see peer data</div>
-              <div style="font-size:9px;color:var(--txm);margin-top:10px;line-height:1.5">All sector peers shown. Past returns do not indicate future performance. Data for learning only.</div>
-              <div style="border-top:1px solid var(--bord);margin-top:10px;padding-top:10px;display:flex;justify-content:flex-end">
-                <span onclick="switchTab('learn')" style="font-size:10px;color:var(--gold);cursor:pointer;border:1px solid var(--gold-bord);border-radius:6px;padding:3px 9px;background:var(--gold-bg)">Learn: How to use P/E ratio →</span>
-              </div>
-            </div>
-          </div>
-          <div id="st-connector" style="display:none;border-left:2px solid var(--gold);border-radius:0 var(--r10) var(--r10) 0;background:var(--gold-bg);padding:10px 12px;margin-bottom:10px">
-            <div style="font-size:10px;font-weight:700;color:var(--gold);margin-bottom:5px;letter-spacing:.3px">PRICE vs BUSINESS — WHAT THE DATA SHOWS</div>
-            <div id="st-connector-txt" style="font-size:12px;color:var(--txd);line-height:1.7"></div>
           </div>
           <div class="ai-bub">
-            <div class="ai-head"><div class="ai-av">🤖</div><div class="ai-nm">Artha · facts only, no advice</div></div>
+            <div class="ai-head"><div class="ai-av">🤖</div><div class="ai-nm">Artha · Stock Insight</div></div>
             <div class="ai-txt" id="st-why">—</div>
           </div>
-          <div class="disc">⚠️ Educational only. Not investment advice. Always do your own research before making any financial decision.</div>
+          <div class="disc">⚠️ Educational only. Not investment advice. Always do your own research.</div>
         </div>
         <div class="card">
           <div class="section-title">Stock Screener</div>
@@ -2060,17 +2155,9 @@ function buildLearnChips() {
   const MACRO = ['M1 What is Inflation','M2 RBI & Repo Rate','M3 GDP & Stocks','M4 Rupee & Portfolio','M5 FII & DII Flows','M6 US Fed & India','M7 Crude Oil Impact','M8 Budget & Sensex'];
   const prog = S.g('aa_learn') || {};
   const done = Object.keys(prog).filter(k => prog[k]).length;
-  const total = 91;
-  const countEl = document.getElementById('learn-count');
-  if (countEl) countEl.textContent = done + ' of ' + total + ' lessons complete';
-  const pctEl = document.getElementById('learn-pct');
-  if (pctEl) pctEl.textContent = Math.round((done/total)*100) + '%';
-  const ring = document.getElementById('learn-progress-ring');
-  if (ring) ring.style.strokeDashoffset = 144.5 - (done/total)*144.5;
-  const strEl = document.getElementById('streak-count');
-  if (strEl) strEl.textContent = S.g('aa_streak') || 0;
-  const xpEl = document.getElementById('xp-count');
-  if (xpEl) xpEl.textContent = S.g('aa_xp') || 0;
+  const lel = document.getElementById('learn-lessons'); if (lel) lel.textContent = done;
+  const sel = document.getElementById('learn-streak'); if (sel) sel.textContent = (S.g('aa_streak')||0) + ' 🔥';
+  const xel = document.getElementById('learn-xp'); if (xel) xel.textContent = S.g('aa_xp')||0;
   const mkChips = (ids, containerId) => {
     const el = document.getElementById(containerId); if (!el) return;
     el.innerHTML = ids.map(id => {
@@ -2488,239 +2575,52 @@ function doSearch() {
   if (sym) doSearchSym(sym);
 }
 
-function switchATab(tab) {
-  ['tech','fund','peer'].forEach(function(t) {
-    var panel = document.getElementById('apanel-' + t);
-    var btn   = document.getElementById('atab-' + t);
-    if (!panel || !btn) return;
-    var on = t === tab;
-    panel.style.display = on ? 'block' : 'none';
-    btn.style.color = on ? 'var(--gold)' : 'var(--txm)';
-    btn.style.borderBottomColor = on ? 'var(--gold)' : 'transparent';
-  });
-}
-
-var PEER_MAP = {
-  'TCS':['INFY','WIPRO','HCLTECH','LTIM','TECHM'],
-  'INFY':['TCS','WIPRO','HCLTECH','LTIM','TECHM'],
-  'WIPRO':['TCS','INFY','HCLTECH','LTIM','TECHM'],
-  'HCLTECH':['TCS','INFY','WIPRO','LTIM','TECHM'],
-  'LTIM':['TCS','INFY','WIPRO','HCLTECH','TECHM'],
-  'TECHM':['TCS','INFY','WIPRO','HCLTECH','LTIM'],
-  'HDFCBANK':['ICICIBANK','KOTAKBANK','AXISBANK','SBIN','INDUSINDBK'],
-  'ICICIBANK':['HDFCBANK','KOTAKBANK','AXISBANK','SBIN','INDUSINDBK'],
-  'KOTAKBANK':['HDFCBANK','ICICIBANK','AXISBANK','SBIN','INDUSINDBK'],
-  'AXISBANK':['HDFCBANK','ICICIBANK','KOTAKBANK','SBIN','INDUSINDBK'],
-  'SBIN':['HDFCBANK','ICICIBANK','KOTAKBANK','AXISBANK','INDUSINDBK'],
-  'RELIANCE':['ONGC','BPCL','NTPC','POWERGRID'],
-  'SUNPHARMA':['DRREDDY','CIPLA','DIVISLAB'],
-  'DRREDDY':['SUNPHARMA','CIPLA','DIVISLAB'],
-  'CIPLA':['SUNPHARMA','DRREDDY','DIVISLAB'],
-  'MARUTI':['TATAMOTORS','MM','BAJAJ-AUTO','HEROMOTOCO'],
-  'TATAMOTORS':['MARUTI','MM','BAJAJ-AUTO','HEROMOTOCO'],
-  'ITC':['HINDUNILVR','NESTLEIND','BRITANNIA'],
-  'HINDUNILVR':['ITC','NESTLEIND','BRITANNIA'],
-  'BAJFINANCE':['BAJAJFINSV','HDFCLIFE','SBILIFE'],
-  'TATASTEEL':['JSWSTEEL','HINDALCO','COALINDIA'],
-  'ZOMATO':['SWIGGY','PAYTM','NYKAA'],
-};
-
 async function doSearchSym(sym) {
   currentSym = sym;
   document.getElementById('search-inp').value = sym;
   const result = document.getElementById('stock-result');
   result.classList.remove('show');
+  // Show loading state
   setEl('st-sym','textContent', sym);
   setEl('st-name','textContent', 'Loading…');
   setEl('st-price','textContent', '—');
   result.classList.add('show');
-  switchATab('tech');
 
   const data = await api('quote', {symbol: sym});
   if (!data || !data.price) {
-    setEl('st-name','textContent', 'Symbol not found — check NSE code');
+    setEl('st-name','textContent', 'Not found — try another symbol');
     return;
   }
   const up = (data.changePct||0) >= 0;
-
-  // Header
   setEl('st-sym','textContent', sym);
   setEl('st-name','textContent', data.longName || sym);
   setEl('st-price','textContent', fmtPrice(data.price));
-  document.getElementById('st-price').className = 'stock-p ' + (up?'up':'dn');
+  document.getElementById('st-price').className   = 'stock-p ' + (up?'up':'dn');
   setEl('st-chg','textContent', (up?'+':'') + (data.changePct||0).toFixed(2) + '% today');
-  document.getElementById('st-chg').className = 'stock-chg ' + (up?'up':'dn');
-
-  // OHLC
+  document.getElementById('st-chg').className     = 'stock-chg ' + (up?'up':'dn');
   setEl('st-open','textContent', data.open > 0 ? fmtPrice(data.open) : '—');
   setEl('st-high','textContent', data.high > 0 ? fmtPrice(data.high) : '—');
-  setEl('st-low','textContent',  data.low  > 0 ? fmtPrice(data.low)  : '—');
-  setEl('st-pe','textContent',   data.pe   > 0 ? data.pe.toFixed(1)+'x' : 'N/A');
-
-  // 52W
+  setEl('st-low','textContent', data.low  > 0 ? fmtPrice(data.low)  : '—');
+  setEl('st-pe','textContent', data.pe   > 0 ? data.pe.toFixed(1)+'x' : 'N/A');
   setEl('st-52l','textContent', data.w52Low  > 0 ? fmtPrice(data.w52Low)  : '—');
   setEl('st-52h','textContent', data.w52High > 0 ? fmtPrice(data.w52High) : '—');
   const pct52 = data.w52High > data.w52Low ? ((data.price - data.w52Low)/(data.w52High - data.w52Low)*100) : 50;
-  setEl('st-52pos','textContent', Math.round(pct52) + '% of 52W range');
+  setEl('st-52pos','textContent', `At ${Math.round(pct52)}% of 52W range`);
   document.getElementById('st-52fill').style.left = Math.min(94,Math.max(6,pct52)) + '%';
 
-  // Technical stat boxes
-  var el52p = document.getElementById('st-52pct'); if(el52p) el52p.textContent = Math.round(pct52)+'%';
-  var elvol = document.getElementById('st-volvavg');
-  if(elvol) elvol.textContent = (data.volume && data.avgVolume && data.avgVolume>0) ? (data.volume/data.avgVolume).toFixed(1)+'×' : '—';
-  var elpe2 = document.getElementById('st-pe2'); if(elpe2) elpe2.textContent = data.pe>0 ? data.pe.toFixed(1)+'x' : 'N/A';
+  // AI insight (brief, in ai-bub)
+  const insight = up
+    ? `${sym} is up ${(data.changePct||0).toFixed(2)}% today. ${pct52 > 70 ? 'Near 52W highs — strong momentum, watch resistance.' : pct52 < 30 ? 'Near 52W lows despite today\'s gain — check fundamentals.' : 'Mid-range, room to move higher.'} ${data.pe > 0 ? `P/E ${data.pe.toFixed(1)}x — compare with sector peers.` : ''}`
+    : `${sym} is down ${Math.abs(data.changePct||0).toFixed(2)}% today. ${pct52 < 30 ? 'Near 52W lows — verify if business fundamentals are intact before calling it cheap.' : 'Pulling back from highs — could be healthy consolidation.'} ${data.pe > 0 ? `P/E: ${data.pe.toFixed(1)}x.` : ''}`;
+  setEl('st-why','textContent', insight);
 
-  // Chart
+  // ── ARTHA SCORECARD ──────────────────────────────────────
+  buildArthaSCorecard(data, pct52, up);
+
+  // Load chart default 1D
   loadStockChart(sym, '1d', '5m');
-
-  // Reference line
-  var refEl = document.getElementById('st-ref-line');
-  if(refEl && data.w52Low>0 && data.w52High>0) {
-    refEl.textContent = 'Price is at ' + Math.round(pct52) + '% of its 52-week range (' + fmtPrice(data.w52Low) + ' low → ' + fmtPrice(data.w52High) + ' high).';
-    refEl.style.display = 'block';
-  }
-
-  // Artha says — facts only
-  var facts = sym + ' is ' + (up?'up':'down') + ' ' + Math.abs(data.changePct||0).toFixed(2) + '% today at ' + fmtPrice(data.price) + '. ';
-  facts += '52-week range: ' + fmtPrice(data.w52Low) + ' to ' + fmtPrice(data.w52High) + '. Current price is at ' + Math.round(pct52) + '% of that range. ';
-  if(data.pe>0) facts += 'P/E ratio: ' + data.pe.toFixed(1) + 'x. ';
-  facts += 'This is information to help you learn — not a recommendation to buy or sell.';
-  setEl('st-why','textContent', facts);
-
-  // Peers
-  var peers = PEER_MAP[sym] || [];
-  renderPeerSection(sym, data, peers, pct52);
-  renderFundamentalSection(data, sym);
-  renderConnector(sym, data, pct52);
-}
-
-function renderPeerSection(sym, selfData, peers, selfPct52) {
-  var p52El = document.getElementById('st-peer-52w');
-  var ptEl  = document.getElementById('st-peer-table');
-  if(!peers.length) {
-    if(p52El) p52El.innerHTML = '<div style="color:var(--txd)">No peer data for this symbol yet</div>';
-    if(ptEl)  ptEl.innerHTML  = '<div style="color:var(--txd)">No peer data for this symbol yet</div>';
-    return;
-  }
-  if(p52El) {
-    p52El.innerHTML = [sym].concat(peers).map(function(s) {
-      var pct = s===sym ? selfPct52 : null;
-      var isself = s===sym;
-      return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">'
-        + '<div style="font-size:11px;width:54px;flex-shrink:0;color:'+(isself?'var(--gold)':'var(--txd)')+';font-weight:'+(isself?'700':'400')+'">' + s + '</div>'
-        + '<div style="flex:1;height:6px;background:var(--bord);border-radius:3px;overflow:hidden">'
-        + '<div id="p52bar-'+s+'" style="height:100%;width:'+(pct!==null?Math.round(pct)+'%':'0%')+';background:'+(isself?'var(--gold)':'var(--txm)')+';border-radius:3px;transition:width .5s"></div>'
-        + '</div>'
-        + '<div id="p52pct-'+s+'" style="font-size:10px;width:28px;text-align:right;color:'+(isself?'var(--gold)':'var(--txd)') +'">'+(pct!==null?Math.round(pct)+'%':'—')+'</div>'
-        + '</div>';
-    }).join('');
-  }
-  if(ptEl) {
-    ptEl.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:11px">'
-      + '<tr><th style="text-align:left;color:var(--txm);font-weight:400;font-size:10px;padding:0 3px 6px">Stock</th>'
-      + '<th style="text-align:right;color:var(--txm);font-weight:400;font-size:10px;padding:0 3px 6px">Price</th>'
-      + '<th style="text-align:right;color:var(--txm);font-weight:400;font-size:10px;padding:0 3px 6px">P/E</th>'
-      + '<th style="text-align:right;color:var(--txm);font-weight:400;font-size:10px;padding:0 3px 6px">Today</th></tr>'
-      + '<tr style="background:var(--gold-bg)">'
-      + '<td style="padding:7px 3px;border-bottom:1px solid var(--bord);font-weight:700;color:var(--gold)">' + sym + '</td>'
-      + '<td style="padding:7px 3px;border-bottom:1px solid var(--bord);text-align:right;color:var(--tx)">' + fmtPrice(selfData.price) + '</td>'
-      + '<td style="padding:7px 3px;border-bottom:1px solid var(--bord);text-align:right;color:var(--tx)">' + (selfData.pe>0?selfData.pe.toFixed(1)+'x':'—') + '</td>'
-      + '<td style="padding:7px 3px;border-bottom:1px solid var(--bord);text-align:right;color:'+((selfData.changePct||0)>=0?'var(--g)':'var(--err)')+'">'+((selfData.changePct||0)>=0?'+':'')+selfData.changePct.toFixed(2)+'%</td>'
-      + '</tr>'
-      + peers.map(function(p) {
-          return '<tr><td id="pt-nm-'+p+'" style="padding:7px 3px;border-bottom:1px solid var(--bord);color:var(--tx)">'+p+'</td>'
-            + '<td id="pt-pr-'+p+'" style="padding:7px 3px;border-bottom:1px solid var(--bord);text-align:right;color:var(--txd)">—</td>'
-            + '<td id="pt-pe-'+p+'" style="padding:7px 3px;border-bottom:1px solid var(--bord);text-align:right;color:var(--txd)">—</td>'
-            + '<td id="pt-ch-'+p+'" style="padding:7px 3px;border-bottom:1px solid var(--bord);text-align:right;color:var(--txd)">—</td></tr>';
-        }).join('')
-      + '</table>';
-  }
-  peers.forEach(async function(p) {
-    var pd = await api('quote', {symbol:p});
-    if(!pd||!pd.price) return;
-    var pup = (pd.changePct||0)>=0;
-    var pp52 = pd.w52High>pd.w52Low ? ((pd.price-pd.w52Low)/(pd.w52High-pd.w52Low)*100) : 50;
-    var bar=document.getElementById('p52bar-'+p); if(bar) bar.style.width=Math.round(pp52)+'%';
-    var ppc=document.getElementById('p52pct-'+p); if(ppc) ppc.textContent=Math.round(pp52)+'%';
-    var tp=document.getElementById('pt-pr-'+p); if(tp){tp.textContent=fmtPrice(pd.price);tp.style.color='var(--tx)';}
-    var tpe=document.getElementById('pt-pe-'+p); if(tpe){tpe.textContent=pd.pe>0?pd.pe.toFixed(1)+'x':'—';tpe.style.color='var(--tx)';}
-    var tc=document.getElementById('pt-ch-'+p); if(tc){tc.textContent=(pup?'+':'')+pd.changePct.toFixed(2)+'%';tc.style.color=pup?'var(--g)':'var(--err)';}
-  });
-}
-
-function renderFundamentalSection(data, sym) {
-  var ifEl = document.getElementById('st-income-flow'); if(!ifEl) return;
-  var hasRev=data.revenue&&data.revenue>0, hasPft=data.netIncome&&data.netIncome>0;
-  var hasOCF=data.operatingCashflow&&data.operatingCashflow>0;
-  var hasMC=data.marketCap&&data.marketCap>0, hasDebt=data.totalDebt!=null;
-  var hasCash=data.cash&&data.cash>0, hasROE=data.roe&&data.roe>0;
-  if(!hasRev&&!hasPft) {
-    ifEl.innerHTML='<div style="font-size:11px;color:var(--txd);padding:8px;background:var(--elev);border-radius:var(--r8)">Annual financial data not available for '+sym+'.</div>';
-    return;
-  }
-  var profW=hasRev&&hasPft?Math.max(10,Math.round((data.netIncome/data.revenue)*100)):40;
-  var margin=hasRev&&hasPft?((data.netIncome/data.revenue)*100).toFixed(1)+'%':'—';
-  ifEl.innerHTML=
-    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">'
-    +'<div style="font-size:11px;color:var(--txd);width:90px;flex-shrink:0">Revenue</div>'
-    +'<div style="flex:1;height:22px;background:var(--bord);border-radius:4px;overflow:hidden">'
-    +'<div style="width:100%;height:100%;background:rgba(26,77,143,.5);border-radius:4px;display:flex;align-items:center;padding-left:8px;font-size:10px;font-weight:500;color:#8ab4f8">'+(hasRev?fmtCr(data.revenue):'—')+'</div>'
-    +'</div></div>'
-    +'<div style="padding-left:90px;font-size:9px;color:var(--txm);margin-bottom:4px">↓ minus operating costs</div>'
-    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">'
-    +'<div style="font-size:11px;color:var(--txd);width:90px;flex-shrink:0">Net profit</div>'
-    +'<div style="flex:1;height:22px;background:var(--bord);border-radius:4px;overflow:hidden">'
-    +'<div style="width:'+profW+'%;height:100%;background:rgba(0,192,118,.35);border-radius:4px;display:flex;align-items:center;padding-left:8px;font-size:10px;font-weight:500;color:var(--g)">'+(hasPft?fmtCr(data.netIncome):'—')+'</div>'
-    +'</div></div>'
-    +'<div style="font-size:10px;color:var(--txm);padding-left:90px">Profit margin: '+margin+'</div>';
-
-  var cfSec=document.getElementById('st-cashflow-section');
-  var cfBars=document.getElementById('st-cashflow-bars');
-  if(cfSec&&cfBars&&hasPft) {
-    cfSec.style.display='block';
-    var ocfH=hasOCF?Math.max(8,Math.round((data.operatingCashflow/data.netIncome)*40)):40;
-    cfBars.innerHTML=
-      '<div style="background:var(--elev);border-radius:var(--r8);padding:10px;text-align:center">'
-      +'<div style="font-size:10px;color:var(--txm);margin-bottom:4px">Net profit</div>'
-      +'<div style="font-size:13px;font-weight:700;color:var(--tx)">'+fmtCr(data.netIncome)+'</div>'
-      +'<div style="font-size:9px;color:var(--txm);margin-top:2px">(accounting)</div>'
-      +'<div style="height:40px;width:32px;background:rgba(26,77,143,.5);border-radius:3px 3px 0 0;margin:8px auto 0"></div></div>'
-      +'<div style="background:var(--elev);border-radius:var(--r8);padding:10px;text-align:center">'
-      +'<div style="font-size:10px;color:var(--txm);margin-bottom:4px">Operating cash flow</div>'
-      +'<div style="font-size:13px;font-weight:700;color:var(--g)">'+(hasOCF?fmtCr(data.operatingCashflow):'—')+'</div>'
-      +'<div style="font-size:9px;color:var(--txm);margin-top:2px">(actual cash)</div>'
-      +'<div style="height:'+ocfH+'px;width:32px;background:rgba(0,192,118,.4);border-radius:3px 3px 0 0;margin:8px auto 0"></div></div>';
-  }
-  var bsSec=document.getElementById('st-balance-section');
-  var bsRows=document.getElementById('st-balance-rows');
-  if(bsSec&&bsRows&&(hasMC||hasDebt||hasCash||hasROE)) {
-    bsSec.style.display='block';
-    var rows=[];
-    if(hasMC) rows.push(['Market cap',fmtCr(data.marketCap)]);
-    if(hasCash) rows.push(['Cash & equivalents',fmtCr(data.cash)]);
-    if(hasDebt) rows.push(['Total debt',data.totalDebt>0?fmtCr(data.totalDebt):'₹0']);
-    if(hasDebt&&data.totalEquity>0) rows.push(['Debt / Equity',(data.totalDebt/data.totalEquity).toFixed(2)]);
-    if(hasROE) rows.push(['Return on Equity (ROE)',data.roe.toFixed(1)+'%']);
-    bsRows.innerHTML=rows.map(function(r){
-      return '<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--bord)">'
-        +'<div style="font-size:12px;color:var(--txd)">'+r[0]+'</div>'
-        +'<div style="font-size:12px;font-weight:500;color:var(--tx)">'+r[1]+'</div></div>';
-    }).join('');
-  }
-}
-
-function renderConnector(sym, data, pct52) {
-  var el=document.getElementById('st-connector');
-  var txt=document.getElementById('st-connector-txt');
-  if(!el||!txt) return;
-  var up=(data.changePct||0)>=0;
-  var parts=[sym+' moved '+(up?'+':'')+data.changePct.toFixed(2)+'% today.'];
-  if(data.w52Low>0&&data.w52High>0) parts.push('It is at '+Math.round(pct52)+'% of its 52-week price range.');
-  if(data.pe>0) parts.push('P/E ratio is '+data.pe.toFixed(1)+'x.');
-  if(data.revenue>0&&data.netIncome>0) parts.push('For every ₹100 of revenue, ₹'+((data.netIncome/data.revenue)*100).toFixed(1)+' reaches net profit.');
-  parts.push('What these numbers mean for the business is for you to interpret.');
-  txt.textContent=parts.join(' ');
-  el.style.display='block';
+  // Reset TF buttons
+  document.querySelectorAll('.tf-btn').forEach(function(b,i){ b.classList.toggle('active', i===0); });
 }
 
 function addToWatchlist() {
@@ -2929,10 +2829,10 @@ function runScreen(type) {
   setEl('screen-result','innerHTML', '<div class="shimmer" style="height:60px;border-radius:10px"></div>');
   setTimeout(() => {
     const msgs = {
-      rsi:'RSI Oversold scan: Stocks where RSI (14-day) is estimated below 35. RSI measures recent price speed on a 0–100 scale. Coming live in Phase 4.',
-      golden:'Golden Cross scan: Stocks where the 20-day moving average is above the 50-day moving average. Coming live in Phase 4.',
+      rsi:'RSI Oversold scan: Stocks where RSI is estimated below 35. These have fallen fast and may find support. Check fundamentals before acting. Coming live in Phase 4.',
+      golden:'Golden Cross scan: Stocks where 20-day MA is above 50-day MA — positive momentum signal. Coming live in Phase 4.',
       '52low':'Near 52-Week Low scan: Stocks within 15% of yearly low. Sometimes value, sometimes falling knife — always check the reason. Coming live in Phase 4.',
-      lowpe:'Low P/E scan: Stocks trading below the sector average P/E ratio. P/E compares price to earnings per share. Coming live in Phase 4.',
+      lowpe:'Low P/E scan: Stocks trading below sector average P/E. May be undervalued or struggling — always investigate the reason. Coming live in Phase 4.',
     };
     setEl('screen-result','innerHTML', `<div class="ai-bub"><div class="ai-head"><div class="ai-av">📋</div><div class="ai-nm">Screener</div></div><div class="ai-txt">${msgs[type]}</div></div>`);
   }, 800);
@@ -3109,43 +3009,27 @@ function renderHeatmap(quotes) {
   }).join('');
 }
 
-async function showSectorPanel(name, syms) {
-  var cached = window._nifty50Quotes || {};
-  var missing = syms.filter(function(s){ return !cached[s]; });
-  function buildRow(sym, q) {
-    var up = q ? (q.changePct||0) >= 0 : null;
-    var col = up === null ? 'var(--txd)' : up ? 'var(--g)' : 'var(--err)';
-    var priceHtml = '<div id="sprice-' + sym + '" style="font-size:11px;color:var(--txd)">Loading…</div>';
-    if (q && q.price) {
-      priceHtml = '<div style="font-size:13px;font-weight:600;font-family:\'DM Mono\',monospace">₹' + q.price.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}) + '</div>'
+function showSectorPanel(name, syms) {
+  const quotes = window._nifty50Quotes || {};
+  const rows = syms.map(function(sym) {
+    const q = quotes[sym];
+    const up = q ? (q.changePct||0) >= 0 : null;
+    const col = up === null ? 'var(--txd)' : up ? 'var(--g)' : 'var(--err)';
+    let priceHtml = '<div style="font-size:11px;color:var(--txd)">Loading…</div>';
+    if (q) {
+      priceHtml = '<div style="font-size:13px;font-weight:600;font-family:\'DM Mono\',monospace">₹' + (q.price ? q.price.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}) : '—') + '</div>'
         + '<div style="font-size:11px;font-weight:700;color:' + col + '">'
-        + (up?'▲':'▼') + ' ' + Math.abs(q.changePct||0).toFixed(2) + '% '
-        + (up?'+':'') + '₹' + Math.abs(q.change||0).toFixed(2) + '</div>';
+        + (up?'▲':'▼') + ' ' + Math.abs(q.changePct||0).toFixed(2) + '% &nbsp; '
+        + (up?'+':'') + '₹' + Math.abs(q.change||0).toFixed(2)
+        + '</div>';
     }
     return '<div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--bord);cursor:pointer" onclick="doSearchSym(\'' + sym + '\');closePanel();switchTab(\'analyse\')">'
       + '<div><div style="font-size:13px;font-weight:700;font-family:\'DM Mono\',monospace">' + sym + '</div>'
-      + '<div style="font-size:10px;color:var(--txd)">' + ((q && q.longName) ? q.longName.substring(0,26) : 'Tap to analyse →') + '</div></div>'
-      + '<div id="spwrap-' + sym + '" style="text-align:right">' + priceHtml + '</div>'
+      + '<div style="font-size:10px;color:var(--txd)">' + ((q && q.longName) ? q.longName.substring(0,26) : 'Tap to research →') + '</div></div>'
+      + '<div style="text-align:right">' + priceHtml + '</div>'
       + '</div>';
-  }
-  var rows = syms.map(function(sym){ return buildRow(sym, cached[sym]); }).join('');
+  }).join('');
   openPanel(name + ' Sector', rows);
-  if (missing.length) {
-    missing.forEach(async function(sym) {
-      var data = await api('quote', {symbol: sym});
-      if (!data || !data.price) return;
-      if (!window._nifty50Quotes) window._nifty50Quotes = {};
-      window._nifty50Quotes[sym] = data;
-      var wrap = document.getElementById('spwrap-' + sym);
-      if (!wrap) return;
-      var up = (data.changePct||0) >= 0;
-      var col = up ? 'var(--g)' : 'var(--err)';
-      wrap.innerHTML = '<div style="font-size:13px;font-weight:600;font-family:\'DM Mono\',monospace">₹' + data.price.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}) + '</div>'
-        + '<div style="font-size:11px;font-weight:700;color:' + col + '">'
-        + (up?'▲':'▼') + ' ' + Math.abs(data.changePct||0).toFixed(2) + '% '
-        + (up?'+':'') + '₹' + Math.abs(data.change||0).toFixed(2) + '</div>';
-    });
-  }
 }
 
 // ── GLOBAL MARKETS ─────────────────────────────────────────────────
