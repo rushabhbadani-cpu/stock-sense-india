@@ -7,209 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>AskArtha — Samjho Apna Paisa</title>
-<script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js">
-// ── NIFTY 50 AUTOCOMPLETE DATA ───────────────────────────────────
-var STOCK_LIST = [
-  ['RELIANCE','Reliance Industries','Energy'],['TCS','Tata Consultancy Services','IT'],
-  ['HDFCBANK','HDFC Bank','Banking'],['BHARTIARTL','Bharti Airtel','Telecom'],
-  ['ICICIBANK','ICICI Bank','Banking'],['SBIN','State Bank of India','Banking'],
-  ['INFY','Infosys','IT'],['HINDUNILVR','Hindustan Unilever','FMCG'],
-  ['ITC','ITC Limited','FMCG'],['KOTAKBANK','Kotak Mahindra Bank','Banking'],
-  ['LT','Larsen & Toubro','Infra'],['AXISBANK','Axis Bank','Banking'],
-  ['BAJFINANCE','Bajaj Finance','Finance'],['MARUTI','Maruti Suzuki','Auto'],
-  ['NTPC','NTPC Limited','Energy'],['HCLTECH','HCL Technologies','IT'],
-  ['SUNPHARMA','Sun Pharma','Pharma'],['POWERGRID','Power Grid Corp','Energy'],
-  ['WIPRO','Wipro','IT'],['ULTRACEMCO','UltraTech Cement','Cement'],
-  ['ADANIPORTS','Adani Ports','Infra'],['NESTLEIND','Nestle India','FMCG'],
-  ['TITAN','Titan Company','Consumer'],['TATAMOTORS','Tata Motors','Auto'],
-  ['ONGC','Oil & Natural Gas Corp','Energy'],['BAJAJFINSV','Bajaj Finserv','Finance'],
-  ['JSWSTEEL','JSW Steel','Metals'],['TATASTEEL','Tata Steel','Metals'],
-  ['COALINDIA','Coal India','Energy'],['GRASIM','Grasim Industries','Cement'],
-  ['CIPLA','Cipla','Pharma'],['DIVISLAB','Divi's Laboratories','Pharma'],
-  ['BPCL','Bharat Petroleum','Energy'],['INDUSINDBK','IndusInd Bank','Banking'],
-  ['TATACONSUM','Tata Consumer Products','FMCG'],['DRREDDY','Dr Reddy's','Pharma'],
-  ['APOLLOHOSP','Apollo Hospitals','Healthcare'],['ASIANPAINT','Asian Paints','Paints'],
-  ['EICHERMOT','Eicher Motors','Auto'],['HDFCLIFE','HDFC Life Insurance','Insurance'],
-  ['SBILIFE','SBI Life Insurance','Insurance'],['TECHM','Tech Mahindra','IT'],
-  ['HEROMOTOCO','Hero MotoCorp','Auto'],['BRITANNIA','Britannia Industries','FMCG'],
-  ['HINDALCO','Hindalco Industries','Metals'],['BAJAJ-AUTO','Bajaj Auto','Auto'],
-  ['ZOMATO','Zomato','Consumer Tech'],['ADANIENT','Adani Enterprises','Conglomerate'],
-  ['VEDL','Vedanta','Metals'],['MM','Mahindra & Mahindra','Auto'],
-  ['PAYTM','Paytm','Fintech'],['NYKAA','Nykaa','Consumer Tech'],
-  ['DMART','Avenue Supermarts','Retail'],['PVR','PVR Inox','Entertainment'],
-  ['IRCTC','IRCTC','Travel'],['HAL','Hindustan Aeronautics','Defence'],
-  ['BEL','Bharat Electronics','Defence'],['IRFC','Indian Railway Finance','Finance'],
-];
-
-var _fundCache = {};
-
-function showAutocomplete(val) {
-  var dd = document.getElementById('ac-dropdown');
-  if (!dd) return;
-  var q = val.trim().toUpperCase();
-  if (q.length < 1) { dd.style.display = 'none'; return; }
-  var matches = STOCK_LIST.filter(function(s) {
-    return s[0].includes(q) || s[1].toUpperCase().includes(q);
-  }).slice(0, 7);
-  if (!matches.length) { dd.style.display = 'none'; return; }
-  dd.innerHTML = matches.map(function(s) {
-    return '<div class="ac-item" onclick="selectStock('' + s[0] + '')">'
-      + '<div class="ac-sym">' + s[0] + '</div>'
-      + '<div class="ac-name">' + s[1] + '</div>'
-      + '<div class="ac-sector">' + s[2] + '</div>'
-      + '</div>';
-  }).join('');
-  dd.style.display = 'block';
-}
-
-function selectStock(sym) {
-  document.getElementById('search-inp').value = sym;
-  hideAutocomplete();
-  doSearchSym(sym);
-}
-
-function hideAutocomplete() {
-  var dd = document.getElementById('ac-dropdown');
-  if (dd) dd.style.display = 'none';
-}
-
-// Close dropdown when clicking outside
-document.addEventListener('click', function(e) {
-  if (!e.target.closest('.search-wrap')) hideAutocomplete();
-});
-
-// ── STOCK ANALYSIS TABS ──────────────────────────────────────────
-function switchStockTab(tab) {
-  // No-op — new layout is always side-by-side, no tabs needed
-}
-
-async function loadFundamentals(sym) {
-  // Use cache if available
-  if (_fundCache[sym]) {
-    renderFundamentals(_fundCache[sym]);
-    return;
-  }
-  var loadEl = document.getElementById('fund-loading-q');
-  var dataEl = document.getElementById('fund-data-q');
-  if (loadEl) loadEl.style.display = 'block';
-  if (dataEl) dataEl.style.display = 'none';
-
-  var d = await api('fundamentals', {symbol: sym});
-  if (!d || !d.live) {
-    if (loadEl) loadEl.textContent = 'N/A';
-    return;
-  }
-  _fundCache[sym] = d;
-  renderFundamentals(d);
-}
-
-function renderFundamentals(d) {
-  var loadEl = document.getElementById('fund-loading-q');
-  var dataEl = document.getElementById('fund-data-q');
-  if (loadEl) loadEl.style.display = 'none';
-  if (dataEl) dataEl.style.display = 'block';
-
-  // Quick analysis column
-  var pe = d.forwardPE || 0;
-  setQA('f-pe', pe > 0 ? pe.toFixed(1)+'x' : '—', pe<15&&pe>0?'sc-pos':pe>40?'sc-neg':'');
-  setQA('f-roe', d.roe != null ? d.roe.toFixed(1)+'%' : '—', d.roe>20?'sc-pos':d.roe>0&&d.roe<10?'sc-neg':'');
-  setQA('f-pm', d.profitMargin != null ? d.profitMargin.toFixed(1)+'%' : '—', d.profitMargin>15?'sc-pos':d.profitMargin>0&&d.profitMargin<5?'sc-neg':'');
-  var rg = d.revenueGrowth;
-  setQA('f-rg', rg != null ? (rg>0?'↑':rg<0?'↓':'→')+' '+(rg>0?'+':'')+rg.toFixed(1)+'%' : '—', rg>10?'sc-pos':rg<0?'sc-neg':'');
-  setQA('f-de', d.debtToEquity != null ? d.debtToEquity.toFixed(2)+'x' : '—', d.debtToEquity<0.5?'sc-pos':d.debtToEquity>2?'sc-neg':'');
-  setQA('f-fcf', d.freeCashFlow ? fmtCr(d.freeCashFlow/1e7) : '—', d.freeCashFlow>0?'sc-pos':d.freeCashFlow<0?'sc-neg':'');
-
-  // Expandable more fundamentals
-  setFund('f-fpe','fv-fpe', d.forwardPE?d.forwardPE.toFixed(1)+'x':'—', 'Based on estimated future earnings');
-  setFund('f-pb','fv-pb', d.priceToBook?d.priceToBook.toFixed(2)+'x':'—', d.priceToBook<1?'Below book value':d.priceToBook<3?'Reasonable':'Premium to book');
-  setFund('f-cr','fv-cr', d.currentRatio?d.currentRatio.toFixed(2):'—', d.currentRatio>2?'Strong liquidity':d.currentRatio>1?'Adequate':'Watch liquidity');
-  setFund('f-beta','fv-beta', d.beta?d.beta.toFixed(2):'—', d.beta<0.8?'Lower volatility than market':d.beta>1.2?'Higher volatility than market':'Moves with market');
-
-  // Revenue trend bars
-  if (d.income && d.income.length) {
-    var rev = d.income.slice().reverse();
-    var maxR = Math.max.apply(null, rev.map(function(i){ return i.revenue||0; }));
-    var barsEl = document.getElementById('revenue-bars');
-    var lblsEl = document.getElementById('revenue-labels');
-    var secEl  = document.getElementById('revenue-section');
-    if (barsEl && maxR > 0) {
-      if (secEl) secEl.style.display = 'block';
-      barsEl.innerHTML = rev.map(function(yr) {
-        var pct = Math.max(10, (yr.revenue/maxR)*100);
-        var col = yr.profit > 0 ? 'var(--g)' : 'var(--err)';
-        return '<div style="flex:1;background:'+col+';border-radius:3px 3px 0 0;height:'+pct+'%;opacity:.8"></div>';
-      }).join('');
-      lblsEl.innerHTML = rev.map(function(yr){
-        return '<div style="flex:1;text-align:center;font-size:8px;color:var(--txm)">'+yr.date.substring(0,4)+'</div>';
-      }).join('');
-    }
-  }
-}
-
-function setQA(id, val, cls) {
-  var el = document.getElementById(id);
-  if (!el) return;
-  el.textContent = val;
-  el.className = 'qa-val ' + (cls||'');
-}
-
-function setFund(valId, verdictId, val, verdict) {
-  setEl(valId,'textContent',val); setEl(verdictId,'textContent',verdict);
-}
-
-function setScItem(valId, verdictId, val, verdict, cls) {
-  var v = document.getElementById(valId);
-  var vd = document.getElementById(verdictId);
-  if (v) { v.textContent = val; v.className = 'sc-val ' + (cls||''); }
-  if (vd) { vd.textContent = verdict; vd.className = 'sc-verdict ' + (cls||''); }
-}
-
-function buildArthaSCorecard(data, pct52, up) {
-  var sc = document.getElementById('artha-scorecard');
-  if (!sc) return;
-  sc.style.display = 'block';
-
-  // ── TECHNICAL COLUMN ──
-  // 52W position
-  var pos52 = Math.round(pct52);
-  var col52 = pct52 > 70 ? 'sc-pos' : pct52 < 30 ? 'sc-neg' : '';
-  setQA('sc-52w', pos52 + '%', col52);
-
-  // Day move
-  var chg = data.changePct || 0;
-  setQA('sc-day', (chg>0?'+':'')+chg.toFixed(2)+'%', chg > 1 ? 'sc-pos' : chg < -1 ? 'sc-neg' : '');
-
-  // vs Open
-  var openDiff = data.open > 0 ? ((data.price - data.open)/data.open*100) : 0;
-  setQA('sc-open', (openDiff>0?'+':'')+openDiff.toFixed(1)+'%', openDiff > 1 ? 'sc-pos' : openDiff < -1 ? 'sc-neg' : '');
-
-  // Volume
-  setQA('sc-vol-t', data.volume > 0 ? fmtVol(data.volume) : '—', '');
-
-  // Trend signal based on 52W position
-  var trend = pct52 > 65 ? '↑ Uptrend' : pct52 < 35 ? '↓ Downtrend' : '→ Sideways';
-  var trendCls = pct52 > 65 ? 'sc-pos' : pct52 < 35 ? 'sc-neg' : '';
-  setQA('sc-trend', trend, trendCls);
-
-  // 52W range width
-  var rangePct = data.w52High > 0 && data.w52Low > 0
-    ? Math.round((data.w52High - data.w52Low)/data.w52Low*100) : 0;
-  setQA('sc-rngw', rangePct > 0 ? rangePct+'%' : '—', rangePct > 60 ? 'sc-neg' : rangePct < 25 ? 'sc-pos' : '');
-
-  // Learn tip
-  var tip = pct52 > 70
-    ? '📚 Near 52W high — learn Support & Resistance in Chart School C3'
-    : pct52 < 30
-    ? '📚 Near 52W low — study Red Flags in Fundamentals F32 before acting'
-    : '📚 Chart School C6 (Trend) + Fundamentals F7 (P/E) give the full picture';
-  setEl('sc-learn-tip','textContent', tip);
-
-  // ── FUNDAMENTAL COLUMN — load in parallel ──
-  loadFundamentals(data.symbol || currentSym);
-}
-
-
-</script>
+<script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=Tiro+Devanagari+Hindi&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -3269,6 +3067,207 @@ async function loadIdxChart(sym, range, interval, btn) {
   } catch(e) {
     box.innerHTML = '<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--txd)">Chart error</div>';
   }
+}
+
+// ── NIFTY 50 AUTOCOMPLETE DATA ───────────────────────────────────
+var STOCK_LIST = [
+  ['RELIANCE','Reliance Industries','Energy'],['TCS','Tata Consultancy Services','IT'],
+  ['HDFCBANK','HDFC Bank','Banking'],['BHARTIARTL','Bharti Airtel','Telecom'],
+  ['ICICIBANK','ICICI Bank','Banking'],['SBIN','State Bank of India','Banking'],
+  ['INFY','Infosys','IT'],['HINDUNILVR','Hindustan Unilever','FMCG'],
+  ['ITC','ITC Limited','FMCG'],['KOTAKBANK','Kotak Mahindra Bank','Banking'],
+  ['LT','Larsen & Toubro','Infra'],['AXISBANK','Axis Bank','Banking'],
+  ['BAJFINANCE','Bajaj Finance','Finance'],['MARUTI','Maruti Suzuki','Auto'],
+  ['NTPC','NTPC Limited','Energy'],['HCLTECH','HCL Technologies','IT'],
+  ['SUNPHARMA','Sun Pharma','Pharma'],['POWERGRID','Power Grid Corp','Energy'],
+  ['WIPRO','Wipro','IT'],['ULTRACEMCO','UltraTech Cement','Cement'],
+  ['ADANIPORTS','Adani Ports','Infra'],['NESTLEIND','Nestle India','FMCG'],
+  ['TITAN','Titan Company','Consumer'],['TATAMOTORS','Tata Motors','Auto'],
+  ['ONGC','Oil & Natural Gas Corp','Energy'],['BAJAJFINSV','Bajaj Finserv','Finance'],
+  ['JSWSTEEL','JSW Steel','Metals'],['TATASTEEL','Tata Steel','Metals'],
+  ['COALINDIA','Coal India','Energy'],['GRASIM','Grasim Industries','Cement'],
+  ['CIPLA','Cipla','Pharma'],['DIVISLAB',"Divi's Laboratories",'Pharma'],
+  ['BPCL','Bharat Petroleum','Energy'],['INDUSINDBK','IndusInd Bank','Banking'],
+  ['TATACONSUM','Tata Consumer Products','FMCG'],['DRREDDY',"Dr Reddy's",'Pharma'],
+  ['APOLLOHOSP','Apollo Hospitals','Healthcare'],['ASIANPAINT','Asian Paints','Paints'],
+  ['EICHERMOT','Eicher Motors','Auto'],['HDFCLIFE','HDFC Life Insurance','Insurance'],
+  ['SBILIFE','SBI Life Insurance','Insurance'],['TECHM','Tech Mahindra','IT'],
+  ['HEROMOTOCO','Hero MotoCorp','Auto'],['BRITANNIA','Britannia Industries','FMCG'],
+  ['HINDALCO','Hindalco Industries','Metals'],['BAJAJ-AUTO','Bajaj Auto','Auto'],
+  ['ZOMATO','Zomato','Consumer Tech'],['ADANIENT','Adani Enterprises','Conglomerate'],
+  ['VEDL','Vedanta','Metals'],['MM','Mahindra & Mahindra','Auto'],
+  ['PAYTM','Paytm','Fintech'],['NYKAA','Nykaa','Consumer Tech'],
+  ['DMART','Avenue Supermarts','Retail'],['PVR','PVR Inox','Entertainment'],
+  ['IRCTC','IRCTC','Travel'],['HAL','Hindustan Aeronautics','Defence'],
+  ['BEL','Bharat Electronics','Defence'],['IRFC','Indian Railway Finance','Finance'],
+];
+
+var _fundCache = {};
+
+function showAutocomplete(val) {
+  var dd = document.getElementById('ac-dropdown');
+  if (!dd) return;
+  var q = val.trim().toUpperCase();
+  if (q.length < 1) { dd.style.display = 'none'; return; }
+  var matches = STOCK_LIST.filter(function(s) {
+    return s[0].includes(q) || s[1].toUpperCase().includes(q);
+  }).slice(0, 7);
+  if (!matches.length) { dd.style.display = 'none'; return; }
+  dd.innerHTML = matches.map(function(s) {
+    var sym = s[0], name = s[1], sector = s[2];
+    return '<div class="ac-item" onclick="selectStock(\'' + sym + '\')">'
+      + '<div class="ac-sym">' + sym + '</div>'
+      + '<div class="ac-name">' + name + '</div>'
+      + '<div class="ac-sector">' + sector + '</div>'
+      + '</div>';
+  }).join('');
+  dd.style.display = 'block';
+}
+
+function selectStock(sym) {
+  document.getElementById('search-inp').value = sym;
+  hideAutocomplete();
+  doSearchSym(sym);
+}
+
+function hideAutocomplete() {
+  var dd = document.getElementById('ac-dropdown');
+  if (dd) dd.style.display = 'none';
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.search-wrap')) hideAutocomplete();
+});
+
+// ── STOCK ANALYSIS TABS ──────────────────────────────────────────
+function switchStockTab(tab) {
+  // No-op — new layout is always side-by-side, no tabs needed
+}
+
+async function loadFundamentals(sym) {
+  // Use cache if available
+  if (_fundCache[sym]) {
+    renderFundamentals(_fundCache[sym]);
+    return;
+  }
+  var loadEl = document.getElementById('fund-loading-q');
+  var dataEl = document.getElementById('fund-data-q');
+  if (loadEl) loadEl.style.display = 'block';
+  if (dataEl) dataEl.style.display = 'none';
+
+  var d = await api('fundamentals', {symbol: sym});
+  if (!d || !d.live) {
+    if (loadEl) loadEl.textContent = 'N/A';
+    return;
+  }
+  _fundCache[sym] = d;
+  renderFundamentals(d);
+}
+
+function renderFundamentals(d) {
+  var loadEl = document.getElementById('fund-loading-q');
+  var dataEl = document.getElementById('fund-data-q');
+  if (loadEl) loadEl.style.display = 'none';
+  if (dataEl) dataEl.style.display = 'block';
+
+  // Quick analysis column
+  var pe = d.forwardPE || 0;
+  setQA('f-pe', pe > 0 ? pe.toFixed(1)+'x' : '—', pe<15&&pe>0?'sc-pos':pe>40?'sc-neg':'');
+  setQA('f-roe', d.roe != null ? d.roe.toFixed(1)+'%' : '—', d.roe>20?'sc-pos':d.roe>0&&d.roe<10?'sc-neg':'');
+  setQA('f-pm', d.profitMargin != null ? d.profitMargin.toFixed(1)+'%' : '—', d.profitMargin>15?'sc-pos':d.profitMargin>0&&d.profitMargin<5?'sc-neg':'');
+  var rg = d.revenueGrowth;
+  setQA('f-rg', rg != null ? (rg>0?'↑':rg<0?'↓':'→')+' '+(rg>0?'+':'')+rg.toFixed(1)+'%' : '—', rg>10?'sc-pos':rg<0?'sc-neg':'');
+  setQA('f-de', d.debtToEquity != null ? d.debtToEquity.toFixed(2)+'x' : '—', d.debtToEquity<0.5?'sc-pos':d.debtToEquity>2?'sc-neg':'');
+  setQA('f-fcf', d.freeCashFlow ? fmtCr(d.freeCashFlow/1e7) : '—', d.freeCashFlow>0?'sc-pos':d.freeCashFlow<0?'sc-neg':'');
+
+  // Expandable more fundamentals
+  setFund('f-fpe','fv-fpe', d.forwardPE?d.forwardPE.toFixed(1)+'x':'—', 'Based on estimated future earnings');
+  setFund('f-pb','fv-pb', d.priceToBook?d.priceToBook.toFixed(2)+'x':'—', d.priceToBook<1?'Below book value':d.priceToBook<3?'Reasonable':'Premium to book');
+  setFund('f-cr','fv-cr', d.currentRatio?d.currentRatio.toFixed(2):'—', d.currentRatio>2?'Strong liquidity':d.currentRatio>1?'Adequate':'Watch liquidity');
+  setFund('f-beta','fv-beta', d.beta?d.beta.toFixed(2):'—', d.beta<0.8?'Lower volatility than market':d.beta>1.2?'Higher volatility than market':'Moves with market');
+
+  // Revenue trend bars
+  if (d.income && d.income.length) {
+    var rev = d.income.slice().reverse();
+    var maxR = Math.max.apply(null, rev.map(function(i){ return i.revenue||0; }));
+    var barsEl = document.getElementById('revenue-bars');
+    var lblsEl = document.getElementById('revenue-labels');
+    var secEl  = document.getElementById('revenue-section');
+    if (barsEl && maxR > 0) {
+      if (secEl) secEl.style.display = 'block';
+      barsEl.innerHTML = rev.map(function(yr) {
+        var pct = Math.max(10, (yr.revenue/maxR)*100);
+        var col = yr.profit > 0 ? 'var(--g)' : 'var(--err)';
+        return '<div style="flex:1;background:'+col+';border-radius:3px 3px 0 0;height:'+pct+'%;opacity:.8"></div>';
+      }).join('');
+      lblsEl.innerHTML = rev.map(function(yr){
+        return '<div style="flex:1;text-align:center;font-size:8px;color:var(--txm)">'+yr.date.substring(0,4)+'</div>';
+      }).join('');
+    }
+  }
+}
+
+function setQA(id, val, cls) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = val;
+  el.className = 'qa-val ' + (cls||'');
+}
+
+function setFund(valId, verdictId, val, verdict) {
+  setEl(valId,'textContent',val); setEl(verdictId,'textContent',verdict);
+}
+
+function setScItem(valId, verdictId, val, verdict, cls) {
+  var v = document.getElementById(valId);
+  var vd = document.getElementById(verdictId);
+  if (v) { v.textContent = val; v.className = 'sc-val ' + (cls||''); }
+  if (vd) { vd.textContent = verdict; vd.className = 'sc-verdict ' + (cls||''); }
+}
+
+function buildArthaSCorecard(data, pct52, up) {
+  var sc = document.getElementById('artha-scorecard');
+  if (!sc) return;
+  sc.style.display = 'block';
+
+  // ── TECHNICAL COLUMN ──
+  // 52W position
+  var pos52 = Math.round(pct52);
+  var col52 = pct52 > 70 ? 'sc-pos' : pct52 < 30 ? 'sc-neg' : '';
+  setQA('sc-52w', pos52 + '%', col52);
+
+  // Day move
+  var chg = data.changePct || 0;
+  setQA('sc-day', (chg>0?'+':'')+chg.toFixed(2)+'%', chg > 1 ? 'sc-pos' : chg < -1 ? 'sc-neg' : '');
+
+  // vs Open
+  var openDiff = data.open > 0 ? ((data.price - data.open)/data.open*100) : 0;
+  setQA('sc-open', (openDiff>0?'+':'')+openDiff.toFixed(1)+'%', openDiff > 1 ? 'sc-pos' : openDiff < -1 ? 'sc-neg' : '');
+
+  // Volume
+  setQA('sc-vol-t', data.volume > 0 ? fmtVol(data.volume) : '—', '');
+
+  // Trend signal based on 52W position
+  var trend = pct52 > 65 ? '↑ Uptrend' : pct52 < 35 ? '↓ Downtrend' : '→ Sideways';
+  var trendCls = pct52 > 65 ? 'sc-pos' : pct52 < 35 ? 'sc-neg' : '';
+  setQA('sc-trend', trend, trendCls);
+
+  // 52W range width
+  var rangePct = data.w52High > 0 && data.w52Low > 0
+    ? Math.round((data.w52High - data.w52Low)/data.w52Low*100) : 0;
+  setQA('sc-rngw', rangePct > 0 ? rangePct+'%' : '—', rangePct > 60 ? 'sc-neg' : rangePct < 25 ? 'sc-pos' : '');
+
+  // Learn tip
+  var tip = pct52 > 70
+    ? '📚 Near 52W high — learn Support & Resistance in Chart School C3'
+    : pct52 < 30
+    ? '📚 Near 52W low — study Red Flags in Fundamentals F32 before acting'
+    : '📚 Chart School C6 (Trend) + Fundamentals F7 (P/E) give the full picture';
+  setEl('sc-learn-tip','textContent', tip);
+
+  // ── FUNDAMENTAL COLUMN — load in parallel ──
+  loadFundamentals(data.symbol || currentSym);
 }
 </script>
 </body>
