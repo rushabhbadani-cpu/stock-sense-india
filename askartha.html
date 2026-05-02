@@ -1360,16 +1360,16 @@ button{font-family:inherit;cursor:pointer}
             <!-- Chart timeframe selector -->
             <div style="margin-top:14px">
               <div style="display:flex;gap:6px;margin-bottom:8px">
-                <button class="tf-btn active" onclick="setTF(this,'1d','5m')">1D</button>
-                <button class="tf-btn" onclick="setTF(this,'5d','15m')">1W</button>
-                <button class="tf-btn" onclick="setTF(this,'1mo','1d')">1M</button>
+                <button class="tf-btn active" onclick="setTF(this,'1mo','1d')">1M</button>
                 <button class="tf-btn" onclick="setTF(this,'3mo','1d')">3M</button>
+                <button class="tf-btn" onclick="setTF(this,'6mo','1d')">6M</button>
                 <button class="tf-btn" onclick="setTF(this,'1y','1wk')">1Y</button>
+                <button class="tf-btn" onclick="setTF(this,'5y','1mo')">5Y</button>
               </div>
               <div id="stock-chart-wrap" style="height:200px;border-radius:10px;overflow:hidden;background:var(--dark)">
                 <div id="stock-chart-loading" style="height:200px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--txd)">Loading chart…</div>
               </div>
-              <div style="font-size:9px;color:var(--txm);margin-top:4px;text-align:right">📊 1D/1W = Candlestick · 1M/3M/1Y = Line</div>
+              <div style="font-size:9px;color:var(--txm);margin-top:4px;text-align:right">📈 Tap any timeframe to see price movement</div>
             </div>
             <!-- ── ARTHA SCORECARD ── -->
             <div id="artha-scorecard" style="display:none;margin-top:16px">
@@ -2370,7 +2370,7 @@ async function doSearchSym(sym) {
   buildArthaSCorecard(data, pct52, up);
 
   // Load chart default 1D
-  loadStockChart(sym, '1d', '5m');
+  loadStockChart(sym, '1mo', '1d');
   // Reset TF buttons
   document.querySelectorAll('.tf-btn').forEach(function(b,i){ b.classList.toggle('active', i===0); });
 }
@@ -2875,7 +2875,7 @@ async function loadStockChart(sym, range, interval) {
   }
   if (loading) loading.style.display = 'none';
   wrap.innerHTML = '';
-  var isCandle = range === '1d' || range === '5d';
+  var isCandle = false; // All timeframes use line chart — cleaner on mobile
   await new Promise(function(r){ setTimeout(r, 50); }); // Wait for box to render
   try {
     _stockChart = LightweightCharts.createChart(wrap, {
@@ -2936,7 +2936,7 @@ function openIndexChart(name, sym) {
     document.body.appendChild(modal);
   }
   modal.style.display = 'flex';
-  var tfBtns = ['1D|1d|5m','1W|5d|15m','1M|1mo|1d','3M|3mo|1d','1Y|1y|1wk'].map(function(t,i) {
+  var tfBtns = ['1M|1mo|1d','3M|3mo|1d','6M|6mo|1d','1Y|1y|1wk','5Y|5y|1mo'].map(function(t,i) {
     var parts = t.split('|');
     var active = i===0 ? ' active' : '';
     return '<button class="tf-btn' + active + '" onclick="loadIdxChart(\'' + sym + '\',\'' + parts[1] + '\',\'' + parts[2] + '\',this)">' + parts[0] + '</button>';
@@ -2945,7 +2945,7 @@ function openIndexChart(name, sym) {
     + '<button onclick="closeIndexChart()" style="background:var(--elev);border:1px solid var(--bord);border-radius:50%;width:30px;height:30px;font-size:14px;color:var(--txd);cursor:pointer">✕</button></div>'
     + '<div class="idx-modal-body"><div class="idx-tf-row">' + tfBtns + '</div>'
     + '<div class="idx-chart-box" id="idx-chart-box"></div></div>';
-  loadIdxChart(sym, '1d', '5m', modal.querySelector('.tf-btn.active'));
+  loadIdxChart(sym, '1mo', '1d', modal.querySelector('.tf-btn.active'));
 }
 
 function closeIndexChart() {
@@ -2966,16 +2966,7 @@ async function loadIdxChart(sym, range, interval, btn) {
   // Try primary symbol
   var data = await api('history', {symbol: sym, range: range, interval: interval});
 
-  // Fallback 1: if 1D empty (weekend/holiday), try 5D
-  if ((!data || !data.prices || !data.prices.length) && range === '1d') {
-    data = await api('history', {symbol: sym, range: '5d', interval: '15m'});
-    if (data && data.prices && data.prices.length) {
-      var note = document.createElement('div');
-      note.style.cssText = 'font-size:9px;color:#F0B429;text-align:center;padding:4px 0 0;';
-      note.textContent = '📅 Weekend — showing last 5 trading days';
-      box.parentNode && box.parentNode.insertBefore(note, box);
-    }
-  }
+  // Note: 1D/1W intraday removed — all timeframes use daily intervals (more reliable)
 
   // Fallback 2: for any empty result, try with longer range / daily interval
   if (!data || !data.prices || !data.prices.length) {
@@ -2996,7 +2987,7 @@ async function loadIdxChart(sym, range, interval, btn) {
   }
   box.innerHTML = '';
   if (_idxChart) { try { _idxChart.remove(); } catch(e){} _idxChart = null; }
-  var isCandle = range === '1d' || range === '5d';
+  var isCandle = false; // All timeframes use line chart
   try {
     var chartH = Math.max(280, box.clientHeight || 280);
     var chartW = box.clientWidth || window.innerWidth - 32;
