@@ -7,7 +7,116 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>AskArtha — Samjho Apna Paisa</title>
-<script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
+<script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js">
+// ── STOCK ANALYSIS TABS ──────────────────────────────────────────
+function switchStockTab(tab) {
+  document.getElementById('stock-tab-tech').style.display = tab === 'tech' ? 'block' : 'none';
+  document.getElementById('stock-tab-fund').style.display = tab === 'fund' ? 'block' : 'none';
+  document.getElementById('tab-btn-tech').classList.toggle('active', tab === 'tech');
+  document.getElementById('tab-btn-fund').classList.toggle('active', tab === 'fund');
+  if (tab === 'fund' && currentSym) loadFundamentals(currentSym);
+}
+
+async function loadFundamentals(sym) {
+  var loading = document.getElementById('fund-loading');
+  var dataDiv = document.getElementById('fund-data');
+  if (loading) loading.style.display = 'block';
+  if (dataDiv) dataDiv.style.display = 'none';
+  var d = await api('fundamentals', {symbol: sym});
+  if (!d || !d.live) {
+    if (loading) loading.textContent = 'Fundamental data unavailable for ' + sym;
+    return;
+  }
+  if (loading) loading.style.display = 'none';
+  if (dataDiv) dataDiv.style.display = 'block';
+
+  var pe = d.forwardPE || 0;
+  setFund('f-pe','fv-pe', pe > 0 ? pe.toFixed(1)+'x' : '—',
+    pe < 15 && pe > 0 ? 'Low — possibly undervalued' : pe > 40 ? 'High — priced for growth' : pe > 0 ? 'Fair range' : 'Unavailable');
+  setFund('f-fpe','fv-fpe', d.forwardPE ? d.forwardPE.toFixed(1)+'x' : '—', 'Based on estimated future earnings');
+  setFund('f-roe','fv-roe', d.roe != null ? d.roe.toFixed(1)+'%' : '—',
+    d.roe > 20 ? 'Excellent efficiency' : d.roe > 12 ? 'Good — above average' : d.roe > 0 ? 'Below average' : 'Unavailable');
+  setFund('f-pm','fv-pm', d.profitMargin != null ? d.profitMargin.toFixed(1)+'%' : '—',
+    d.profitMargin > 20 ? 'High margin — strong pricing power' : d.profitMargin > 10 ? 'Healthy margin' : d.profitMargin > 0 ? 'Thin margin' : 'Unavailable');
+  setFund('f-de','fv-de', d.debtToEquity != null ? d.debtToEquity.toFixed(2)+'x' : '—',
+    d.debtToEquity < 0.5 ? 'Low debt — financially safe' : d.debtToEquity < 1.5 ? 'Moderate — manageable' : d.debtToEquity > 0 ? 'High debt — monitor' : 'Unavailable');
+  setFund('f-pb','fv-pb', d.priceToBook != null ? d.priceToBook.toFixed(2)+'x' : '—',
+    d.priceToBook < 1 ? 'Below book — assets > price' : d.priceToBook < 3 ? 'Reasonable' : d.priceToBook > 0 ? 'Premium to book' : 'Unavailable');
+  setFund('f-rg','fv-rg', d.revenueGrowth != null ? (d.revenueGrowth>0?'+':'')+d.revenueGrowth.toFixed(1)+'%' : '—',
+    d.revenueGrowth > 15 ? 'Strong growth' : d.revenueGrowth > 5 ? 'Steady growth' : d.revenueGrowth > 0 ? 'Slow growth' : d.revenueGrowth < 0 ? 'Declining revenue' : 'Unavailable');
+  setFund('f-fcf','fv-fcf', d.freeCashFlow ? fmtCr(d.freeCashFlow/1e7) : '—',
+    d.freeCashFlow > 0 ? 'Positive — generates real cash' : d.freeCashFlow < 0 ? 'Negative — burning cash' : 'Unavailable');
+
+  if (d.income && d.income.length) {
+    var maxRev = Math.max.apply(null, d.income.map(function(i){ return i.revenue||0; }));
+    var barsEl = document.getElementById('revenue-bars');
+    var lblsEl = document.getElementById('revenue-labels');
+    if (barsEl && maxRev > 0) {
+      var rev = d.income.slice().reverse();
+      barsEl.innerHTML = rev.map(function(yr) {
+        var pct = Math.max(10, (yr.revenue/maxRev)*100);
+        var col = yr.profit > 0 ? 'var(--g)' : 'var(--err)';
+        return '<div style="flex:1;background:'+col+';border-radius:4px 4px 0 0;height:'+pct+'%;opacity:.8;min-height:4px"></div>';
+      }).join('');
+      lblsEl.innerHTML = rev.map(function(yr){
+        return '<div style="flex:1;text-align:center;font-size:9px;color:var(--txm)">'+yr.date.substring(0,4)+'</div>';
+      }).join('');
+    }
+  }
+}
+
+function setFund(valId, verdictId, val, verdict) {
+  setEl(valId,'textContent',val); setEl(verdictId,'textContent',verdict);
+}
+
+function setScItem(valId, verdictId, val, verdict, cls) {
+  var v = document.getElementById(valId);
+  var vd = document.getElementById(verdictId);
+  if (v) { v.textContent = val; v.className = 'sc-val ' + (cls||''); }
+  if (vd) { vd.textContent = verdict; vd.className = 'sc-verdict ' + (cls||''); }
+}
+
+function buildArthaSCorecard(data, pct52, up) {
+  var sc = document.getElementById('artha-scorecard');
+  if (!sc) return;
+  sc.style.display = 'block';
+
+  var s52 = pct52 > 70
+    ? {val:Math.round(pct52)+'%', verdict:'Near 52W high — strong momentum. See Chart School C3', cls:'sc-pos'}
+    : pct52 < 30
+    ? {val:Math.round(pct52)+'%', verdict:'Near 52W low — understand why before acting', cls:'sc-neg'}
+    : {val:Math.round(pct52)+'%', verdict:'Mid-range — no extreme price signals', cls:'sc-neu'};
+  setScItem('sc-52w','sv-52w', s52.val, s52.verdict, s52.cls);
+
+  var chg = data.changePct || 0;
+  var sDay = {
+    val: (chg>0?'+':'')+chg.toFixed(2)+'%',
+    verdict: Math.abs(chg)>3 ? (chg>0?'Strong buying — check for news':'Heavy selling — check for news') : 'Normal day move',
+    cls: Math.abs(chg)>1 ? (chg>0?'sc-pos':'sc-neg') : 'sc-neu'
+  };
+  setScItem('sc-day','sv-day', sDay.val, sDay.verdict, sDay.cls);
+
+  var openDiff = data.open > 0 ? ((data.price - data.open)/data.open*100) : 0;
+  setScItem('sc-open','sv-open',
+    (openDiff>0?'+':'')+openDiff.toFixed(1)+'% vs open',
+    openDiff > 1 ? 'Above open — buyers active' : openDiff < -1 ? 'Below open — sellers active' : 'Holding near open',
+    openDiff > 1 ? 'sc-pos' : openDiff < -1 ? 'sc-neg' : 'sc-neu');
+
+  setScItem('sc-vol-t','sv-vol', data.volume>0?fmtVol(data.volume):'—', 'See chart for volume trend', 'sc-neu');
+  setScItem('sc-52h','sv-52h', data.w52High>0?fmtPrice(data.w52High):'—',
+    data.price >= data.w52High*0.95 ? 'Within 5% of 52W high' : 'Below 52W high', 'sc-neu');
+  setScItem('sc-52l','sv-52l', data.w52Low>0?fmtPrice(data.w52Low):'—',
+    data.price <= data.w52Low*1.10 ? 'Near 52W low — watch support' : 'Well above 52W low', 'sc-neu');
+
+  var tip = pct52 > 70
+    ? '📚 Chart School C3 (Support & Resistance) explains price behaviour near 52W highs.'
+    : pct52 < 30
+    ? '📚 Study Fundamentals F32 (Red Flags in Financials) before acting near 52W lows.'
+    : '📚 Chart School C6 (Reading Trend) and Fundamentals F7 (P/E) give the full picture.';
+  setEl('sc-learn-tip','textContent', tip);
+}
+
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=Tiro+Devanagari+Hindi&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -1347,11 +1456,15 @@ button{font-family:inherit;cursor:pointer}
               <div><div class="stock-sym" id="st-sym">—</div><div class="stock-name" id="st-name">—</div></div>
               <div class="stock-price"><div class="stock-p" id="st-price">—</div><div class="stock-chg" id="st-chg">—</div></div>
             </div>
-            <div class="price-grid">
+            <div class="price-grid" style="grid-template-columns:repeat(4,1fr)">
               <div class="pg-item"><div class="pg-label">Open</div><div class="pg-val" id="st-open">—</div></div>
               <div class="pg-item"><div class="pg-label">High</div><div class="pg-val up" id="st-high">—</div></div>
               <div class="pg-item"><div class="pg-label">Low</div><div class="pg-val dn" id="st-low">—</div></div>
+              <div class="pg-item"><div class="pg-label">Prev Close</div><div class="pg-val" id="st-prev">—</div></div>
               <div class="pg-item"><div class="pg-label">P/E</div><div class="pg-val" id="st-pe">—</div></div>
+              <div class="pg-item"><div class="pg-label">Market Cap</div><div class="pg-val" id="st-mcap">—</div></div>
+              <div class="pg-item"><div class="pg-label">Volume</div><div class="pg-val" id="st-vol">—</div></div>
+              <div class="pg-item"><div class="pg-label">52W Pos</div><div class="pg-val" id="st-52pct">—</div></div>
             </div>
             <div class="w52-bar">
               <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--txd);margin-bottom:6px"><span>52W Low: <span id="st-52l">—</span></span><span id="st-52pos">—</span><span>52W High: <span id="st-52h">—</span></span></div>
@@ -1369,41 +1482,52 @@ button{font-family:inherit;cursor:pointer}
               <div id="stock-chart-wrap" style="height:200px;border-radius:10px;overflow:hidden;background:var(--dark)">
                 <div id="stock-chart-loading" style="height:200px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--txd)">Loading chart…</div>
               </div>
-              <div style="font-size:9px;color:var(--txm);margin-top:4px;text-align:right">📈 Tap any timeframe to see price movement</div>
+              <div style="font-size:9px;color:var(--txm);margin-top:4px;text-align:right">📊 1M/3M = Candlestick · 6M/1Y/5Y = Line</div>
             </div>
-            <!-- ── ARTHA SCORECARD ── -->
+            <!-- ── ANALYSIS TABS ── -->
             <div id="artha-scorecard" style="display:none;margin-top:16px">
-              <div style="font-family:'Sora',sans-serif;font-size:12px;font-weight:700;color:var(--tx);margin-bottom:10px;display:flex;align-items:center;gap:6px">
-                🔍 Artha Signal Reader
-                <span style="font-size:9px;font-weight:500;color:var(--txm);margin-left:4px">Education only · Not advice</span>
+              <div style="display:flex;gap:0;background:var(--elev);border-radius:var(--r10);padding:3px;margin-bottom:12px">
+                <button class="port-tab active" id="tab-btn-tech" onclick="switchStockTab('tech')">📊 Technical</button>
+                <button class="port-tab" id="tab-btn-fund" onclick="switchStockTab('fund')">📋 Fundamental</button>
               </div>
 
-              <!-- Signal summary — no scoring, education only -->
-              <div style="background:var(--elev);border:1px solid var(--bord);border-radius:12px;padding:12px;margin-bottom:14px">
-                <div style="font-size:11px;color:var(--txd);line-height:1.6" id="score-verdict">Reading signals…</div>
+              <!-- TECHNICAL TAB -->
+              <div id="stock-tab-tech">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+                  <div class="sc-item"><div class="sc-label">52W Position</div><div class="sc-val" id="sc-52w">—</div><div class="sc-verdict" id="sv-52w">—</div></div>
+                  <div class="sc-item"><div class="sc-label">Day Move</div><div class="sc-val" id="sc-day">—</div><div class="sc-verdict" id="sv-day">—</div></div>
+                  <div class="sc-item"><div class="sc-label">Price vs Open</div><div class="sc-val" id="sc-open">—</div><div class="sc-verdict" id="sv-open">—</div></div>
+                  <div class="sc-item"><div class="sc-label">Volume</div><div class="sc-val" id="sc-vol-t">—</div><div class="sc-verdict" id="sv-vol">Check chart for trend</div></div>
+                  <div class="sc-item"><div class="sc-label">52W High</div><div class="sc-val" id="sc-52h">—</div><div class="sc-verdict" id="sv-52h">—</div></div>
+                  <div class="sc-item"><div class="sc-label">52W Low</div><div class="sc-val" id="sc-52l">—</div><div class="sc-verdict" id="sv-52l">—</div></div>
+                </div>
+                <div style="background:var(--blue-bg);border:1px solid var(--blue-bord);border-radius:10px;padding:10px 12px;font-size:11px;color:var(--blue-l);line-height:1.6" id="sc-learn-tip">
+                  📚 Study Chart School C3 (Support & Resistance) to read price levels
+                </div>
               </div>
 
-              <!-- Technical signals -->
-              <div style="font-size:10px;font-weight:700;color:var(--blue-l);letter-spacing:.5px;margin-bottom:6px">📊 TECHNICAL</div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px" id="tech-grid">
-                <div class="sc-item"><div class="sc-label">52W Position</div><div class="sc-val" id="sc-52w">—</div><div class="sc-verdict" id="sv-52w">—</div></div>
-                <div class="sc-item"><div class="sc-label">Day Move</div><div class="sc-val" id="sc-day">—</div><div class="sc-verdict" id="sv-day">—</div></div>
-                <div class="sc-item"><div class="sc-label">Volume Signal</div><div class="sc-val" id="sc-vol">—</div><div class="sc-verdict" id="sv-vol">—</div></div>
-                <div class="sc-item"><div class="sc-label">Price vs Open</div><div class="sc-val" id="sc-open">—</div><div class="sc-verdict" id="sv-open">—</div></div>
-              </div>
-
-              <!-- Fundamental signals -->
-              <div style="font-size:10px;font-weight:700;color:var(--gold);letter-spacing:.5px;margin-bottom:6px">📋 FUNDAMENTAL</div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px" id="fund-grid">
-                <div class="sc-item"><div class="sc-label">P/E Ratio</div><div class="sc-val" id="sc-pe">—</div><div class="sc-verdict" id="sv-pe">—</div></div>
-                <div class="sc-item"><div class="sc-label">Market Cap</div><div class="sc-val" id="sc-mcap">—</div><div class="sc-verdict" id="sv-mcap">—</div></div>
-                <div class="sc-item"><div class="sc-label">52W Range</div><div class="sc-val" id="sc-rng">—</div><div class="sc-verdict" id="sv-rng">—</div></div>
-                <div class="sc-item"><div class="sc-label">Dividend</div><div class="sc-val" id="sc-div">—</div><div class="sc-verdict" id="sv-div">—</div></div>
-              </div>
-
-              <!-- Learn connect -->
-              <div style="background:var(--blue-bg);border:1px solid var(--blue-bord);border-radius:10px;padding:10px 12px;font-size:11px;color:var(--blue-l);line-height:1.6" id="sc-learn-tip">
-                📚 Open Chart School to understand what these signals mean
+              <!-- FUNDAMENTAL TAB -->
+              <div id="stock-tab-fund" style="display:none">
+                <div id="fund-loading" style="text-align:center;padding:20px;font-size:11px;color:var(--txd)">Loading fundamentals…</div>
+                <div id="fund-data" style="display:none">
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+                    <div class="sc-item"><div class="sc-label">P/E Ratio</div><div class="sc-val" id="f-pe">—</div><div class="sc-verdict" id="fv-pe">—</div></div>
+                    <div class="sc-item"><div class="sc-label">Forward P/E</div><div class="sc-val" id="f-fpe">—</div><div class="sc-verdict" id="fv-fpe">—</div></div>
+                    <div class="sc-item"><div class="sc-label">ROE</div><div class="sc-val" id="f-roe">—</div><div class="sc-verdict" id="fv-roe">—</div></div>
+                    <div class="sc-item"><div class="sc-label">Profit Margin</div><div class="sc-val" id="f-pm">—</div><div class="sc-verdict" id="fv-pm">—</div></div>
+                    <div class="sc-item"><div class="sc-label">Debt / Equity</div><div class="sc-val" id="f-de">—</div><div class="sc-verdict" id="fv-de">—</div></div>
+                    <div class="sc-item"><div class="sc-label">Price / Book</div><div class="sc-val" id="f-pb">—</div><div class="sc-verdict" id="fv-pb">—</div></div>
+                    <div class="sc-item"><div class="sc-label">Revenue Growth</div><div class="sc-val" id="f-rg">—</div><div class="sc-verdict" id="fv-rg">—</div></div>
+                    <div class="sc-item"><div class="sc-label">Free Cash Flow</div><div class="sc-val" id="f-fcf">—</div><div class="sc-verdict" id="fv-fcf">—</div></div>
+                  </div>
+                  <!-- Revenue history bars -->
+                  <div style="font-size:10px;font-weight:700;color:var(--gold);letter-spacing:.5px;margin-bottom:8px">📈 Revenue Trend (Annual)</div>
+                  <div id="revenue-bars" style="display:flex;gap:4px;align-items:flex-end;height:60px;margin-bottom:4px"></div>
+                  <div id="revenue-labels" style="display:flex;gap:4px;margin-bottom:12px"></div>
+                </div>
+                <div style="background:var(--blue-bg);border:1px solid var(--blue-bord);border-radius:10px;padding:10px 12px;font-size:11px;color:var(--blue-l);line-height:1.6">
+                  📚 Study Fundamentals School F7 (P/E Ratio) and F10 (ROE) to understand these numbers
+                </div>
               </div>
             </div>
 
@@ -2359,6 +2483,11 @@ async function doSearchSym(sym) {
   const pct52 = data.w52High > data.w52Low ? ((data.price - data.w52Low)/(data.w52High - data.w52Low)*100) : 50;
   setEl('st-52pos','textContent', `At ${Math.round(pct52)}% of 52W range`);
   document.getElementById('st-52fill').style.left = Math.min(94,Math.max(6,pct52)) + '%';
+  // New price grid fields
+  setEl('st-prev','textContent', data.prevClose > 0 ? fmtPrice(data.prevClose) : '—');
+  setEl('st-mcap','textContent', data.marketCap > 0 ? fmtCr(data.marketCap/1e7) : '—');
+  setEl('st-vol','textContent', data.volume > 0 ? fmtVol(data.volume) : '—');
+  setEl('st-52pct','textContent', Math.round(pct52) + '%');
 
   // AI insight (brief, in ai-bub)
   const insight = up
@@ -2875,7 +3004,7 @@ async function loadStockChart(sym, range, interval) {
   }
   if (loading) loading.style.display = 'none';
   wrap.innerHTML = '';
-  var isCandle = false; // All timeframes use line chart — cleaner on mobile
+  var isCandle = (range === '1mo' || range === '3mo'); // Candle for 1M/3M, line for longer
   await new Promise(function(r){ setTimeout(r, 50); }); // Wait for box to render
   try {
     _stockChart = LightweightCharts.createChart(wrap, {
@@ -2987,7 +3116,7 @@ async function loadIdxChart(sym, range, interval, btn) {
   }
   box.innerHTML = '';
   if (_idxChart) { try { _idxChart.remove(); } catch(e){} _idxChart = null; }
-  var isCandle = false; // All timeframes use line chart
+  var isCandle = (range === '1mo' || range === '3mo'); // Candle for 1M/3M, line for longer
   try {
     var chartH = Math.max(280, box.clientHeight || 280);
     var chartW = box.clientWidth || window.innerWidth - 32;
