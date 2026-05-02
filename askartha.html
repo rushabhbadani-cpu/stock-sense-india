@@ -8,61 +8,149 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>AskArtha — Samjho Apna Paisa</title>
 <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js">
+// ── NIFTY 50 AUTOCOMPLETE DATA ───────────────────────────────────
+var STOCK_LIST = [
+  ['RELIANCE','Reliance Industries','Energy'],['TCS','Tata Consultancy Services','IT'],
+  ['HDFCBANK','HDFC Bank','Banking'],['BHARTIARTL','Bharti Airtel','Telecom'],
+  ['ICICIBANK','ICICI Bank','Banking'],['SBIN','State Bank of India','Banking'],
+  ['INFY','Infosys','IT'],['HINDUNILVR','Hindustan Unilever','FMCG'],
+  ['ITC','ITC Limited','FMCG'],['KOTAKBANK','Kotak Mahindra Bank','Banking'],
+  ['LT','Larsen & Toubro','Infra'],['AXISBANK','Axis Bank','Banking'],
+  ['BAJFINANCE','Bajaj Finance','Finance'],['MARUTI','Maruti Suzuki','Auto'],
+  ['NTPC','NTPC Limited','Energy'],['HCLTECH','HCL Technologies','IT'],
+  ['SUNPHARMA','Sun Pharma','Pharma'],['POWERGRID','Power Grid Corp','Energy'],
+  ['WIPRO','Wipro','IT'],['ULTRACEMCO','UltraTech Cement','Cement'],
+  ['ADANIPORTS','Adani Ports','Infra'],['NESTLEIND','Nestle India','FMCG'],
+  ['TITAN','Titan Company','Consumer'],['TATAMOTORS','Tata Motors','Auto'],
+  ['ONGC','Oil & Natural Gas Corp','Energy'],['BAJAJFINSV','Bajaj Finserv','Finance'],
+  ['JSWSTEEL','JSW Steel','Metals'],['TATASTEEL','Tata Steel','Metals'],
+  ['COALINDIA','Coal India','Energy'],['GRASIM','Grasim Industries','Cement'],
+  ['CIPLA','Cipla','Pharma'],['DIVISLAB','Divi's Laboratories','Pharma'],
+  ['BPCL','Bharat Petroleum','Energy'],['INDUSINDBK','IndusInd Bank','Banking'],
+  ['TATACONSUM','Tata Consumer Products','FMCG'],['DRREDDY','Dr Reddy's','Pharma'],
+  ['APOLLOHOSP','Apollo Hospitals','Healthcare'],['ASIANPAINT','Asian Paints','Paints'],
+  ['EICHERMOT','Eicher Motors','Auto'],['HDFCLIFE','HDFC Life Insurance','Insurance'],
+  ['SBILIFE','SBI Life Insurance','Insurance'],['TECHM','Tech Mahindra','IT'],
+  ['HEROMOTOCO','Hero MotoCorp','Auto'],['BRITANNIA','Britannia Industries','FMCG'],
+  ['HINDALCO','Hindalco Industries','Metals'],['BAJAJ-AUTO','Bajaj Auto','Auto'],
+  ['ZOMATO','Zomato','Consumer Tech'],['ADANIENT','Adani Enterprises','Conglomerate'],
+  ['VEDL','Vedanta','Metals'],['MM','Mahindra & Mahindra','Auto'],
+  ['PAYTM','Paytm','Fintech'],['NYKAA','Nykaa','Consumer Tech'],
+  ['DMART','Avenue Supermarts','Retail'],['PVR','PVR Inox','Entertainment'],
+  ['IRCTC','IRCTC','Travel'],['HAL','Hindustan Aeronautics','Defence'],
+  ['BEL','Bharat Electronics','Defence'],['IRFC','Indian Railway Finance','Finance'],
+];
+
+var _fundCache = {};
+
+function showAutocomplete(val) {
+  var dd = document.getElementById('ac-dropdown');
+  if (!dd) return;
+  var q = val.trim().toUpperCase();
+  if (q.length < 1) { dd.style.display = 'none'; return; }
+  var matches = STOCK_LIST.filter(function(s) {
+    return s[0].includes(q) || s[1].toUpperCase().includes(q);
+  }).slice(0, 7);
+  if (!matches.length) { dd.style.display = 'none'; return; }
+  dd.innerHTML = matches.map(function(s) {
+    return '<div class="ac-item" onclick="selectStock('' + s[0] + '')">'
+      + '<div class="ac-sym">' + s[0] + '</div>'
+      + '<div class="ac-name">' + s[1] + '</div>'
+      + '<div class="ac-sector">' + s[2] + '</div>'
+      + '</div>';
+  }).join('');
+  dd.style.display = 'block';
+}
+
+function selectStock(sym) {
+  document.getElementById('search-inp').value = sym;
+  hideAutocomplete();
+  doSearchSym(sym);
+}
+
+function hideAutocomplete() {
+  var dd = document.getElementById('ac-dropdown');
+  if (dd) dd.style.display = 'none';
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.search-wrap')) hideAutocomplete();
+});
+
 // ── STOCK ANALYSIS TABS ──────────────────────────────────────────
 function switchStockTab(tab) {
-  document.getElementById('stock-tab-tech').style.display = tab === 'tech' ? 'block' : 'none';
-  document.getElementById('stock-tab-fund').style.display = tab === 'fund' ? 'block' : 'none';
-  document.getElementById('tab-btn-tech').classList.toggle('active', tab === 'tech');
-  document.getElementById('tab-btn-fund').classList.toggle('active', tab === 'fund');
-  if (tab === 'fund' && currentSym) loadFundamentals(currentSym);
+  // No-op — new layout is always side-by-side, no tabs needed
 }
 
 async function loadFundamentals(sym) {
-  var loading = document.getElementById('fund-loading');
-  var dataDiv = document.getElementById('fund-data');
-  if (loading) loading.style.display = 'block';
-  if (dataDiv) dataDiv.style.display = 'none';
-  var d = await api('fundamentals', {symbol: sym});
-  if (!d || !d.live) {
-    if (loading) loading.textContent = 'Fundamental data unavailable for ' + sym;
+  // Use cache if available
+  if (_fundCache[sym]) {
+    renderFundamentals(_fundCache[sym]);
     return;
   }
-  if (loading) loading.style.display = 'none';
-  if (dataDiv) dataDiv.style.display = 'block';
+  var loadEl = document.getElementById('fund-loading-q');
+  var dataEl = document.getElementById('fund-data-q');
+  if (loadEl) loadEl.style.display = 'block';
+  if (dataEl) dataEl.style.display = 'none';
 
+  var d = await api('fundamentals', {symbol: sym});
+  if (!d || !d.live) {
+    if (loadEl) loadEl.textContent = 'N/A';
+    return;
+  }
+  _fundCache[sym] = d;
+  renderFundamentals(d);
+}
+
+function renderFundamentals(d) {
+  var loadEl = document.getElementById('fund-loading-q');
+  var dataEl = document.getElementById('fund-data-q');
+  if (loadEl) loadEl.style.display = 'none';
+  if (dataEl) dataEl.style.display = 'block';
+
+  // Quick analysis column
   var pe = d.forwardPE || 0;
-  setFund('f-pe','fv-pe', pe > 0 ? pe.toFixed(1)+'x' : '—',
-    pe < 15 && pe > 0 ? 'Low — possibly undervalued' : pe > 40 ? 'High — priced for growth' : pe > 0 ? 'Fair range' : 'Unavailable');
-  setFund('f-fpe','fv-fpe', d.forwardPE ? d.forwardPE.toFixed(1)+'x' : '—', 'Based on estimated future earnings');
-  setFund('f-roe','fv-roe', d.roe != null ? d.roe.toFixed(1)+'%' : '—',
-    d.roe > 20 ? 'Excellent efficiency' : d.roe > 12 ? 'Good — above average' : d.roe > 0 ? 'Below average' : 'Unavailable');
-  setFund('f-pm','fv-pm', d.profitMargin != null ? d.profitMargin.toFixed(1)+'%' : '—',
-    d.profitMargin > 20 ? 'High margin — strong pricing power' : d.profitMargin > 10 ? 'Healthy margin' : d.profitMargin > 0 ? 'Thin margin' : 'Unavailable');
-  setFund('f-de','fv-de', d.debtToEquity != null ? d.debtToEquity.toFixed(2)+'x' : '—',
-    d.debtToEquity < 0.5 ? 'Low debt — financially safe' : d.debtToEquity < 1.5 ? 'Moderate — manageable' : d.debtToEquity > 0 ? 'High debt — monitor' : 'Unavailable');
-  setFund('f-pb','fv-pb', d.priceToBook != null ? d.priceToBook.toFixed(2)+'x' : '—',
-    d.priceToBook < 1 ? 'Below book — assets > price' : d.priceToBook < 3 ? 'Reasonable' : d.priceToBook > 0 ? 'Premium to book' : 'Unavailable');
-  setFund('f-rg','fv-rg', d.revenueGrowth != null ? (d.revenueGrowth>0?'+':'')+d.revenueGrowth.toFixed(1)+'%' : '—',
-    d.revenueGrowth > 15 ? 'Strong growth' : d.revenueGrowth > 5 ? 'Steady growth' : d.revenueGrowth > 0 ? 'Slow growth' : d.revenueGrowth < 0 ? 'Declining revenue' : 'Unavailable');
-  setFund('f-fcf','fv-fcf', d.freeCashFlow ? fmtCr(d.freeCashFlow/1e7) : '—',
-    d.freeCashFlow > 0 ? 'Positive — generates real cash' : d.freeCashFlow < 0 ? 'Negative — burning cash' : 'Unavailable');
+  setQA('f-pe', pe > 0 ? pe.toFixed(1)+'x' : '—', pe<15&&pe>0?'sc-pos':pe>40?'sc-neg':'');
+  setQA('f-roe', d.roe != null ? d.roe.toFixed(1)+'%' : '—', d.roe>20?'sc-pos':d.roe>0&&d.roe<10?'sc-neg':'');
+  setQA('f-pm', d.profitMargin != null ? d.profitMargin.toFixed(1)+'%' : '—', d.profitMargin>15?'sc-pos':d.profitMargin>0&&d.profitMargin<5?'sc-neg':'');
+  var rg = d.revenueGrowth;
+  setQA('f-rg', rg != null ? (rg>0?'↑':rg<0?'↓':'→')+' '+(rg>0?'+':'')+rg.toFixed(1)+'%' : '—', rg>10?'sc-pos':rg<0?'sc-neg':'');
+  setQA('f-de', d.debtToEquity != null ? d.debtToEquity.toFixed(2)+'x' : '—', d.debtToEquity<0.5?'sc-pos':d.debtToEquity>2?'sc-neg':'');
+  setQA('f-fcf', d.freeCashFlow ? fmtCr(d.freeCashFlow/1e7) : '—', d.freeCashFlow>0?'sc-pos':d.freeCashFlow<0?'sc-neg':'');
 
+  // Expandable more fundamentals
+  setFund('f-fpe','fv-fpe', d.forwardPE?d.forwardPE.toFixed(1)+'x':'—', 'Based on estimated future earnings');
+  setFund('f-pb','fv-pb', d.priceToBook?d.priceToBook.toFixed(2)+'x':'—', d.priceToBook<1?'Below book value':d.priceToBook<3?'Reasonable':'Premium to book');
+  setFund('f-cr','fv-cr', d.currentRatio?d.currentRatio.toFixed(2):'—', d.currentRatio>2?'Strong liquidity':d.currentRatio>1?'Adequate':'Watch liquidity');
+  setFund('f-beta','fv-beta', d.beta?d.beta.toFixed(2):'—', d.beta<0.8?'Lower volatility than market':d.beta>1.2?'Higher volatility than market':'Moves with market');
+
+  // Revenue trend bars
   if (d.income && d.income.length) {
-    var maxRev = Math.max.apply(null, d.income.map(function(i){ return i.revenue||0; }));
+    var rev = d.income.slice().reverse();
+    var maxR = Math.max.apply(null, rev.map(function(i){ return i.revenue||0; }));
     var barsEl = document.getElementById('revenue-bars');
     var lblsEl = document.getElementById('revenue-labels');
-    if (barsEl && maxRev > 0) {
-      var rev = d.income.slice().reverse();
+    var secEl  = document.getElementById('revenue-section');
+    if (barsEl && maxR > 0) {
+      if (secEl) secEl.style.display = 'block';
       barsEl.innerHTML = rev.map(function(yr) {
-        var pct = Math.max(10, (yr.revenue/maxRev)*100);
+        var pct = Math.max(10, (yr.revenue/maxR)*100);
         var col = yr.profit > 0 ? 'var(--g)' : 'var(--err)';
-        return '<div style="flex:1;background:'+col+';border-radius:4px 4px 0 0;height:'+pct+'%;opacity:.8;min-height:4px"></div>';
+        return '<div style="flex:1;background:'+col+';border-radius:3px 3px 0 0;height:'+pct+'%;opacity:.8"></div>';
       }).join('');
       lblsEl.innerHTML = rev.map(function(yr){
-        return '<div style="flex:1;text-align:center;font-size:9px;color:var(--txm)">'+yr.date.substring(0,4)+'</div>';
+        return '<div style="flex:1;text-align:center;font-size:8px;color:var(--txm)">'+yr.date.substring(0,4)+'</div>';
       }).join('');
     }
   }
+}
+
+function setQA(id, val, cls) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = val;
+  el.className = 'qa-val ' + (cls||'');
 }
 
 function setFund(valId, verdictId, val, verdict) {
@@ -81,40 +169,45 @@ function buildArthaSCorecard(data, pct52, up) {
   if (!sc) return;
   sc.style.display = 'block';
 
-  var s52 = pct52 > 70
-    ? {val:Math.round(pct52)+'%', verdict:'Near 52W high — strong momentum. See Chart School C3', cls:'sc-pos'}
-    : pct52 < 30
-    ? {val:Math.round(pct52)+'%', verdict:'Near 52W low — understand why before acting', cls:'sc-neg'}
-    : {val:Math.round(pct52)+'%', verdict:'Mid-range — no extreme price signals', cls:'sc-neu'};
-  setScItem('sc-52w','sv-52w', s52.val, s52.verdict, s52.cls);
+  // ── TECHNICAL COLUMN ──
+  // 52W position
+  var pos52 = Math.round(pct52);
+  var col52 = pct52 > 70 ? 'sc-pos' : pct52 < 30 ? 'sc-neg' : '';
+  setQA('sc-52w', pos52 + '%', col52);
 
+  // Day move
   var chg = data.changePct || 0;
-  var sDay = {
-    val: (chg>0?'+':'')+chg.toFixed(2)+'%',
-    verdict: Math.abs(chg)>3 ? (chg>0?'Strong buying — check for news':'Heavy selling — check for news') : 'Normal day move',
-    cls: Math.abs(chg)>1 ? (chg>0?'sc-pos':'sc-neg') : 'sc-neu'
-  };
-  setScItem('sc-day','sv-day', sDay.val, sDay.verdict, sDay.cls);
+  setQA('sc-day', (chg>0?'+':'')+chg.toFixed(2)+'%', chg > 1 ? 'sc-pos' : chg < -1 ? 'sc-neg' : '');
 
+  // vs Open
   var openDiff = data.open > 0 ? ((data.price - data.open)/data.open*100) : 0;
-  setScItem('sc-open','sv-open',
-    (openDiff>0?'+':'')+openDiff.toFixed(1)+'% vs open',
-    openDiff > 1 ? 'Above open — buyers active' : openDiff < -1 ? 'Below open — sellers active' : 'Holding near open',
-    openDiff > 1 ? 'sc-pos' : openDiff < -1 ? 'sc-neg' : 'sc-neu');
+  setQA('sc-open', (openDiff>0?'+':'')+openDiff.toFixed(1)+'%', openDiff > 1 ? 'sc-pos' : openDiff < -1 ? 'sc-neg' : '');
 
-  setScItem('sc-vol-t','sv-vol', data.volume>0?fmtVol(data.volume):'—', 'See chart for volume trend', 'sc-neu');
-  setScItem('sc-52h','sv-52h', data.w52High>0?fmtPrice(data.w52High):'—',
-    data.price >= data.w52High*0.95 ? 'Within 5% of 52W high' : 'Below 52W high', 'sc-neu');
-  setScItem('sc-52l','sv-52l', data.w52Low>0?fmtPrice(data.w52Low):'—',
-    data.price <= data.w52Low*1.10 ? 'Near 52W low — watch support' : 'Well above 52W low', 'sc-neu');
+  // Volume
+  setQA('sc-vol-t', data.volume > 0 ? fmtVol(data.volume) : '—', '');
 
+  // Trend signal based on 52W position
+  var trend = pct52 > 65 ? '↑ Uptrend' : pct52 < 35 ? '↓ Downtrend' : '→ Sideways';
+  var trendCls = pct52 > 65 ? 'sc-pos' : pct52 < 35 ? 'sc-neg' : '';
+  setQA('sc-trend', trend, trendCls);
+
+  // 52W range width
+  var rangePct = data.w52High > 0 && data.w52Low > 0
+    ? Math.round((data.w52High - data.w52Low)/data.w52Low*100) : 0;
+  setQA('sc-rngw', rangePct > 0 ? rangePct+'%' : '—', rangePct > 60 ? 'sc-neg' : rangePct < 25 ? 'sc-pos' : '');
+
+  // Learn tip
   var tip = pct52 > 70
-    ? '📚 Chart School C3 (Support & Resistance) explains price behaviour near 52W highs.'
+    ? '📚 Near 52W high — learn Support & Resistance in Chart School C3'
     : pct52 < 30
-    ? '📚 Study Fundamentals F32 (Red Flags in Financials) before acting near 52W lows.'
-    : '📚 Chart School C6 (Reading Trend) and Fundamentals F7 (P/E) give the full picture.';
+    ? '📚 Near 52W low — study Red Flags in Fundamentals F32 before acting'
+    : '📚 Chart School C6 (Trend) + Fundamentals F7 (P/E) give the full picture';
   setEl('sc-learn-tip','textContent', tip);
+
+  // ── FUNDAMENTAL COLUMN — load in parallel ──
+  loadFundamentals(data.symbol || currentSym);
 }
+
 
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=Tiro+Devanagari+Hindi&display=swap" rel="stylesheet">
@@ -460,6 +553,23 @@ button{font-family:inherit;cursor:pointer}
 .s-done{background:var(--gold-bg);color:var(--gold);border:1px solid var(--gold-bord)}
 .s-next{background:var(--blue-bg);color:var(--blue-l);border:1px solid var(--blue-bord)}
 .s-lock{background:var(--elev);color:var(--txm);border:1px solid var(--bord)}
+
+
+/* Search autocomplete */
+.search-wrap{position:relative}
+.ac-dropdown{position:absolute;top:100%;left:0;right:0;background:var(--surf);border:1px solid var(--bord);border-radius:var(--r12);z-index:200;max-height:240px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.4);display:none;margin-top:4px}
+.ac-item{display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;border-bottom:1px solid var(--bord);transition:background .1s}
+.ac-item:last-child{border-bottom:none}
+.ac-item:active{background:var(--elev)}
+.ac-sym{font-size:13px;font-weight:700;color:var(--tx);min-width:80px}
+.ac-name{font-size:11px;color:var(--txd);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ac-sector{font-size:9px;color:var(--txm);background:var(--elev);border-radius:4px;padding:2px 6px;white-space:nowrap}
+
+
+/* Quick Analysis side-by-side */
+.qa-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:10px}
+.qa-label{color:var(--txm);font-weight:600;text-transform:uppercase;letter-spacing:.3px;font-size:9px}
+.qa-val{font-family:'DM Mono',monospace;font-size:11px;font-weight:700;color:var(--tx);text-align:right}
 
 </style>
 </head>
@@ -1440,8 +1550,11 @@ button{font-family:inherit;cursor:pointer}
       <!-- Research -->
       <div id="an-research">
         <div class="search-wrap">
-          <input class="search-inp" id="search-inp" type="text" placeholder="Search NSE stock — TCS, ZOMATO…" autocomplete="off" onkeydown="if(event.key==='Enter')doSearch()">
-          <button class="search-btn" onclick="doSearch()">Go</button>
+          <input class="search-inp" id="search-inp" type="text" placeholder="Search NSE stock — TCS, ZOMATO…" autocomplete="off"
+            oninput="showAutocomplete(this.value)"
+            onkeydown="if(event.key==='Enter'){hideAutocomplete();doSearch();}if(event.key==='Escape')hideAutocomplete()">
+          <button class="search-btn" onclick="hideAutocomplete();doSearch()">Go</button>
+          <div class="ac-dropdown" id="ac-dropdown"></div>
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
           <span onclick="doSearchSym('RELIANCE')" style="cursor:pointer;background:var(--elev);border:1px solid var(--bord);border-radius:20px;padding:5px 12px;font-size:11px;font-weight:600;color:var(--txd)">RELIANCE</span>
@@ -1473,62 +1586,71 @@ button{font-family:inherit;cursor:pointer}
             <!-- Chart timeframe selector -->
             <div style="margin-top:14px">
               <div style="display:flex;gap:6px;margin-bottom:8px">
-                <button class="tf-btn active" onclick="setTF(this,'1mo','1d')">1M</button>
+                <button class="tf-btn active" onclick="setTF(this,'5d','1d')">1W</button>
+                <button class="tf-btn" onclick="setTF(this,'1mo','1d')">1M</button>
                 <button class="tf-btn" onclick="setTF(this,'3mo','1d')">3M</button>
-                <button class="tf-btn" onclick="setTF(this,'6mo','1d')">6M</button>
                 <button class="tf-btn" onclick="setTF(this,'1y','1wk')">1Y</button>
                 <button class="tf-btn" onclick="setTF(this,'5y','1mo')">5Y</button>
               </div>
               <div id="stock-chart-wrap" style="height:200px;border-radius:10px;overflow:hidden;background:var(--dark)">
                 <div id="stock-chart-loading" style="height:200px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--txd)">Loading chart…</div>
               </div>
-              <div style="font-size:9px;color:var(--txm);margin-top:4px;text-align:right">📊 1M/3M = Candlestick · 6M/1Y/5Y = Line</div>
+              <div style="font-size:9px;color:var(--txm);margin-top:4px;text-align:right">📊 1W/1M/3M = Candlestick · 1Y/5Y = Line</div>
             </div>
-            <!-- ── ANALYSIS TABS ── -->
+            <!-- ── QUICK ANALYSIS ── -->
             <div id="artha-scorecard" style="display:none;margin-top:16px">
-              <div style="display:flex;gap:0;background:var(--elev);border-radius:var(--r10);padding:3px;margin-bottom:12px">
-                <button class="port-tab active" id="tab-btn-tech" onclick="switchStockTab('tech')">📊 Technical</button>
-                <button class="port-tab" id="tab-btn-fund" onclick="switchStockTab('fund')">📋 Fundamental</button>
-              </div>
+              <!-- Side-by-side Technical | Fundamental -->
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
 
-              <!-- TECHNICAL TAB -->
-              <div id="stock-tab-tech">
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
-                  <div class="sc-item"><div class="sc-label">52W Position</div><div class="sc-val" id="sc-52w">—</div><div class="sc-verdict" id="sv-52w">—</div></div>
-                  <div class="sc-item"><div class="sc-label">Day Move</div><div class="sc-val" id="sc-day">—</div><div class="sc-verdict" id="sv-day">—</div></div>
-                  <div class="sc-item"><div class="sc-label">Price vs Open</div><div class="sc-val" id="sc-open">—</div><div class="sc-verdict" id="sv-open">—</div></div>
-                  <div class="sc-item"><div class="sc-label">Volume</div><div class="sc-val" id="sc-vol-t">—</div><div class="sc-verdict" id="sv-vol">Check chart for trend</div></div>
-                  <div class="sc-item"><div class="sc-label">52W High</div><div class="sc-val" id="sc-52h">—</div><div class="sc-verdict" id="sv-52h">—</div></div>
-                  <div class="sc-item"><div class="sc-label">52W Low</div><div class="sc-val" id="sc-52l">—</div><div class="sc-verdict" id="sv-52l">—</div></div>
+                <!-- TECHNICAL COLUMN -->
+                <div style="background:var(--elev);border:1px solid var(--blue-bord);border-radius:12px;padding:10px">
+                  <div style="font-size:10px;font-weight:700;color:var(--blue-l);letter-spacing:.5px;margin-bottom:8px;display:flex;align-items:center;gap:4px">📊 TECHNICAL</div>
+                  <div class="qa-row"><div class="qa-label">52W Position</div><div class="qa-val" id="sc-52w">—</div></div>
+                  <div class="qa-row"><div class="qa-label">Day Move</div><div class="qa-val" id="sc-day">—</div></div>
+                  <div class="qa-row"><div class="qa-label">vs Open</div><div class="qa-val" id="sc-open">—</div></div>
+                  <div class="qa-row"><div class="qa-label">Volume</div><div class="qa-val" id="sc-vol-t">—</div></div>
+                  <div class="qa-row"><div class="qa-label">Trend</div><div class="qa-val" id="sc-trend">—</div></div>
+                  <div class="qa-row" style="border:none"><div class="qa-label">52W Range</div><div class="qa-val" id="sc-rngw">—</div></div>
                 </div>
-                <div style="background:var(--blue-bg);border:1px solid var(--blue-bord);border-radius:10px;padding:10px 12px;font-size:11px;color:var(--blue-l);line-height:1.6" id="sc-learn-tip">
-                  📚 Study Chart School C3 (Support & Resistance) to read price levels
-                </div>
-              </div>
 
-              <!-- FUNDAMENTAL TAB -->
-              <div id="stock-tab-fund" style="display:none">
-                <div id="fund-loading" style="text-align:center;padding:20px;font-size:11px;color:var(--txd)">Loading fundamentals…</div>
-                <div id="fund-data" style="display:none">
-                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
-                    <div class="sc-item"><div class="sc-label">P/E Ratio</div><div class="sc-val" id="f-pe">—</div><div class="sc-verdict" id="fv-pe">—</div></div>
-                    <div class="sc-item"><div class="sc-label">Forward P/E</div><div class="sc-val" id="f-fpe">—</div><div class="sc-verdict" id="fv-fpe">—</div></div>
-                    <div class="sc-item"><div class="sc-label">ROE</div><div class="sc-val" id="f-roe">—</div><div class="sc-verdict" id="fv-roe">—</div></div>
-                    <div class="sc-item"><div class="sc-label">Profit Margin</div><div class="sc-val" id="f-pm">—</div><div class="sc-verdict" id="fv-pm">—</div></div>
-                    <div class="sc-item"><div class="sc-label">Debt / Equity</div><div class="sc-val" id="f-de">—</div><div class="sc-verdict" id="fv-de">—</div></div>
-                    <div class="sc-item"><div class="sc-label">Price / Book</div><div class="sc-val" id="f-pb">—</div><div class="sc-verdict" id="fv-pb">—</div></div>
-                    <div class="sc-item"><div class="sc-label">Revenue Growth</div><div class="sc-val" id="f-rg">—</div><div class="sc-verdict" id="fv-rg">—</div></div>
-                    <div class="sc-item"><div class="sc-label">Free Cash Flow</div><div class="sc-val" id="f-fcf">—</div><div class="sc-verdict" id="fv-fcf">—</div></div>
+                <!-- FUNDAMENTAL COLUMN -->
+                <div style="background:var(--elev);border:1px solid var(--gold-bord);border-radius:12px;padding:10px">
+                  <div style="font-size:10px;font-weight:700;color:var(--gold);letter-spacing:.5px;margin-bottom:8px;display:flex;align-items:center;gap:4px">📋 FUNDAMENTAL</div>
+                  <div id="fund-loading-q" style="font-size:10px;color:var(--txm);text-align:center;padding:8px 0">Loading…</div>
+                  <div id="fund-data-q" style="display:none">
+                    <div class="qa-row"><div class="qa-label">P/E Ratio</div><div class="qa-val" id="f-pe">—</div></div>
+                    <div class="qa-row"><div class="qa-label">ROE</div><div class="qa-val" id="f-roe">—</div></div>
+                    <div class="qa-row"><div class="qa-label">Margin</div><div class="qa-val" id="f-pm">—</div></div>
+                    <div class="qa-row"><div class="qa-label">Revenue ↑↓</div><div class="qa-val" id="f-rg">—</div></div>
+                    <div class="qa-row"><div class="qa-label">Debt/Eq</div><div class="qa-val" id="f-de">—</div></div>
+                    <div class="qa-row" style="border:none"><div class="qa-label">FCF</div><div class="qa-val" id="f-fcf">—</div></div>
                   </div>
-                  <!-- Revenue history bars -->
-                  <div style="font-size:10px;font-weight:700;color:var(--gold);letter-spacing:.5px;margin-bottom:8px">📈 Revenue Trend (Annual)</div>
-                  <div id="revenue-bars" style="display:flex;gap:4px;align-items:flex-end;height:60px;margin-bottom:4px"></div>
-                  <div id="revenue-labels" style="display:flex;gap:4px;margin-bottom:12px"></div>
-                </div>
-                <div style="background:var(--blue-bg);border:1px solid var(--blue-bord);border-radius:10px;padding:10px 12px;font-size:11px;color:var(--blue-l);line-height:1.6">
-                  📚 Study Fundamentals School F7 (P/E Ratio) and F10 (ROE) to understand these numbers
                 </div>
               </div>
+
+              <!-- Signal row — full width -->
+              <div style="background:var(--elev);border:1px solid var(--bord);border-radius:10px;padding:8px 12px;font-size:11px;color:var(--txd);line-height:1.6;margin-bottom:8px" id="sc-learn-tip">
+                📚 Open Chart School to understand these signals
+              </div>
+
+              <!-- Revenue trend bars -->
+              <div id="revenue-section" style="display:none;margin-bottom:8px">
+                <div style="font-size:9px;font-weight:700;color:var(--gold);letter-spacing:.5px;margin-bottom:4px">📈 REVENUE TREND</div>
+                <div style="display:flex;gap:3px;align-items:flex-end;height:44px" id="revenue-bars"></div>
+                <div style="display:flex;gap:3px;margin-top:2px" id="revenue-labels"></div>
+              </div>
+
+              <!-- Deeper fundamentals expandable -->
+              <details style="margin-bottom:4px">
+                <summary style="font-size:10px;font-weight:700;color:var(--txd);cursor:pointer;padding:6px 0;list-style:none">▸ More fundamentals</summary>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px" id="fund-data">
+                  <div class="sc-item"><div class="sc-label">Forward P/E</div><div class="sc-val" id="f-fpe">—</div><div class="sc-verdict" id="fv-fpe">—</div></div>
+                  <div class="sc-item"><div class="sc-label">Price/Book</div><div class="sc-val" id="f-pb">—</div><div class="sc-verdict" id="fv-pb">—</div></div>
+                  <div class="sc-item"><div class="sc-label">Current Ratio</div><div class="sc-val" id="f-cr">—</div><div class="sc-verdict" id="fv-cr">—</div></div>
+                  <div class="sc-item"><div class="sc-label">Beta</div><div class="sc-val" id="f-beta">—</div><div class="sc-verdict" id="fv-beta">—</div></div>
+                </div>
+              </details>
+              <div class="disc">📚 <span onclick="switchTab('learn')" style="color:var(--blue-l);cursor:pointer">Open Learn tab</span> to understand each metric. Education only · Not investment advice.</div>
             </div>
 
             <div style="display:flex;gap:8px;margin-top:12px">
@@ -2456,10 +2578,17 @@ async function doSearchSym(sym) {
   document.getElementById('search-inp').value = sym;
   const result = document.getElementById('stock-result');
   result.classList.remove('show');
-  // Show loading state
+  // Show loading state immediately
   setEl('st-sym','textContent', sym);
   setEl('st-name','textContent', 'Loading…');
   setEl('st-price','textContent', '—');
+  setEl('st-open','textContent','—'); setEl('st-high','textContent','—');
+  setEl('st-low','textContent','—'); setEl('st-pe','textContent','—');
+  // Always show analysis tabs container
+  var sc = document.getElementById('artha-scorecard');
+  if (sc) sc.style.display = 'block';
+  // Reset to technical tab
+  switchStockTab('tech');
   result.classList.add('show');
 
   const data = await api('quote', {symbol: sym});
@@ -2496,10 +2625,10 @@ async function doSearchSym(sym) {
   setEl('st-why','textContent', insight);
 
   // ── ARTHA SCORECARD ──────────────────────────────────────
-  buildArthaSCorecard(data, pct52, up);
+  data.symbol = sym; buildArthaSCorecard(data, pct52, up);
 
   // Load chart default 1D
-  loadStockChart(sym, '1mo', '1d');
+  loadStockChart(sym, '5d', '1d');
   // Reset TF buttons
   document.querySelectorAll('.tf-btn').forEach(function(b,i){ b.classList.toggle('active', i===0); });
 }
@@ -3004,7 +3133,7 @@ async function loadStockChart(sym, range, interval) {
   }
   if (loading) loading.style.display = 'none';
   wrap.innerHTML = '';
-  var isCandle = (range === '1mo' || range === '3mo'); // Candle for 1M/3M, line for longer
+  var isCandle = (range === '5d' || range === '1mo' || range === '3mo'); // Candle for 1W/1M/3M
   await new Promise(function(r){ setTimeout(r, 50); }); // Wait for box to render
   try {
     _stockChart = LightweightCharts.createChart(wrap, {
@@ -3065,7 +3194,7 @@ function openIndexChart(name, sym) {
     document.body.appendChild(modal);
   }
   modal.style.display = 'flex';
-  var tfBtns = ['1M|1mo|1d','3M|3mo|1d','6M|6mo|1d','1Y|1y|1wk','5Y|5y|1mo'].map(function(t,i) {
+  var tfBtns = ['1W|5d|1d','1M|1mo|1d','3M|3mo|1d','6M|6mo|1d','1Y|1y|1wk'].map(function(t,i) {
     var parts = t.split('|');
     var active = i===0 ? ' active' : '';
     return '<button class="tf-btn' + active + '" onclick="loadIdxChart(\'' + sym + '\',\'' + parts[1] + '\',\'' + parts[2] + '\',this)">' + parts[0] + '</button>';
@@ -3074,7 +3203,7 @@ function openIndexChart(name, sym) {
     + '<button onclick="closeIndexChart()" style="background:var(--elev);border:1px solid var(--bord);border-radius:50%;width:30px;height:30px;font-size:14px;color:var(--txd);cursor:pointer">✕</button></div>'
     + '<div class="idx-modal-body"><div class="idx-tf-row">' + tfBtns + '</div>'
     + '<div class="idx-chart-box" id="idx-chart-box"></div></div>';
-  loadIdxChart(sym, '1mo', '1d', modal.querySelector('.tf-btn.active'));
+  loadIdxChart(sym, '5d', '1d', modal.querySelector('.tf-btn.active'));
 }
 
 function closeIndexChart() {
@@ -3116,7 +3245,7 @@ async function loadIdxChart(sym, range, interval, btn) {
   }
   box.innerHTML = '';
   if (_idxChart) { try { _idxChart.remove(); } catch(e){} _idxChart = null; }
-  var isCandle = (range === '1mo' || range === '3mo'); // Candle for 1M/3M, line for longer
+  var isCandle = (range === '5d' || range === '1mo' || range === '3mo'); // Candle for 1W/1M/3M
   try {
     var chartH = Math.max(280, box.clientHeight || 280);
     var chartW = box.clientWidth || window.innerWidth - 32;
