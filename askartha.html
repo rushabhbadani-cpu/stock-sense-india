@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>AskArtha — Samjho Apna Paisa</title>
-<script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js">
+<script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
 // ── CHART ENGINE ─────────────────────────────────────────────────
 var _stockChart = null;
 var _stockChartTF = {range:'1d', interval:'5m'};
@@ -15,96 +15,72 @@ var _stockChartTF = {range:'1d', interval:'5m'};
 function setTF(btn, range, interval) {
   document.querySelectorAll('.tf-btn').forEach(function(b){ b.classList.remove('active'); });
   btn.classList.add('active');
-  _stockChartTF = {range, interval};
+  _stockChartTF = {range: range, interval: interval};
   if (currentSym) loadStockChart(currentSym, range, interval);
 }
 
 async function loadStockChart(sym, range, interval) {
-  const wrap = document.getElementById('stock-chart-wrap');
-  const loading = document.getElementById('stock-chart-loading');
+  var wrap = document.getElementById('stock-chart-wrap');
+  var loading = document.getElementById('stock-chart-loading');
   if (!wrap) return;
-
-  // Show loading
   if (loading) loading.style.display = 'flex';
   if (_stockChart) { try { _stockChart.remove(); } catch(e){} _stockChart = null; }
-
-  const data = await api('history', {symbol: sym, range: range, interval: interval});
+  var data = await api('history', {symbol: sym, range: range, interval: interval});
   if (!data || !data.history || !data.history.length) {
     if (loading) { loading.style.display = 'flex'; loading.textContent = 'Chart data unavailable'; }
     return;
   }
-
   if (loading) loading.style.display = 'none';
-
-  // Clear and create chart
   wrap.innerHTML = '';
-  const isCandle = range === '1d' || range === '5d';
-
+  var isCandle = range === '1d' || range === '5d';
   try {
     _stockChart = LightweightCharts.createChart(wrap, {
-      width: wrap.clientWidth || 340,
-      height: 200,
+      width: wrap.clientWidth || 340, height: 200,
       layout: { background: { color: '#080E14' }, textColor: '#7A90A8' },
       grid: { vertLines: { color: 'rgba(26,42,56,.4)' }, horzLines: { color: 'rgba(26,42,56,.4)' } },
       timeScale: { borderColor: '#1A2A38', timeVisible: true, secondsVisible: false },
       rightPriceScale: { borderColor: '#1A2A38' },
       crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
-      handleScroll: true,
-      handleScale: true,
+      handleScroll: true, handleScale: true,
     });
-
     if (isCandle) {
-      const series = _stockChart.addCandlestickSeries({
+      var series = _stockChart.addCandlestickSeries({
         upColor: '#00C076', downColor: '#FF4D4D',
         borderUpColor: '#00C076', borderDownColor: '#FF4D4D',
         wickUpColor: '#00C076', wickDownColor: '#FF4D4D',
       });
-      const ohlc = data.history
-        .filter(function(d){ return d.open && d.high && d.low && d.close; })
-        .map(function(d){ return { time: d.time, open: d.open, high: d.high, low: d.low, close: d.close }; });
-      series.setData(ohlc);
+      series.setData(data.history.filter(function(d){ return d.open&&d.high&&d.low&&d.close; }).map(function(d){ return {time:d.time,open:d.open,high:d.high,low:d.low,close:d.close}; }));
     } else {
-      const series = _stockChart.addLineSeries({
-        color: '#C9922A', lineWidth: 2,
-        priceLineVisible: false,
-        crosshairMarkerVisible: true,
-      });
-      const line = data.history
-        .filter(function(d){ return d.close; })
-        .map(function(d){ return { time: d.time, value: d.close }; });
-      series.setData(line);
+      var series = _stockChart.addLineSeries({ color: '#C9922A', lineWidth: 2, priceLineVisible: false, crosshairMarkerVisible: true });
+      series.setData(data.history.filter(function(d){ return d.close; }).map(function(d){ return {time:d.time,value:d.close}; }));
     }
     _stockChart.timeScale().fitContent();
   } catch(e) {
     console.warn('Chart error:', e.message);
-    if (loading) { loading.style.display = 'flex'; loading.textContent = 'Chart unavailable'; wrap.appendChild(loading); }
+    if (loading) { loading.style.display = 'flex'; loading.textContent = 'Chart unavailable'; }
   }
 }
 
-// Sparkline for index cards (lightweight SVG — no library needed)
 async function loadSparkline(sym, containerId, isUp) {
-  const el = document.getElementById(containerId);
+  var el = document.getElementById(containerId);
   if (!el) return;
-  const data = await api('history', {symbol: sym, range: '5d', interval: '30m'});
+  var data = await api('history', {symbol: sym, range: '5d', interval: '30m'});
   if (!data || !data.history || data.history.length < 2) return;
-  const prices = data.history.map(function(d){ return d.close; }).filter(Boolean);
+  var prices = data.history.map(function(d){ return d.close; }).filter(Boolean);
   if (prices.length < 2) return;
-  const min = Math.min.apply(null, prices);
-  const max = Math.max.apply(null, prices);
-  const range = max - min || 1;
-  const W = 120, H = 36;
-  const pts = prices.map(function(p, i) {
-    const x = (i / (prices.length - 1)) * W;
-    const y = H - ((p - min) / range) * H;
+  var min = Math.min.apply(null, prices);
+  var max = Math.max.apply(null, prices);
+  var rng = max - min || 1;
+  var W = 120, H = 36;
+  var pts = prices.map(function(p, i) {
+    var x = (i / (prices.length - 1)) * W;
+    var y = H - ((p - min) / rng) * H;
     return x + ',' + y;
   }).join(' ');
-  const col = isUp ? '#00C076' : '#FF4D4D';
-  el.innerHTML = '<svg width="100%" height="36" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none">'
-    + '<polyline points="' + pts + '" fill="none" stroke="' + col + '" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>'
-    + '</svg>';
+  var col = isUp ? '#00C076' : '#FF4D4D';
+  el.innerHTML = '<svg width="100%" height="36" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none"><polyline points="' + pts + '" fill="none" stroke="' + col + '" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 }
 
-// Index chart modal (tap to expand)
 var _idxChart = null;
 
 function openIndexChart(name, sym) {
@@ -116,19 +92,13 @@ function openIndexChart(name, sym) {
     document.body.appendChild(modal);
   }
   modal.style.display = 'flex';
-  modal.innerHTML = '<div class="idx-modal-bar">'
-    + '<div class="idx-modal-title">' + name + '</div>'
-    + '<button onclick="closeIndexChart()" style="background:var(--elev);border:1px solid var(--bord);border-radius:50%;width:30px;height:30px;font-size:14px;color:var(--txd);cursor:pointer">✕</button>'
-    + '</div>'
-    + '<div class="idx-modal-body">'
-    + '<div class="idx-tf-row">'
+  modal.innerHTML = '<div class="idx-modal-bar"><div class="idx-modal-title">' + name + '</div><button onclick="closeIndexChart()" style="background:var(--elev);border:1px solid var(--bord);border-radius:50%;width:30px;height:30px;font-size:14px;color:var(--txd);cursor:pointer">✕</button></div>'
+    + '<div class="idx-modal-body"><div class="idx-tf-row">'
     + ['1D|1d|5m','1W|5d|15m','1M|1mo|1d','3M|3mo|1d','1Y|1y|1wk'].map(function(t,i) {
         var parts = t.split('|');
         return '<button class="tf-btn' + (i===0?' active':'') + '" onclick="loadIdxChart('' + sym + '','' + parts[1] + '','' + parts[2] + '',this)">' + parts[0] + '</button>';
       }).join('')
-    + '</div>'
-    + '<div class="idx-chart-box" id="idx-chart-box"></div>'
-    + '</div>';
+    + '</div><div class="idx-chart-box" id="idx-chart-box"></div></div>';
   loadIdxChart(sym, '1d', '5m', modal.querySelector('.tf-btn.active'));
 }
 
@@ -139,32 +109,25 @@ function closeIndexChart() {
 }
 
 async function loadIdxChart(sym, range, interval, btn) {
-  // Update active button
   if (btn) {
     var modal = document.getElementById('idx-chart-modal');
     if (modal) modal.querySelectorAll('.tf-btn').forEach(function(b){ b.classList.remove('active'); });
     btn.classList.add('active');
   }
-
   var box = document.getElementById('idx-chart-box');
   if (!box) return;
   box.innerHTML = '<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--txd)">Loading…</div>';
-
-  const data = await api('history', {symbol: sym, range: range, interval: interval});
+  var data = await api('history', {symbol: sym, range: range, interval: interval});
   if (!data || !data.history || !data.history.length) {
     box.innerHTML = '<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--txd)">Data unavailable</div>';
     return;
   }
-
   box.innerHTML = '';
   if (_idxChart) { try { _idxChart.remove(); } catch(e){} _idxChart = null; }
-
-  const isCandle = range === '1d' || range === '5d';
-
+  var isCandle = range === '1d' || range === '5d';
   try {
     _idxChart = LightweightCharts.createChart(box, {
-      width: box.clientWidth || window.innerWidth - 32,
-      height: box.clientHeight || 300,
+      width: box.clientWidth || window.innerWidth - 32, height: box.clientHeight || 300,
       layout: { background: { color: '#080E14' }, textColor: '#7A90A8' },
       grid: { vertLines: { color: 'rgba(26,42,56,.4)' }, horzLines: { color: 'rgba(26,42,56,.4)' } },
       timeScale: { borderColor: '#1A2A38', timeVisible: true },
@@ -172,130 +135,17 @@ async function loadIdxChart(sym, range, interval, btn) {
       crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
       handleScroll: true, handleScale: true,
     });
-
     if (isCandle) {
-      const series = _idxChart.addCandlestickSeries({
-        upColor: '#00C076', downColor: '#FF4D4D',
-        borderUpColor: '#00C076', borderDownColor: '#FF4D4D',
-        wickUpColor: '#00C076', wickDownColor: '#FF4D4D',
-      });
+      var series = _idxChart.addCandlestickSeries({ upColor:'#00C076',downColor:'#FF4D4D',borderUpColor:'#00C076',borderDownColor:'#FF4D4D',wickUpColor:'#00C076',wickDownColor:'#FF4D4D' });
       series.setData(data.history.filter(function(d){ return d.open&&d.high&&d.low&&d.close; }).map(function(d){ return {time:d.time,open:d.open,high:d.high,low:d.low,close:d.close}; }));
     } else {
-      const series = _idxChart.addLineSeries({ color: '#C9922A', lineWidth: 2, priceLineVisible: false });
+      var series = _idxChart.addLineSeries({ color: '#C9922A', lineWidth: 2, priceLineVisible: false });
       series.setData(data.history.filter(function(d){ return d.close; }).map(function(d){ return {time:d.time,value:d.close}; }));
     }
     _idxChart.timeScale().fitContent();
   } catch(e) {
     box.innerHTML = '<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--txd)">Chart error</div>';
   }
-}
-
-// ── ARTHA SIGNAL READER ─────────────────────────────────────────
-function buildArthaSCorecard(data, pct52, up) {
-  var sc = document.getElementById('artha-scorecard');
-  if (!sc) return;
-  sc.style.display = 'block';
-
-  // ── TECHNICAL SIGNALS ── (plain English only, no scoring)
-  // 1. 52W position
-  var s52 = pct52 > 70
-    ? {val: Math.round(pct52)+'%', verdict: 'Trading near its 52-week high. Momentum is strong — learn about resistance levels in Chart School C3.', cls:'sc-pos'}
-    : pct52 < 30
-    ? {val: Math.round(pct52)+'%', verdict: 'Trading near its 52-week low. Worth understanding why — check the company news and financials.', cls:'sc-neg'}
-    : {val: Math.round(pct52)+'%', verdict: 'In the middle of its 52-week range. No extreme signals in either direction.', cls:'sc-neu'};
-  setScItem('sc-52w','sv-52w', s52.val, s52.verdict, s52.cls);
-
-  // 2. Day move
-  var chg = data.changePct || 0;
-  var sDay = Math.abs(chg) > 3
-    ? {val: (chg>0?'+':'')+chg.toFixed(2)+'%', verdict: chg>0 ? 'Large move up today — strong buying. Check if there is news driving this.' : 'Large fall today — heavy selling. Check for news or results.', cls: chg>0?'sc-pos':'sc-neg'}
-    : Math.abs(chg) > 1
-    ? {val: (chg>0?'+':'')+chg.toFixed(2)+'%', verdict: chg>0 ? 'Moderate gain today.' : 'Moderate fall today.', cls: chg>0?'sc-pos':'sc-neg'}
-    : {val: (chg>0?'+':'')+chg.toFixed(2)+'%', verdict: 'Flat day — low activity. Market has no strong view today.', cls:'sc-neu'};
-  setScItem('sc-day','sv-day', sDay.val, sDay.verdict, sDay.cls);
-
-  // 3. Volume — honest N/A from quote
-  setScItem('sc-vol','sv-vol', 'See chart', 'Volume bars are visible on the 1D and 1W chart above. High volume confirms moves.', 'sc-neu');
-
-  // 4. Price vs Open
-  var openDiff = data.open > 0 ? ((data.price - data.open)/data.open*100) : 0;
-  var sOpen = openDiff > 1
-    ? {val: '+'+openDiff.toFixed(1)+'% vs open', verdict: 'Price has moved up from the opening. Buyers have been active through the day.', cls:'sc-pos'}
-    : openDiff < -1
-    ? {val: openDiff.toFixed(1)+'% vs open', verdict: 'Price slipped below the opening level. Sellers stepped in after market open.', cls:'sc-neg'}
-    : {val: openDiff.toFixed(1)+'% vs open', verdict: 'Holding near the opening price. Neither buyers nor sellers have dominated today.', cls:'sc-neu'};
-  setScItem('sc-open','sv-open', sOpen.val, sOpen.verdict, sOpen.cls);
-
-  // ── FUNDAMENTAL SIGNALS ──
-  // 5. P/E
-  var pe = data.pe || 0;
-  var sPE = pe <= 0
-    ? {val:'N/A', verdict:'P/E data not available. This is common for loss-making companies or some PSUs.', cls:'sc-neu'}
-    : pe < 15
-    ? {val:pe.toFixed(1)+'x', verdict:'Low P/E compared to most sectors. Could mean undervalued or lower growth expectations — check Fundamentals School F7 to understand P/E.', cls:'sc-pos'}
-    : pe < 30
-    ? {val:pe.toFixed(1)+'x', verdict:'P/E in a fair range for most Indian sectors. Neither cheap nor expensive on this metric alone.', cls:'sc-neu'}
-    : pe < 60
-    ? {val:pe.toFixed(1)+'x', verdict:'High P/E — market expects strong future growth. Common in IT, FMCG, and quality compounders.', cls:'sc-neu'}
-    : {val:pe.toFixed(1)+'x', verdict:'Very high P/E. The stock is priced for a lot of growth. Any disappointment in results could cause sharp moves.', cls:'sc-neg'};
-  setScItem('sc-pe','sv-pe', sPE.val, sPE.verdict, sPE.cls);
-
-  // 6. Market cap
-  var mcap = data.marketCap || 0;
-  var sMcap = mcap <= 0
-    ? {val:'N/A', verdict:'Market cap data unavailable.', cls:'sc-neu'}
-    : mcap > 2000000000000
-    ? {val:fmtCr(mcap/1e7), verdict:'Large cap company. Generally more stable, followed by institutional investors and analysts.', cls:'sc-pos'}
-    : mcap > 200000000000
-    ? {val:fmtCr(mcap/1e7), verdict:'Mid cap company. Higher growth potential than large caps but also more volatile.', cls:'sc-neu'}
-    : {val:fmtCr(mcap/1e7), verdict:'Small cap company. Can deliver high growth but also carries higher risk — read Fundamentals School F33.', cls:'sc-neu'};
-  setScItem('sc-mcap','sv-mcap', sMcap.val, sMcap.verdict, sMcap.cls);
-
-  // 7. 52W range breadth (volatility indicator)
-  var rangePct = data.w52High > 0 && data.w52Low > 0 ? ((data.w52High - data.w52Low)/data.w52Low*100) : 0;
-  var sRng = rangePct > 80
-    ? {val:rangePct.toFixed(0)+'% range', verdict:'Very wide 52-week range — this stock moves a lot. Higher risk and higher opportunity.', cls:'sc-neg'}
-    : rangePct > 40
-    ? {val:rangePct.toFixed(0)+'% range', verdict:'Moderate yearly range — normal for most stocks.', cls:'sc-neu'}
-    : rangePct > 0
-    ? {val:rangePct.toFixed(0)+'% range', verdict:'Tight yearly range — relatively stable stock with lower price swings.', cls:'sc-pos'}
-    : {val:'N/A', verdict:'Range data unavailable.', cls:'sc-neu'};
-  setScItem('sc-rng','sv-rng', sRng.val, sRng.verdict, sRng.cls);
-
-  // 8. Dividend
-  var dy = data.dividendYield || 0;
-  var sDiv = dy <= 0
-    ? {val:'None / N/A', verdict:'No dividend declared. Company may be reinvesting profits for growth, or data is unavailable.', cls:'sc-neu'}
-    : dy < 1
-    ? {val:dy.toFixed(2)+'%', verdict:'Low dividend yield. Growth-focused company — profits likely reinvested.', cls:'sc-neu'}
-    : dy < 4
-    ? {val:dy.toFixed(2)+'%', verdict:'Healthy dividend yield — provides regular income along with price appreciation.', cls:'sc-pos'}
-    : {val:dy.toFixed(2)+'%', verdict:'High dividend yield — verify if the payout is sustainable by checking the dividend payout ratio in Fundamentals School F22.', cls:'sc-neu'};
-  setScItem('sc-div','sv-div', sDiv.val, sDiv.verdict, sDiv.cls);
-
-  // ── SUMMARY (no score, just context) ──
-  var summaryText = 'These signals help you understand what this stock is doing — not whether to buy or sell. '
-    + 'Use Chart School and Fundamentals School to learn how to read each signal properly before making any decisions.';
-  var verdictEl = document.getElementById('score-verdict');
-  if (verdictEl) verdictEl.textContent = summaryText;
-
-  // Learn tip — connect to relevant lesson
-  var pe2 = data.pe || 0;
-  var tip = pct52 > 70
-    ? '📚 This stock is near its 52W high. Chart School C3 (Support & Resistance) explains what typically happens at these levels.'
-    : pct52 < 30
-    ? '📚 Near 52W lows. Before concluding it is cheap, study Fundamentals School F7 (P/E Ratio) and F32 (Red Flags in Financials).'
-    : pe2 > 40
-    ? '📚 High P/E detected. Study Fundamentals School F7 (P/E Ratio) and F23 (PEG Ratio) to understand growth-adjusted valuation.'
-    : '📚 Study Chart School C2 (Candlesticks) and Fundamentals School F1 (P&L Statement) to read this stock more deeply.';
-  setEl('sc-learn-tip','textContent', tip);
-}
-
-function setScItem(valId, verdictId, val, verdict, cls) {
-  var v = document.getElementById(valId);
-  var vd = document.getElementById(verdictId);
-  if (v) { v.textContent = val; v.className = 'sc-val ' + (cls||''); }
-  if (vd) { vd.textContent = verdict; vd.className = 'sc-verdict ' + (cls||''); }
 }
 
 </script>
@@ -624,6 +474,25 @@ button{font-family:inherit;cursor:pointer}
 .sc-pos{color:var(--g)}
 .sc-neg{color:var(--err)}
 .sc-neu{color:var(--txd)}
+
+/* ── LEARN TAB — NEW STRUCTURE ── */
+.learn-hero{background:linear-gradient(135deg,rgba(26,77,143,.2),rgba(60,40,10,.25));border:1px solid var(--gold-bord);border-radius:var(--r16);padding:16px;margin-bottom:14px;position:relative}
+.prog-ring{position:relative;width:56px;height:56px;flex-shrink:0}
+.prog-pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:11px;font-weight:700;color:var(--blue-l)}
+.school-card{background:var(--surf);border:1px solid var(--bord);border-radius:var(--r16);overflow:hidden;margin-bottom:10px}
+.school-hd{padding:14px 16px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;transition:background .15s}
+.school-hd:active{background:rgba(255,255,255,.03)}
+.school-emoji{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.school-name{font-family:'Sora',sans-serif;font-size:14px;font-weight:700;color:var(--tx);margin-bottom:2px}
+.school-cnt{font-size:10px;color:var(--txd)}
+.lesson-chip{display:flex;align-items:center;gap:10px;padding:11px 16px;border-top:1px solid var(--bord);cursor:pointer;transition:background .15s}
+.lesson-chip:active{background:rgba(255,255,255,.03)}
+.lc-name{flex:1;font-size:12px;font-weight:600;color:var(--txd);line-height:1.4}
+.lc-st{font-size:9px;font-weight:700;padding:3px 8px;border-radius:6px;white-space:nowrap;flex-shrink:0}
+.s-done{background:var(--gold-bg);color:var(--gold);border:1px solid var(--gold-bord)}
+.s-next{background:var(--blue-bg);color:var(--blue-l);border:1px solid var(--blue-bord)}
+.s-lock{background:var(--elev);color:var(--txm);border:1px solid var(--bord)}
+
 </style>
 </head>
 <body>
@@ -2150,26 +2019,45 @@ async function loadGlobal() {
 
 // ── LEARN TAB ─────────────────────────────────────────────────────
 function buildLearnChips() {
-  const CHART = ['C1 Support & Resistance','C2 Hammer Candle','C3 Moving Averages','C4 Chart Types','C5 Reading a Candle','C6 How to Read Trend','C7 Volume Basics','C8 Breakout Patterns'];
-  const FA    = ['F1 What is FA','F2 P/E Ratio','F3 Revenue vs Profit','F4 ROE Explained','F5 Promoter Holding','F6 Debt/Equity Ratio','F7 Annual Report','F8 Investability Checklist'];
-  const MACRO = ['M1 What is Inflation','M2 RBI & Repo Rate','M3 GDP & Stocks','M4 Rupee & Portfolio','M5 FII & DII Flows','M6 US Fed & India','M7 Crude Oil Impact','M8 Budget & Sensex'];
   const prog = S.g('aa_learn') || {};
-  const done = Object.keys(prog).filter(k => prog[k]).length;
-  const lel = document.getElementById('learn-lessons'); if (lel) lel.textContent = done;
-  const sel = document.getElementById('learn-streak'); if (sel) sel.textContent = (S.g('aa_streak')||0) + ' 🔥';
-  const xel = document.getElementById('learn-xp'); if (xel) xel.textContent = S.g('aa_xp')||0;
-  const mkChips = (ids, containerId) => {
-    const el = document.getElementById(containerId); if (!el) return;
-    el.innerHTML = ids.map(id => {
-      const key = id.split(' ')[0];
-      const d = prog[key];
-      const label = id.substring(id.indexOf(' ')+1);
-      return `<div class="chip ${d?'done':''}" onclick="openLesson('${key}')">${d?'✓ ':''}${label}</div>`;
-    }).join('');
-  };
-  mkChips(CHART, 'chart-chips');
-  mkChips(FA, 'fa-chips');
-  mkChips(MACRO, 'macro-chips');
+  const totalDone = Object.keys(prog).filter(k => prog[k]).length;
+
+  // Update progress header
+  setEl('learn-count','textContent', totalDone + ' of 88 lessons complete');
+  setEl('streak-count','textContent', S.g('aa_streak')||0);
+  setEl('xp-count','textContent', S.g('aa_xp')||0);
+  setEl('learn-pct','textContent', Math.round(totalDone/88*100)+'%');
+
+  // Update overall progress ring
+  var ring = document.getElementById('learn-progress-ring');
+  if (ring) {
+    var pct = totalDone/88;
+    ring.style.strokeDashoffset = 144.5 - (144.5 * pct);
+  }
+
+  // Update lesson chip statuses based on completion
+  document.querySelectorAll('.lesson-chip').forEach(function(chip) {
+    var onclick = chip.getAttribute('onclick') || '';
+    var match = onclick.match(/openLesson\('([^']+)'\)/);
+    if (!match) return;
+    var key = match[1];
+    var stEl = chip.querySelector('.lc-st');
+    if (!stEl) return;
+    if (prog[key]) {
+      stEl.textContent = 'Done';
+      stEl.className = 'lc-st s-done';
+    }
+  });
+
+  // Chart school progress ring
+  var chartDone = Object.keys(prog).filter(k => k.startsWith('C') && prog[k]).length;
+  var fundDone  = Object.keys(prog).filter(k => k.startsWith('F') && prog[k]).length;
+  var cRing = document.getElementById('chart-ring');
+  if (cRing) cRing.style.strokeDashoffset = 75.4 - (75.4 * chartDone/40);
+  setEl('chart-pct','textContent', Math.round(chartDone/40*100)+'%');
+  var fRing = document.getElementById('fund-ring');
+  if (fRing) fRing.style.strokeDashoffset = 75.4 - (75.4 * fundDone/40);
+  setEl('fund-pct','textContent', Math.round(fundDone/40*100)+'%');
 }
 
 // markLesson removed — use openLesson()
@@ -3091,6 +2979,13 @@ function startAutoRefresh() {
   }, interval);
 }
 startAutoRefresh();
+
+function toggleSchool(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+function openWhyMachine() { switchTab('analyse'); }
 </script>
 </body>
 </html>
