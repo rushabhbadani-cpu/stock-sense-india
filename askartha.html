@@ -704,7 +704,7 @@ button{font-family:inherit;cursor:pointer}
           </div>
           <div style="flex:1">
             <div style="font-family:'Sora',sans-serif;font-size:14px;font-weight:700;color:var(--tx);margin-bottom:2px">AskArtha University</div>
-            <div style="font-size:11px;color:var(--txd)" id="learn-count">0 of 88 lessons complete</div>
+            <div style="font-size:11px;color:var(--txd)" id="learn-count">0 of 91 lessons complete</div>
             <div style="display:flex;gap:12px;margin-top:4px">
               <div style="font-size:11px;color:var(--txd)">&#x1F525; <span style="color:var(--gold-l);font-weight:700" id="streak-count">0</span> day streak</div>
               <div style="font-size:11px;color:var(--txd)">&#x2B50; <span style="color:var(--gold-l);font-weight:700" id="xp-count">0</span> XP</div>
@@ -2079,9 +2079,23 @@ function buildLearnChips() {
   const MACRO = ['M1 What is Inflation','M2 RBI & Repo Rate','M3 GDP & Stocks','M4 Rupee & Portfolio','M5 FII & DII Flows','M6 US Fed & India','M7 Crude Oil Impact','M8 Budget & Sensex'];
   const prog = S.g('aa_learn') || {};
   const done = Object.keys(prog).filter(k => prog[k]).length;
-  const lel = document.getElementById('learn-lessons'); if (lel) lel.textContent = done;
-  const sel = document.getElementById('learn-streak'); if (sel) sel.textContent = (S.g('aa_streak')||0) + ' 🔥';
-  const xel = document.getElementById('learn-xp'); if (xel) xel.textContent = S.g('aa_xp')||0;
+  const total = 91; // total openLesson chips in the app
+
+  // Update progress hero — correct element IDs
+  const countEl = document.getElementById('learn-count');
+  if (countEl) countEl.textContent = done + ' of ' + total + ' lessons complete';
+  const pctEl = document.getElementById('learn-pct');
+  if (pctEl) pctEl.textContent = Math.round((done/total)*100) + '%';
+  const ring = document.getElementById('learn-progress-ring');
+  if (ring) {
+    const circ = 144.5;
+    ring.style.strokeDashoffset = circ - (done/total)*circ;
+  }
+  const strEl = document.getElementById('streak-count');
+  if (strEl) strEl.textContent = S.g('aa_streak') || 0;
+  const xpEl = document.getElementById('xp-count');
+  if (xpEl) xpEl.textContent = S.g('aa_xp') || 0;
+
   const mkChips = (ids, containerId) => {
     const el = document.getElementById(containerId); if (!el) return;
     el.innerHTML = ids.map(id => {
@@ -2989,10 +3003,10 @@ function runScreen(type) {
   setEl('screen-result','innerHTML', '<div class="shimmer" style="height:60px;border-radius:10px"></div>');
   setTimeout(() => {
     const msgs = {
-      rsi:'RSI Oversold scan: Stocks where RSI is estimated below 35. These have fallen fast and may find support. Check fundamentals before acting. Coming live in Phase 4.',
-      golden:'Golden Cross scan: Stocks where 20-day MA is above 50-day MA — positive momentum signal. Coming live in Phase 4.',
-      '52low':'Near 52-Week Low scan: Stocks within 15% of yearly low. Sometimes value, sometimes falling knife — always check the reason. Coming live in Phase 4.',
-      lowpe:'Low P/E scan: Stocks trading below sector average P/E. May be undervalued or struggling — always investigate the reason. Coming live in Phase 4.',
+      rsi:'RSI Oversold scan: Stocks where RSI (14-day) is estimated below 35. RSI measures how fast price has moved recently on a scale of 0–100. A low RSI means price fell quickly in recent sessions. Coming live in Phase 4.',
+      golden:'Golden Cross scan: Stocks where the 20-day moving average is above the 50-day moving average. This pattern indicates short-term price is higher than medium-term price. Coming live in Phase 4.',
+      '52low':'Near 52-Week Low scan: Stocks within 10% of their 52-week low price. The 52-week low is the lowest price traded in the past year. Coming live in Phase 4.',
+      lowpe:'Low P/E scan: Stocks trading below the sector average P/E ratio. P/E ratio compares price to earnings per share. Differences across companies have many possible explanations. Coming live in Phase 4.',
     };
     setEl('screen-result','innerHTML', `<div class="ai-bub"><div class="ai-head"><div class="ai-av">📋</div><div class="ai-nm">Screener</div></div><div class="ai-txt">${msgs[type]}</div></div>`);
   }, 800);
